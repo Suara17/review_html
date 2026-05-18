@@ -1,5 +1,5 @@
 {
-  "rewrites": [{ "source": "/", "destination": "/python高频问题.html" }],
+  "rewrites": [{ "source": "/", "destination": "/index.html" }],
   "cleanUrls": true,
   "trailingSlash": false
 }
