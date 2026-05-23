@@ -1,7 +1,9 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
-    { "source": "/guanlan", "destination": "/guanlan.html" }
+    { "source": "/python-notes", "destination": "/python.html" },
+    { "source": "/guanlan", "destination": "/guanlan.html" },
+    { "source": "/learning-research-agent", "destination": "/learning-research-agent.html" }
   ],
   "cleanUrls": true,
   "trailingSlash": false
