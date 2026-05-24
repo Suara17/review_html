@@ -1,10 +1,17 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/python-notes", "destination": "/python.html" },
     { "source": "/guanlan", "destination": "/guanlan.html" },
     { "source": "/learning-research-agent", "destination": "/learning-research-agent.html" }
   ],
+  "functions": {
+    "api/**/*.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{.playwright-mcp/**,.serena/**,__pycache__/**}"
+    }
+  },
   "cleanUrls": true,
   "trailingSlash": false
 }
