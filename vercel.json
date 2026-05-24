@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
-    { "source": "/python-notes", "destination": "/python.html" },
+    { "source": "/python-notes", "destination": "/python" },
     { "source": "/guanlan", "destination": "/guanlan.html" },
     { "source": "/learning-research-agent", "destination": "/learning-research-agent.html" }
   ],
