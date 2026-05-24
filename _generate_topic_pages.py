@@ -168,6 +168,47 @@ def chunk_to_html(chunk_lines):
     return "".join(parts).replace("</script>", "<\\/script>").strip()
 
 
+IRRELEVANT_TEXT_PATTERNS = [
+    r"欢迎加入代码随想录知识星球",
+    r"点击进入",
+    r"代码随想录知识星球精华（最强.*?）第五版为九份PDF",
+    r"代码随想录知识星球八股文概述",
+    r"本篇为最强.*?计算机基础篇",
+    r"大部分内容来自.*?(代码随想录|小林coding|牛客网|博客资料)",
+    r"内容参考总结自.*?(小林coding|MySQL45讲|网络资料)",
+    r"本部分面试题仅做参考.*",
+    r"本部分是一些基础的概念，仅做了解使用",
+    r"超高频面试题，从这道题.*?引导到你更熟悉的地方",
+    r"超⾼频⾯试题，从这道题.*?引导到你更熟悉的地⽅",
+    r"原图链接.*代码随想录.*",
+    r"思维导图：",
+]
+
+
+
+def normalize_plain_text(text):
+    return html.unescape(re.sub(r"\s+", "", text or ""))
+
+
+
+def strip_irrelevant_text(content_html):
+    if not content_html:
+        return content_html
+
+    blocks = re.findall(r"(<p>.*?</p>|<ul>.*?</ul>|<pre>.*?</pre>|<table>.*?</table>)", content_html, re.S)
+    filtered = []
+
+    for block in blocks:
+        if block.startswith("<p>"):
+            plain = normalize_plain_text(re.sub(r"<[^>]+>", "", block))
+            if any(re.search(pattern, plain, re.I) for pattern in IRRELEVANT_TEXT_PATTERNS):
+                continue
+        filtered.append(block)
+
+    return "".join(filtered).strip()
+
+
+
 def get_text_length(content_html):
     text = re.sub(r"<[^>]+>", "", content_html)
     text = html.unescape(text)
@@ -195,11 +236,20 @@ def is_step_title(title):
 
 
 
+def is_auxiliary_title(title):
+    return title in {
+        "面试题", "⾯试题", "概述", "总结", "总结：", "实际应⽤", "实际应用", "应⽤", "应用",
+        "实现步骤", "实现步骤：", "使⽤场景", "使用场景", "使⽤场景总结：", "使用场景总结：",
+        "主要⻆⾊", "主要角色", "结构图", "结构图："
+    }
+
+
+
 def should_merge_entry(entry):
     content = entry["content"]
     if any(tag in content for tag in ("<ul>", "<ol>", "<pre>", "<table>")):
         return False
-    return get_text_length(content) <= 90
+    return get_text_length(content) <= 120
 
 
 
@@ -210,7 +260,7 @@ def should_merge_backward(entry, previous_entry):
     title = entry["title"]
     previous_title = previous_entry["title"]
 
-    if title in {"总结", "总结："}:
+    if is_auxiliary_title(title):
         return True
 
     if title.endswith(("：", ":")) or title in {"WWW 构建技术（3 项）：", "HTTP 版本："}:
@@ -220,6 +270,9 @@ def should_merge_backward(entry, previous_entry):
         if is_step_title(title):
             return False
         return not is_numbered_title(previous_title)
+
+    if len(title) >= 12 and not title.endswith(("？", "?")) and not any(sep in title for sep in ("/", "-", "：", ":")):
+        return True
 
     return False
 
@@ -277,13 +330,56 @@ def merge_short_entries(entries):
 
 
 
+def post_process_design_patterns(entries):
+    if not entries:
+        return entries
+
+    auxiliary_titles = {
+        "概述", "概述：", "概念", "定义", "主要构成", "代理模式结构图",
+        "UML", "结构图", "结构图：", "实际应⽤", "实际应用", "应⽤", "应用",
+        "实现步骤", "实现步骤：", "使⽤场景", "使用场景", "主要⻆⾊", "主要角色",
+        "案例", "优点", "缺点", "举例来说："
+    }
+    drop_titles = {
+        "设计模式", "⼯⼚⽅法模式", "装饰模式"
+    }
+    drop_content_markers = {
+        "想要了解更多设计模式，可以查看卡码⽹设计模式精讲",
+        "第6章穿什么有这么重要？—装饰模式",
+        "代理模式（Proxy）结构图",
+        "装饰模式（Decorator）结构图"
+    }
+
+    merged = []
+    for entry in entries:
+        plain_content = normalize_plain_text(re.sub(r"<[^>]+>", "", entry["content"]))
+
+        if entry["title"] in drop_titles and (not plain_content or plain_content in {normalize_plain_text(x) for x in drop_content_markers}):
+            continue
+
+        if any(marker in plain_content for marker in {normalize_plain_text(x) for x in drop_content_markers}):
+            entry["content"] = strip_irrelevant_text(entry["content"])
+            plain_content = normalize_plain_text(re.sub(r"<[^>]+>", "", entry["content"]))
+            if not plain_content:
+                continue
+
+        if merged and entry["title"] in auxiliary_titles:
+            merged[-1]["content"] += format_embedded_entry(entry)
+            continue
+
+        merged.append(entry)
+
+    return merged
+
+
+
 def parse_entries(range_start, range_end):
     entries = []
     local_headings = [(idx, title) for idx, title in heading_positions if idx >= range_start and idx < range_end]
     for i, (idx, title) in enumerate(local_headings):
         next_idx = local_headings[i + 1][0] if i + 1 < len(local_headings) else range_end
         body_lines = lines[idx + 1:next_idx]
-        body_html = chunk_to_html(body_lines)
+        body_html = strip_irrelevant_text(chunk_to_html(body_lines))
         if not body_html:
             continue
         entries.append({"title": title, "content": body_html})
@@ -343,6 +439,9 @@ for config in sections.values():
         start = position_by_title[start_title]
         end = position_by_title[end_title] if end_title else len(lines)
         entries.extend(parse_entries(start, end))
+
+    if config["page_id"] == "design-patterns-topics":
+        entries = post_process_design_patterns(entries)
 
     page = template
     page = page.replace("<title>Python知识点动态展示 - 精讲版</title>", f"<title>{config['page_title']}</title>")
