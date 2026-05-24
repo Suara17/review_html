@@ -61,6 +61,51 @@
     document.head.appendChild(style);
   }
 
+  const SPECIAL_SPOKEN_TOKENS = {
+    '__init__': '初始化方法',
+    '__new__': '创建方法',
+    '__str__': '字符串方法',
+    '__dict__': '属性表',
+    '__slots__': 'slots 约束',
+    '__call__': '调用方法',
+    '__doc__': '文档字符串',
+    '__del__': '析构方法',
+    '__name__': '名称变量',
+    'AttributeError': '属性错误',
+    'TypeError': '类型错误',
+    'ValueError': '值错误',
+    'KeyError': '键错误',
+    'IndexError': '索引错误'
+  };
+
+  function toSpokenIdentifier(token) {
+    if (SPECIAL_SPOKEN_TOKENS[token]) return SPECIAL_SPOKEN_TOKENS[token];
+    if (!/[A-Za-z]/.test(token)) return token;
+
+    const hadCodeStyle = /_|\.|[a-z][A-Z]|[A-Z]{2,}/.test(token);
+    if (!hadCodeStyle) return token;
+
+    return token
+      .replace(/\(\)$/g, '')
+      .replace(/\.py\b/gi, ' py 文件')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_/g, ' ')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+      .replace(/\s{2,}/g, ' ')
+      .trim() || token;
+  }
+
+  function normalizeSpeechText(text) {
+    return (text || '')
+      .replace(/"""|'''/g, '三引号')
+      .replace(/->/g, ' 返回 ')
+      .replace(/[A-Za-z_][A-Za-z0-9_.]*\(\)/g, (match) => toSpokenIdentifier(match))
+      .replace(/[A-Za-z_][A-Za-z0-9_.]*/g, (match) => toSpokenIdentifier(match))
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
   function htmlToSpeechText(title, html) {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = (html || '').replace(/<br\s*\/?>/gi, '\n');
@@ -68,14 +113,14 @@
       li.insertAdjacentText('afterbegin', '• ');
       li.insertAdjacentText('beforeend', '\n');
     });
-    const contentText = wrapper.textContent
+    const contentText = normalizeSpeechText(wrapper.textContent
       .replace(/ /g, ' ')
       .replace(/[\t ]+\n/g, '\n')
       .replace(/\n[\t ]+/g, '\n')
       .replace(/\n{3,}/g, '\n\n')
       .replace(/[ ]{2,}/g, ' ')
-      .trim();
-    return [title, contentText].filter(Boolean).join('。\n');
+      .trim());
+    return normalizeSpeechText([title, contentText].filter(Boolean).join('。\n'));
   }
 
   window.setupTtsPlayer = function setupTtsPlayer(options) {
