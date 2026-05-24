@@ -280,9 +280,10 @@ body {
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+  opacity: 0;
 }
 .sidebar-toggle:hover {
   background: rgba(0,255,255,0.25);
@@ -366,6 +367,8 @@ body {
   /* 侧边栏切换按钮始终显示（手机端） */
   .sidebar-toggle {
     display: flex;
+    pointer-events: auto;
+    opacity: 1;
   }
 
   /* 侧边栏：从左侧滑入覆盖 */
@@ -450,6 +453,7 @@ body {
 <!-- 侧边栏切换按钮（手机端） -->
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
 
+<script src="./tts-player.js"></script>
 <script>
 // ===== 数字雨背景动画 =====
 const canvas = document.getElementById('matrix-canvas');
@@ -1259,6 +1263,18 @@ function goToNext() {
 }
 
 nextBtn.addEventListener('click', goToNext);
+
+setupTtsPlayer({
+  pageId: 'python-notes',
+  knowledgePoints,
+  getIndex: () => index,
+  navigateToIndex: (targetIndex) => {
+    index = targetIndex;
+    showKnowledge();
+  },
+  ensureExpanded: () => toggleContent(true),
+  apiUrl: '/api/tts'
+});
 
 // 初始显示
 showKnowledge();
