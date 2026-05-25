@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>操作系统知识点动态展示 - 精讲版</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ffffff;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* ===== 数字雨背景 ===== */
+#matrix-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  opacity: 0.3;
+}
+
+/* ===== 扫描线覆盖 ===== */
+.scanlines {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,255,255,0.02) 2px,
+    rgba(0,255,255,0.02) 4px
+  );
+}
+
+/* ===== 主内容 & 侧边栏 ===== */
+.main-content, .sidebar { position: relative; z-index: 2; }
+
+/* ----- 桌面端主区域 ----- */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 粘性头部：进度条 + 标题 */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(0,8,16,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(0,255,255,0.2);
+}
+
+.sticky-header .progress-bar-container {
+  width: 100%;
+  height: 5px;
+  background: rgba(0,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.sticky-header .progress-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #00ffff, #00ccff, #00ffff);
+  box-shadow: 0 0 12px #00ffff, 0 0 24px rgba(0,255,255,0.4);
+  transition: width 1s linear;
+  background-size: 200% 100%;
+  animation: progressGlow 2s ease infinite;
+  border-radius: 3px;
+}
+@keyframes progressGlow {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+#knowledge-title {
+  font-size: 1.1em;
+  color: #00ffff;
+  text-shadow: 0 0 8px rgba(0,255,255,0.4);
+  cursor: pointer;
+  padding-right: 60px;
+  line-height: 1.4;
+  min-height: 1.6em;
+}
+#knowledge-title:hover {
+  text-shadow: 0 0 15px #00ffff, 0 0 30px rgba(0,255,255,0.3);
+}
+
+/* 卡片（滚动区域） */
+.card {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px 80px;
+  background: rgba(0,10,20,0.35);
+  margin: 0;
+  position: relative;
+}
+
+.card .content {
+  font-size: 1.18em;
+  line-height: 1.85em;
+}
+.card .content strong {
+  color: #00ffcc;
+  text-shadow: 0 0 8px rgba(0,255,204,0.4);
+}
+
+/* 倒计时（固定在头部右侧） */
+.countdown {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  font-size: 1.3em;
+  background: rgba(0,255,255,0.12);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 6px 16px;
+  border-radius: 10px;
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.5);
+  font-weight: bold;
+  border: 1px solid rgba(0,255,255,0.4);
+  letter-spacing: 1px;
+  z-index: 11;
+}
+
+/* ===== 下一个按钮 ===== */
+.next-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 30px;
+  z-index: 20;
+  background: rgba(0,255,255,0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0,255,255,0.4);
+  color: #00ffff;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 1.05em;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s;
+  text-shadow: 0 0 8px rgba(0,255,255,0.5);
+  letter-spacing: 1px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.next-btn:hover {
+  background: rgba(0,255,255,0.25);
+  box-shadow: 0 0 30px rgba(0,255,255,0.3), 0 4px 20px rgba(0,0,0,0.5);
+  transform: scale(1.05);
+}
+.next-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===== 侧边栏 ===== */
+.sidebar {
+  width: 340px;
+  background: rgba(0,10,20,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 20px;
+  overflow-y: auto;
+  border-left: 2px solid rgba(0,255,255,0.3);
+  position: relative;
+  z-index: 2;
+}
+.sidebar h3 {
+  color: #00ffff;
+  text-align: center;
+  margin-top: 0;
+  text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.3);
+  font-size: 1.15em;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,255,255,0.15);
+  letter-spacing: 2px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(0,255,255,0.15);
+  padding-bottom: 12px;
+}
+.sidebar-header h3 {
+  text-align: left;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  color: #00ffff;
+  font-size: 1.4em;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.3s;
+}
+.sidebar-close:hover {
+  background: rgba(0,255,255,0.15);
+}
+
+.sidebar ul {
+  list-style: none;
+}
+.sidebar li {
+  padding: 12px 16px;
+  margin: 5px 0;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.3s;
+  font-size: 1em;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.sidebar li::before {
+  content: '>';
+  position: absolute;
+  left: -20px;
+  color: #00ffff;
+  opacity: 0;
+  transition: all 0.3s;
+}
+.sidebar li:hover {
+  background: rgba(0,255,255,0.15);
+  border-color: rgba(0,255,255,0.3);
+  transform: translateX(12px);
+  box-shadow: 0 0 20px rgba(0,255,255,0.1);
+}
+.sidebar li:hover::before {
+  left: 6px;
+  opacity: 1;
+}
+.sidebar li.active {
+  background: rgba(0,255,255,0.12);
+  border-color: rgba(0,255,255,0.4);
+}
+
+/* ===== 侧边栏切换按钮（手机端显示） ===== */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 30;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(0,255,255,0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0,255,255,0.4);
+  color: #00ffff;
+  font-size: 1.5em;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+}
+.sidebar-toggle:hover {
+  background: rgba(0,255,255,0.25);
+  box-shadow: 0 0 30px rgba(0,255,255,0.2), 0 4px 20px rgba(0,0,0,0.5);
+}
+.sidebar-toggle:active {
+  transform: scale(0.9);
+}
+
+/* 侧边栏遮罩 */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.6);
+  z-index: 25;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); border-radius: 3px; }
+
+/* ===== 内容操作 ===== */
+.content-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.edit-btn,
+.edit-modal-close,
+.edit-modal-btn {
+  border: 1px solid rgba(0,255,255,0.35);
+  background: rgba(0,255,255,0.12);
+  color: #00ffff;
+}
+
+.edit-btn,
+.edit-modal-btn {
+  min-width: 72px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 0.92em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.edit-btn:hover,
+.edit-modal-btn:hover {
+  background: rgba(0,255,255,0.2);
+  box-shadow: 0 0 18px rgba(0,255,255,0.18);
+}
+
+.edit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+#click-hint {
+  margin-top: 12px;
+  font-size: 0.85em;
+  opacity: 0.35;
+  color: #00ffff;
+}
+
+.edit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,0.72);
+}
+
+.edit-modal[hidden] {
+  display: none;
+}
+
+.edit-modal.open {
+  display: flex;
+}
+
+.edit-modal-panel {
+  width: min(860px, 100%);
+  max-height: min(80vh, 760px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,12,24,0.96);
+  border: 1px solid rgba(0,255,255,0.24);
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.45);
+  overflow: hidden;
+}
+
+.edit-modal-header,
+.edit-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: rgba(0,255,255,0.06);
+}
+
+.edit-modal-header h3 {
+  margin: 0;
+  font-size: 1em;
+  color: #9fffe7;
+}
+
+.edit-modal-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+.edit-modal-body {
+  padding: 18px;
+  overflow: auto;
+}
+
+.edit-modal-editor {
+  min-height: 280px;
+  padding: 18px;
+  border: 1px solid rgba(0,255,255,0.18);
+  border-radius: 14px;
+  background: rgba(0,0,0,0.38);
+  color: #ffffff;
+  line-height: 1.8;
+  outline: none;
+}
+
+.edit-modal-editor:focus {
+  border-color: rgba(0,255,255,0.45);
+  box-shadow: 0 0 20px rgba(0,255,255,0.16);
+}
+
+.edit-modal-editor strong {
+  color: #00ffcc;
+}
+
+.edit-modal-editor p {
+  margin: 0 0 1em;
+}
+
+.edit-modal-editor ul,
+.edit-modal-editor ol {
+  margin: 0 0 1.2em 1.4em;
+}
+
+.edit-modal-editor li {
+  margin-bottom: 0.45em;
+}
+
+.edit-modal-editor .embedded-entry {
+  margin: 0 0 1.1em;
+}
+
+.edit-modal-editor .embedded-entry-title {
+  margin: 0 0 0.55em;
+  color: #9fffe7;
+  font-weight: 700;
+}
+
+.edit-modal-editor pre {
+  margin: 0 0 1.2em;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0,255,255,0.16);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+  line-height: 1.7;
+}
+
+.edit-modal-editor code {
+  font-family: 'Consolas', 'SFMono-Regular', monospace;
+  color: #9fffe7;
+}
+
+.edit-modal-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+
+.edit-modal-editor th,
+.edit-modal-editor td {
+  border: 1px solid rgba(0,255,255,0.18);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.edit-modal-editor th {
+  background: rgba(0,255,255,0.08);
+  color: #9fffe7;
+}
+
+.edit-modal-actions {
+  justify-content: flex-end;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+/* ===== 手机适配 ===== */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #matrix-canvas { opacity: 0.15; }
+
+  .main-content {
+    flex: 1;
+    height: 100vh;
+  }
+
+  .sticky-header {
+    padding: 10px 14px 10px;
+  }
+  .sticky-header .progress-bar-container {
+    height: 4px;
+    margin-bottom: 8px;
+  }
+  #knowledge-title {
+    font-size: 0.95em;
+    padding-right: 50px;
+  }
+
+  .card {
+    padding: 14px 14px 90px;
+  }
+  .card .content {
+    font-size: 0.95em;
+    line-height: 1.6em;
+  }
+
+  .countdown {
+    top: 10px;
+    right: 14px;
+    font-size: 1.05em;
+    padding: 4px 12px;
+  }
+
+  .next-btn {
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 22px;
+    font-size: 0.9em;
+  }
+
+  /* 侧边栏切换按钮始终显示（手机端） */
+  .sidebar-toggle {
+    display: flex;
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  /* 侧边栏：从左侧滑入覆盖 */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100vh;
+    z-index: 30;
+    border-left: none;
+    border-right: 2px solid rgba(0,255,255,0.3);
+    padding: 16px;
+    transition: left 0.3s ease;
+    background: rgba(0,8,16,0.92);
+  }
+  .sidebar.open {
+    left: 0;
+  }
+  .sidebar-close {
+    display: block;
+  }
+  .sidebar ul {
+    padding-bottom: 60px;
+  }
+  .sidebar li {
+    padding: 10px 14px;
+    font-size: 0.92em;
+    margin: 3px 0;
+  }
+
+  .sidebar-overlay.show {
+    display: block;
+    opacity: 1;
+  }
+
+  
+#click-hint {
+    font-size: 0.78em;
+    margin-top: 14px;
+  }
+}
+
+.content p { margin: 0 0 1em; }
+.content ul, .content ol { margin: 0 0 1.2em 1.4em; }
+.content li { margin-bottom: 0.45em; }
+.content .embedded-entry { margin: 0 0 1.1em; }
+.content .embedded-entry-title {
+  margin: 0 0 0.55em;
+  color: #9fffe7;
+  font-weight: 700;
+}
+.content pre {
+  margin: 0 0 1.2em;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0,255,255,0.16);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+  line-height: 1.7;
+}
+.content code {
+  font-family: 'Consolas', 'SFMono-Regular', monospace;
+  color: #9fffe7;
+}
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+.content th, .content td {
+  border: 1px solid rgba(0,255,255,0.18);
+  padding: 8px 10px;
+  text-align: left;
+}
+.content th {
+  background: rgba(0,255,255,0.08);
+  color: #9fffe7;
+}
+</style>
+</head>
+<body>
+
+<!-- 数字雨 Canvas -->
+<canvas id="matrix-canvas"></canvas>
+<!-- 扫描线叠层 -->
+<div class="scanlines"></div>
+
+<div class="main-content">
+  <!-- 粘性头部：进度条 + 标题 -->
+  <div class="sticky-header">
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <h2 id="knowledge-title" onclick="toggleContent(true)">加载中...</h2>
+  </div>
+
+  <!-- 倒计时（固定在头部右上角） -->
+  <div class="countdown" id="countdown">30</div>
+
+  <!-- 卡片（滚动区域） -->
+  <div class="card" id="card">
+    <div id="knowledge-container" class="content"></div>
+    <div class="content-toolbar">
+      <button class="edit-btn" id="edit-btn" type="button">修改</button>
+    </div>
+    <div id="click-hint">点标题展开，点修改编辑</div>
+  </div>
+
+  <button class="next-btn" id="next-btn">下一个 →</button>
+</div>
+
+
+<div class="edit-modal" id="edit-modal" hidden>
+  <div class="edit-modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div class="edit-modal-header">
+      <h3 id="edit-modal-title">修改内容</h3>
+      <button class="edit-modal-close" id="edit-modal-close" type="button">✕</button>
+    </div>
+    <div class="edit-modal-body">
+      <div class="edit-modal-editor" id="edit-modal-editor" contenteditable="true" spellcheck="false"></div>
+    </div>
+    <div class="edit-modal-actions">
+      <button class="edit-modal-btn" id="edit-cancel-btn" type="button">取消</button>
+      <button class="edit-modal-btn" id="edit-save-btn" type="button">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 侧边栏（桌面端侧栏 / 手机端滑动抽屉） -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>操作系统高频知识点</h3>
+    <button class="sidebar-close" id="sidebar-close">✕</button>
+  </div>
+  <ul id="sidebar-list"></ul>
+</div>
+
+<!-- 侧边栏切换按钮（手机端） -->
+<button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+
+<script src="./tts-player.js"></script>
+<script>
+// ===== 数字雨背景动画 =====
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789<>/{}[]|&^%$#@!';
+const fontSize = 14;
+const columns = Math.floor(canvas.width / fontSize);
+const drops = [];
+for (let i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * -canvas.height / fontSize);
+
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00ffff';
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#00ffff';
+  ctx.font = fontSize + 'px monospace';
+  for (let i = 0; i < drops.length; i++) {
+    const text = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillStyle = i % 3 === 0 ? '#00ffaa' : '#00ffff';
+    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+
+let matrixInterval = setInterval(drawMatrix, 35);
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  drops.length = 0;
+  const newCols = Math.floor(canvas.width / fontSize);
+  for (let i = 0; i < newCols; i++) drops[i] = Math.floor(Math.random() * -canvas.height / fontSize);
+});
+
+// ===== 知识点展示逻辑 =====
+const knowledgePoints = [{"title":"操作系统基础","content":"<p>本部分是⼀些基础的概念，仅做了解使⽤。</p>"},{"title":"什么是操作系统","content":"<p>操作系统(Operating System)，是介于硬件资源和应⽤程序之间的⼀个系统软件 ，能控制和管理整个计算机系统的硬件和软件资源，调度计算机的⼯作与资源的分配，进⽽为⽤户和其他软件提供服务，操作系统是计算机系统中最基本的系统软件。</p><p>如果将它理解为“掌控计算机的系统”是否更能精确的描述OS所做的事情呢？</p><p>如果要更深⼊的掌握这个问题，可以问⼀问：如果没有了操作系统，你使⽤的PC机还能⼲什么？或者说，你能够使⽤你的PC机做什么呢？</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">操作系统的特征：</p><p>并发：并发指的是两个或多个事件在同⼀时间间隔内发⽣，计算机系统中同时存在多个运⾏的程序，因此具有处理和调度多个程序同时执⾏的能⼒。</p><p>注意：并⾏和并发的区别：并发指的是同⼀时间间隔，并⾏指的是同⼀时刻。</p><p>共享：系统中的资源可以供内存中多个并发执⾏的进程共同使⽤。</p><p>互斥共享：⼀段时间内只允许⼀个进程访问该资源。⼀段时间内只允许⼀个进程访问的资源称为临界资源。</p><p>同时访问：⼀段时间内允许多个进程“同时”访问，“同时”通常是宏观的，实际上是交替的对该资源进⾏访问。</p><p>虚拟：把⼀个物理上的实体变为若⼲逻辑上的对应物。</p><p>异步：进程的执⾏并不是⼀贯到底的，⽽是以不可预知的速度向前推进。</p></div>"},{"title":"操作系统的功能","content":"<p>操作系统位于硬件资源之上，管理硬件资源; 应⽤程序之下，为应⽤程序提供服务，同时管理应⽤程序</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、资源分配，资源回收</p><p>计算机必要重要的硬件资源⽆⾮就是 CPU、内存、硬盘、I/O设备。</p><p>⽽这些资源总是有限的，因此需要有效管理，资源管理最终只有两个问题：资源分配、资源回收。</p><p>资源分配： 体现在CPU上，⽐如进程调度，多个进程同时请求CPU下，应该给哪⼀个进程呢？再⽐如内存分配，内存不够了怎么办？A进程⾮法访问了B进程的内存地址怎么办？内存内、外碎⽚问题等。</p><p>资源回收： 考虑内存回收后的合并等等。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、为应⽤程序提供服务</p><p>操作系统将硬件资源的操作封装起来，提供相对统⼀的接⼝（系统调⽤）供开发者调⽤。</p><p>如果没有操作系统，应⽤程序将直接⾯对硬件，除去给开发者带来的编程困难不说，直接访问硬件，使⽤不当极有可能直接损坏硬件资源。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、管理应⽤程序</p><p>即控制进程的⽣命周期：进程开始时的环境配置和资源分配、进程结束后的资源回收、进程调度等。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、操作系统内核的功能</p><ul><li>进程调度能⼒： 管理进程、线程，决定哪个进程、线程使⽤CPU。</li></ul><ul><li>内存管理能⼒： 决定内存的分配和回收。</li></ul><ul><li>硬件通信能⼒： 管理硬件，为进程和硬件之间提供通信。</li></ul><ul><li>系统调⽤能⼒： 应⽤程序进⾏更⾼限权运⾏的服务，需要系统调⽤，⽤户程序和操作系统之间的接⼝。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、管理者</p><p>主要分为：CPU管理、内存管理、外存管理、IO管理；以及⾃⼰的健壮性和安全性管理。</p><p>健壮性，⼜称鲁棒性，即使很粗鲁的对待程序，它还是可以很好的运⾏。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、魔术师:</p><p>⽐如操作系统会让每个进程都觉得⾃⼰独占CPU、独占整⽚物理内存，⽽实际上每个进程都只是在某⼀时间段内占⽤CPU，仅仅只是占⽤实际⼀点点物理内存。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">⽤户程序与操作系统的关系</p><p>⽤户程序和操作系统之间是相互调⽤的关系</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、操作系统的⻆度</p><p>计算机启动后启动的第⼀个软件就是操作系统，随后启动的所有进程都运⾏在操作系统之上，使⽤操作系统提供的服务，同时被操作系统监控，进程结束后也由操作系统回收。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、进程⻆度</p><p>调⽤操作系统提供的服务，实现⾃⼰的功能。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、进程的概念</p><p>我们编写的代码只是⼀个存储在硬盘的静态⽂件，通过编译后就会⽣成⼆进制可执⾏⽂件，当我们运⾏这个可执⾏⽂件后，它会被装载到内存中，接着 CPU 会执⾏程序中的每⼀条指令，那么这个运⾏中的程序，就被称为「进程」（Process）。</p><p>根据上⾯的过程，我们可以得到进程的其中⼀个定义：进程是具有独⽴功能的程序在⼀个数据集合上运⾏的过程，是系统进⾏资源分配和调度的⼀个独⽴单位。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、进程控制块（PCB）</p><p>系统通过进程控制块PCB来描述进程的基本情况和运⾏状态，就进⽽控制和管理进程，它是进程存在的唯⼀标识，其包括以下信息：</p><ul><li>进程描述信息： 进程标识符、⽤户标识符</li></ul><ul><li>进程控制和管理信息： 进程当前状态，进程优先级</li></ul><ul><li>进程资源分配清单： 有关内存地址空间或虚拟地址空间的信息，所打开⽂件的列表和所使⽤的 I/O 设备信息。</li></ul><ul><li>CPU相关信息： 当进程切换时，CPU寄存器的值都被保存在相应PCB中，以便CPU重新执⾏该进程时能从断点处继续执⾏;</li></ul><p>PCB 通常是通过链表的⽅式进⾏组织，把具有相同状态的进程链在⼀起，组成各种队列。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、并发与并⾏</p><ul><li>单个处理核在很短时间内分别执⾏多个进程，称为并发</li></ul><ul><li>多个处理核同时执⾏多个进程称为并⾏</li></ul><ul><li>对于并发来说，CPU需要从⼀个进程切换到另⼀个进程，在切换前必须要记录当前进程中运⾏的状态信息，以备下次切换回来的时候可以恢复执⾏。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、进程的状态切换</p><p>我们知道了并发会执⾏进程的切换，这就需要进程有运⾏状态和停⽌状态，实际上某个进程在某个时刻所处的状态分为以下⼏种状态：</p><p>运⾏态： 该时刻进程占⽤CPU</p><p>就绪态：可运⾏，由于其他进程处于运⾏状态⽽暂时停⽌运⾏</p><p>阻塞态：该进程正在等待某⼀事件发⽣（如等待输⼊/输出操作的完成）⽽暂时停⽌运⾏</p><p>当然，进程还有另外两个基本状态：</p><p>创建状态（new）：进程正在被创建时的状态；</p><p>结束状态（Exit）：进程正在从系统中消失时的状态；</p><p>1．进程为等待事件而阻塞</p><p>选择另一个进程</p><p>选择这个进程</p><p>如果有⼤量处于阻塞状态的进程，进程可能会占⽤着物理内存空间，所以系统通常会把阻塞状态的进程的物理内存空间换出到硬盘，等需要再次运⾏的时候，再从硬盘换⼊到物理内存，那么，就需要⼀个新的状态，来描述进程没有占⽤实际的物理内存空间的情况，这个状态就是挂起状态。这跟阻塞状态是不⼀样，阻塞状态是等待某个事件的返回。</p><p>挂起状态可以分为两种：</p><p>阻塞挂起状态：进程在外存（硬盘）并等待某个事件的出现；</p><p>就绪挂起状态：进程在外存（硬盘），但只要进⼊内存，即刻⽴刻运⾏；</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">特点：</p><ul><li>只有就绪态和运⾏态可以相互转换，其它的都是单向转换。就绪态的进程通过调度算法从⽽获得CPU 时间，转为运⾏状态；</li></ul><ul><li>运⾏态的进程，在分配给它的 CPU 时间⽚⽤完之后就会转为就绪状态，等待下⼀次调度。</li></ul><ul><li>阻塞态是因缺少需要的资源从⽽由运⾏态转换⽽来，但是该资源不包括 CPU 时间，缺少 CPU 时间会从运⾏态转换为就绪态。</li></ul><ul><li>当进程等待的外部事件发⽣时（如⼀些输⼊到达），则由阻塞态转换为就绪态，如果此时没有其他进程运⾏，则转换为运⾏态，否则该进程将处于就绪态，等待CPU空闲轮到它运⾏。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5、进程的上下⽂切换</p><p>⼀个进程切换到另⼀个进程运⾏，称为进程的上下⽂切换, 进程的上下⽂切换不仅包含了虚拟内存、栈、全局变量等⽤户空间的资源，还包括了内核堆栈、寄存器等内核空间的资源。</p><p>发⽣进程上下⽂切换有哪些场景？</p><p>进程的时间⽚耗尽</p><p>阻塞等待</p><p>⾼优先级进程运⾏</p><p>中断处理</p><p>进程通过睡眠函数 sleep 这样的⽅法将⾃⼰主动挂起</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6、进程的创建</p><p>⼀个进程可以创建另⼀个进程，此时创建者为⽗进程，被创建的进程为⼦进程，操作系统创建⼀个新进程的过程如下：</p><p>为新进程分配⼀个独特的进程控制块（PCB）</p><p>为新进程分配所需要的资源，⽐如内存、CPU时间</p><p>初始化进程控制块（PCB）的各种字段，包括状态、优先级、寄存器初始值等。</p><p>将其状态设置为就绪状态，使其能够被调度执⾏。进程进⼊就绪队列，等待分配处理器时间。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7、进程的终⽌</p><p>根据标识符，查找需要终⽌的进程的 PCB；</p><p>如果进程处于执⾏状态，则⽴即终⽌该进程的执⾏，然后将处理器资源分配给其他进程；</p><p>如果其还有⼦进程，则应将该进程的⼦进程交给 1 号进程接管；</p><p>将该进程所拥有的全部资源都归还给操作系统；</p><p>将其从 PCB 所在队列中删除；</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">8、进程的阻塞</p><p>找到被阻塞进程的标识符对应的PCB</p><p>如果该进程为运⾏状态，则保护其现场，将其状态转为阻塞状态，停⽌运⾏；</p><p>将该 PCB 插⼊到等待队列中，将处理机资源调度给其他就绪进程</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">9、进程的唤醒</p><p>在该事件的阻塞队列中找到相应进程的 PCB；</p><p>将其从阻塞队列中移出，并置其状态为就绪状态；</p><p>把该 PCB 插⼊到就绪队列中，等待调度程序调度；</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、什么是线程？</p><p>线程是“轻量级线程”，是进程中的⼀个实体，是程序执⾏的最⼩单元，也是被系统独⽴调度和分配的基本单位。</p><p>线程是进程当中的⼀条执⾏流程，同⼀个进程内多个线程之间可以共享代码段、数据段、打开的⽂件等资源，但每个线程各⾃都有⼀套独⽴的寄存器和栈，这样可以确保线程的控制流是相对独⽴的。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、线程的特点</p><p>线程是⼀个“轻量级线程”，⼀个进程中可以有多个线程，线程不拥有系统资源，但是也有PCB，创建线程使⽤的底层函数和进程⼀样，都是clone</p><p>各个线程之间可以并发执⾏</p><p>同⼀个进程中的各个线程共享该进程所拥有的资源。</p><p>进程可以蜕变成线程;</p><p>实际上，⽆论是创建进程的fork，还是创建线程的 pthread_create ，底层实现都是调⽤同⼀个内核函数 clone 。</p><ul><li>如果复制对⽅的地址空间，那么就产出⼀个“进程”;</li></ul><ul><li>如果共享对⽅的地址空间，就产⽣⼀个“线程”。</li></ul><p>Linux内核是不区分进程和线程的, 只在⽤户层⾯上进⾏区分。所以，线程所有操作函数 pthread_*是库函数，⽽⾮系统调⽤。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、进程和线程的⽐较</p><p>进程是资源（包括内存、打开的⽂件等）分配的单位，线程是 CPU 调度的单位；</p><p>资源：进程是系统中拥有资源的基本单位，⽽线程不拥有系统资源（仅有⼀点必不可少的能保证运⾏的资源，⽐如寄存器和栈），但线程可以访问⾪属进程的系统资源。</p><p>调度：线程切换的代价远低于进程，在同⼀个进程中，线程的切换不会引起进程切换，⽽从⼀个进程中的线程切换到另⼀个进程中的线程中，会引起进程切换。</p><p>并发：进程可以并发执⾏，⽽⼀个进程中的多个线程之间也能并发执⾏，甚⾄不同进程中的线程也能并发执⾏，从⽽使得操作系统拥有更好的并发性，提⾼了系统资源的利⽤率和系统的吞吐量。</p><p>独⽴性：每个进程都拥有独⽴的地址空间和资源、除了共享全局变量，不允许其他进程访问。某进程中的线程对其他进程都不可⻅，同⼀进程中的不同线程是为了提⾼并发性以及进⾏相互之间的合作⽽创建的，它们共享进程的地址空间和资源。</p><p>系统开销：线程所需要的开销⽐进程⼩</p><p>线程的创建时间⽐进程快，因为进程在创建的过程中，还需要资源管理信息，⽐如内存管理信息、⽂件管理信息，⽽线程在创建的过程中，不会涉及这些资源管理信息，⽽是共享它们；</p><p>线程的终⽌时间⽐进程快，因为线程释放的资源相⽐进程少很多；</p><p>同⼀个进程内的线程切换⽐进程切换快，因为线程具有相同的地址空间（虚拟内存共享），这意味着同⼀个进程的线程都具有同⼀个⻚表，那么在切换的时候不需要切换⻚表。⽽对于进程之间的切换，切换的时候要把⻚表给切换掉，⽽⻚表的切换过程开销是⽐较⼤的；</p><p>由于同⼀进程的各线程间共享内存和⽂件资源，那么在线程之间数据传递的时候，就不需要经过内核了，这就使得线程之间的数据交互效率更⾼了；</p><p>所以，不管是时间效率，还是空间效率线程⽐进程都要⾼。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、线程的状态：</p><p>执⾏状态：线程获得处理机正在执⾏</p><p>就绪状态：线程已经具备执⾏条件，只需要获得CPU就可以执⾏</p><p>阻塞状态：线程在执⾏中因事件受阻⽽处于暂停状态</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）⽤户线程 （ULT）</p><p>⽤户线程是在⽤户空间实现的线程，不是由内核管理的线程，整个线程管理和调度，操作系统是不直接参与的，⽽是由⽤户级线程库函数来完成线程的管理，包括线程的创建、终⽌、同步和调度等。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">优点：</p><ul><li>线程切换不需要切换到内核空间中，节省了模式切换的开销。</li></ul><ul><li>调度算法可以是进程专⽤的，不同的进程可根据⾃身的需要，对⾃⼰的线程选择不同的调度算法。</li></ul><ul><li>⽤户级线程的实现与操作系统平台⽆关，对线程管理的代码是属于⽤户程序的⼀部分。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">缺点：</p><ul><li>由于不由操作系统调度，⼀旦⽤户线程发起系统调⽤⽽阻塞，那么此进程下⽤户线程都⽆法运⾏;</li></ul><ul><li>⼀旦某个⽤户线程正在运⾏，只有当其交出CPU执⾏权，其他⽤户线程才可以运⾏，⽆法被打断，因为只有操作系统才有权限打断运⾏，但是操作系统不直接参与调度;</li></ul><ul><li>由于时间⽚分配给进程，故与其他进程⽐，在多线程执⾏时，每个线程得到的时间⽚较少，执⾏会⽐较慢；</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）内核线程（KLT）</p><p>由操作系统管理、调度，其对应的TCB是存放在内核中，这样线程的创建、终⽌和管理都是由操作系统负责。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">优点：</p><ul><li>当⼀个内核线程发起系统调⽤阻塞时不会影响其它内核线程的执⾏;</li></ul><ul><li>分配给线程，多线程的进程获得更多的 CPU 运⾏时间；</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">缺点：</p><ul><li>在⽀持内核线程的操作系统中，由内核来维护进程和线程的上下⽂信息，如 PCB 和 TCB；</li></ul><ul><li>线程的创建、终⽌和切换都是通过系统调⽤的⽅式来进⾏，因此对于系统来说，系统开销⽐较⼤；</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）轻量级线程 (LWP)：</p><p>轻量级进程是内核⽀持的⽤户线程，⼀个进程可有⼀个或多个 LWP，每个 LWP 是跟内核线程⼀对⼀映射的，也就是 LWP 都是由⼀个内核线程⽀持，⽽且 LWP 是由内核管理并像普通进程⼀样被调度。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6、线程共享资源</p><p>⽂件描述符表</p><p>每种信号的处理⽅式</p><p>当前⼯作⽬录</p><p>⽤户ID和组ID</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7、 线程⾮共享资源</p><p>线程id</p><p>处理器现场和栈指针(内核栈)</p><p>独⽴的栈空间(⽤户空间栈)</p><p>errno变量</p><p>信号屏蔽字</p><p>调度优先级</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">优点：</p><p>提⾼程序并发性</p><p>开销⼩</p><p>数据通信、共享数据⽅便</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">缺点：</p><p>库函数，不稳定</p><p>调试、编写困难、gdb不⽀持</p><p>对信号⽀持不好</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">9、线程如何减少开销</p><ul><li>线程创建快，进程创建需要资源管理信息，⽐如内存管理信息和⽂件管理信息，⽽线程创建后是共享其所属进程的资源管理信息;</li></ul><ul><li>线程终⽌时间快，需要回收的仅有少量寄存器和私有的栈区;</li></ul><ul><li>线程切换快，因为线程切换仅涉及到少量寄存器和栈区，⽽进程上下⽂切换有CPU寄存器和程序计数器(CPU上下⽂)、虚拟内存空间、⻚表切换等;</li></ul><ul><li>线程因为创建时共享了其所属进程绝⼤多数资源，因此天⽣具有很好的线程间通信交互效率。</li></ul></div>"},{"title":"进程调度","content":"<p>当⼀个进程的状态发⽣改变时，操作系统需要考虑是否要换⼀个进程执⾏，这就需要⽤到“进程调度算法”</p>"},{"title":"调度⽬标","content":"<p>不同的调度算法具有不同的特性，因为使⽤以下标准⽐较处理机调度算法的性能：</p><p>CPU利⽤率：CPU是计算机系统中最重要和昂贵的资源之⼀，应该使CPU保持“忙碌”状态</p><p>系统吞吐量：单位时间内CPU完成作业的数量。</p><p>周转时间：作业从提交到作业完成所需要的时间，是作业等待、在就绪队列中排队、在处理机上运⾏及输⼊输出操作所花费时间的总和。</p><p>等待时间：进程处于等处理机（处于就绪队列）的时间之和，等待时间越⻓，⽤户满意度越低。</p><p>响应时间：⽤户提交请求到系统⾸次产⽣响应所需要的时间。</p>"},{"title":"进程调度⽅式","content":"<p>⾮抢占调度⽅式：当⼀个进程正在处理中，即使有更为重要的进程进⼊到就绪队列中，仍然让正在执⾏的进程继续执⾏。</p><p>抢占调度⽅式：当⼀个进程正在处理中，如果有更为重要的进程进⼊到就绪队列中，则允许调度程序根据某种原则去暂停正在执⾏的进程，将处理机分配给这个更为重要或紧迫的进程。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 先来先服务调度算法(FCFS)</p><p>每次从就绪队列选择最先进⼊队列的进程，然后⼀直运⾏，直到进程退出或被阻塞，才会继续从队列中选择第⼀个进程接着运⾏。</p><p>这种算法虽然看上去公平，但是如果有⼀个⻓作业需要处理，则后⾯的短作业需要处理很⻓时间。</p><p>先来先调度算法的特点是算法简单，对⻓作业⽐较有利，对短作业不利，适⽤于 CPU 繁忙型作业的系统，⽽不适⽤于 I/O 繁忙型作业的系统。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 最短作业优先调度算法（SJF）</p><p>最短作业优先调度算法从就绪队列中选择⼀个估计运⾏时间最短的作业，将之调⼊到内存中运⾏，这有利于提⾼系统的吞吐量。</p><p>但是这对⻓作业⼗分不利，由于调度程序总是优先调度短作业，将会导致⻓作业⻓期不被调度，此外该算法也没有考虑到作业的紧迫程度，因此不能保证紧迫性作业会被及时处理。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. ⾼响应⽐优先调度算法</p><p>每次进⾏进程调度时，先计算「响应⽐优先级」，然后把「响应⽐优先级」最⾼的进程投⼊运⾏</p><p>等待时间+要求服务时间优先权 =要求服务时间</p><p>根据公式可以知道：</p><p>作业的等待时间相同时，如果要求服务时间越短，则响应⽐更⾼，有利于短作业执⾏</p><p>当要求服务时间相同时，响应⽐由等待时间决定，如果等待时间越⻓，则响应⽐越⾼</p><p>对于⻓作业，作业的响应⽐可以随着等待时间的增加⽽提⾼</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. 时间⽚轮转调度算法</p><p>每个进程被分配⼀个时间段，称为时间⽚（Quantum），即允许该进程在该时间段中运⾏。</p><p>如果时间⽚⽤完，进程还在运⾏，那么将会把此进程从 CPU 释放出来，并把 CPU 分配给另外⼀个进程；</p><p>如果该进程在时间⽚结束前阻塞或结束，则 CPU ⽴即进⾏切换；</p><p>另外，时间⽚的⻓度就是⼀个很关键的点：</p><p>如果时间⽚设得太短会导致过多的进程上下⽂切换，降低了 CPU 效率；</p><p>如果设得太⻓⼜可能引起对短作业进程的响应时间变⻓。将</p><p>⼀般来说，时间⽚设为 20ms~50ms 通常是⼀个⽐较合理的折中值。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5. 最⾼优先级调度算法</p><p>从就绪队列中选择最⾼优先级的进程进⾏运⾏，但进程的优先级可以分为静态优先级和动态优先级</p><p>静态优先级：优先级在创建进程时已经确定，在进程运⾏期间保持不变，确定静态优先级的主要依据有进程类型，对资源的要求，⽤户要求。</p><p>动态优先级：进程运⾏过程中，根据进程运⾏时间和等待时间等因素调整进程的优先级</p><p>但是这种算法可能会导致低优先级的进程永远不被执⾏。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6. 多级队列调度算法</p><p>上⾯的各种调度算法是固定且单⼀的，⽆法满⾜系统中不同⽤户对进程调度策略的不同要求，多级队列调度算法在系统中设置多个就绪队列，将不同类型或性质的进程固定分配到不同的就绪队列，每个队列可以实施不同的调度算法。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7. 多级反馈队列调度算法</p><p>多级反馈队列调度算法融合了时间⽚轮转调度算法和优先级调度算法，通过动态调整进程的优先级和时间⽚⼤⼩，多级反馈队列调度算法可以兼顾多⽅⾯的系统⽬标</p><p>多级反馈队列调度算法的实现思想如下：</p><p>设置多个就绪队列，并为每个队列赋予不同的优先级。第1级队列的优先级最⾼，第2级队列的优先级次之，其余队列的优先级逐个降低。</p><p>赋予各个队列的进程运⾏时间⽚的⼤⼩各不相同。在优先级越⾼的队列中，每个进程的时间⽚就越⼩。例如，第i+1级队列的时间⽚要⽐第i级队列的时间⽚⻓1倍。</p><p>每个队列都采⽤FCFS算法。当新进程进⼊内存后，⾸先将它放⼊第1级队列的末尾，按FCFS原则等待调度。当轮到该进程执⾏时，如它能在该时间⽚内完成，便可撤离系统。若它在⼀个时间⽚结束时尚未完成，调度程序将其转⼊第2级队列的末尾等待调度：若它在第2级队列中运⾏⼀个时间⽚后仍未完成，再将它放⼊第3级队列…，依此类推。当进程最后被降到第n级队列后，在第n级队列中便采⽤时间⽚轮转⽅式运⾏。</p><p>按队列优先级调度。仅当第1级队列为空时，才调度第2级队列中的进程运⾏；仅当第 1~i-1 级队列均为空时，才会调度第i级队列中的进程运⾏。若处理机正在执⾏第i级队列中的某进程时，⼜有新进程进⼊任⼀优先级较⾼的队列，此时须⽴即把正在运⾏的进程放回到第级队列的末尾，⽽把处理机分配给新到的⾼优先级进程。</p><p>多级反馈队列的优势有以下⼏点：</p><p>终端型作业⽤户：短作业优先。</p><p>短批处理作业⽤户：周转时间较短。</p><p>⻓批处理作业⽤户：经过前⾯⼏个队列得到部分执⾏，不会⻓期得不到处理。</p></div>"},{"title":"进程通信","content":"<p>进程通信指的是进程之间的信息交换，进程之间⼀般是相互独⽴的，但内核空间是每个进程都共享的，所以进程之间要通信必须通过内核。</p><p>共享存储</p><p>在通信的进程之间存在⼀块可直接访问的共享空间，通过对这⽚共享空间进⾏写/读操作实现进程之间的信息交换。</p>"},{"title":"消息传递（消息队列）","content":"<p>若通信的进程之间不存在可直接访问的共享空间，则必须利⽤操作系统提供的消息传递⽅法进⾏进程通信，进程通过系统提供的发送消息和接收消息两个原语进⾏数据交换。</p><p>直接通信⽅式：发送进程直接把消息发送给接收进程，并将它挂在接收进程的消息缓冲队列上，接收进程从消息缓冲队列中取得消息。</p><p>间接通信⽅式：发送进程把消息发送到某个中间实体，接收进程从中间实体取得消息。这种中间实体⼀般称为信箱。</p><p>因为在内核中每个消息体都有⼀个最⼤⻓度的限制，所以消息队列不适合⽐较⼤数据的传输，⽽且通信也不是很及时。</p>"},{"title":"管道","content":"<p>管道是指⽤于连接⼀个读进程和⼀个写进程以实现它们之间的通信的⼀个共享⽂件，⼜名pipe⽂件，向管道（共享⽂件）提供输⼊的发送进程（写进程），以字符流形式将⼤量的数据送⼊（写）管道：⽽接收管道输出的接收进程（即读进程）则从管道中接收（读）数据。</p><p>管道传输数据是半双⼯通信，某⼀时刻只能单向传输。</p><p>写⼊管道中的数据遵循先⼊先出的规则</p><p>管道所传送的数据是⽆格式的，这要求管道的读出⽅与写⼊⽅必须事先约定好数据的格式，如多少字节算⼀个消息等</p><p>管道不是普通的⽂件，不属于某个⽂件系统，其只存在于内存中</p><p>管道在内存中对应⼀个缓冲区, 不同的系统其⼤⼩不⼀定相同</p><p>从管道读数据是⼀次性操作，数据⼀旦被读⾛，它就从管道中被抛弃，释放空间以便写更多的数据</p><p>通信效率低，不适合进程间频繁地交换数据。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">(1) 匿名管道和命名管道之间的区别</p><p>匿名管道：没有名字的管道，⽤完就销毁， Linux 中的 | 就是⼀个匿名管道，只适⽤于⽗⼦进程之间的通信。</p><p>命名管道：提前创建了⼀个类型为管道的设备⽂件，在进程⾥只要使⽤这个设备⽂件，就可以相互通信，所以它可以在不相关的进程间进⾏通信。</p></div>"},{"title":"(2 ) pipe函数","content":"<pre><code class=\"language-c\">#include &lt;unistd.h&gt;\n/**\n * 创建无名管道。\n * @param pipefd 为int型数组的首地址，其存放了管道的文件描述符\n * pipefd[0]、pipefd[1].\n * @return 创建成功返回0，创建失败返回-1.\n */\nint pipe(int pipefd[2]);\n/**\n * 当一个管道建立时，它会创建两个文件描述符 fd[0] 和 fd[1]。其中\n * fd[0] 固定用于读管道，而 fd[1] 固定用于写管道。\n * 一般文件 I/O的函数都可以用来操作管道(lseek() 除外。)\n */</code></pre><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）命名管道</p><p>命名管道（FIFO）不同于匿名管道之处在于它提供了⼀个路径名与之关联，以 FIFO 的⽂件形式存在于⽂件系统中，这样，即使与 FIFO 的创建进程不存在亲缘关系的进程，只要可以访问该路径，就能够彼此通过 FIFO 相互通信，因此，通过 FIFO 不相关的进程也能交换数据.</p><p>与⽆名管道(pipe)不同之处：</p><ul><li>FIFO 在⽂件系统中作为⼀个特殊的⽂件⽽存在，但 FIFO 中的内容却存放在内存中;</li></ul><ul><li>当使⽤ FIFO 的进程退出后，FIFO ⽂件将继续保存在⽂件系统中以便以后使⽤;</li></ul><ul><li>FIFO 有名字，不相关的进程可以通过打开命名管道进⾏通信.</li></ul><p>通过命令创建有名管道 mkfifo myPipe</p><p>通过函数创建有名管道</p><pre><code class=\"language-c\">#include &lt;sys/types.h&gt;\n#include &lt;sys/stat.h&gt;\n\n/**\n * 命名管道的创建。\n * @param pathname 普通的路径名，也就是创建后 FIFO 的名字。\n * @param mode 文件的权限，\n * 与打开普通文件的 open() 函数中的 mode 参数相同。(0666)。\n * @return 成功：0 状态码；\n *\n * 失败：如果文件已经存在，则会出错且返回 -1。\n */\nint mkfifo(const char *pathname, mode_t mode);</code></pre></div>"},{"title":"信号量","content":"<p>信号量⽤于控制多个进程对共享资源的访问，⽐如避免因为多个进程同时修改同⼀个共享内存造成冲突，信号量可以使共享的资源在任意时刻只能被⼀个进程访问。</p><p>信号量其实是⼀个整型的计数器，主要⽤于实现进程间的互斥与同步，⽽不是⽤于缓存进程间通信的数据。</p><p>信号量维护⼀个整数值，通常称为计数器。进程可以执⾏两种基本操作来操作信号量：</p><p>P（Wait）操作：这个操作会把信号量减去 1，相减后如果信号量 &lt; 0，则表明资源已被占⽤，进程需阻塞等待；相减后如果信号量 &gt;= 0，则表明还有资源可使⽤，进程可正常继续执⾏。</p><p>V（Signal）操作：这个操作会把信号量加上 1，相加后如果信号量 &lt;= 0，则表明当前有阻塞中的进程，于是会将该进程唤醒运⾏；相加后如果信号量 &gt; 0，则表明当前没有阻塞中的进程；</p><p>如果两个进程访问共享内存，我们可以初始化信号量为1</p><p>进程 A 在访问共享内存前，先执⾏了 P 操作，由于信号量的初始值为 1，故在进程 A 执⾏ P 操作后信号量变为 0，表示共享资源可⽤，于是进程 A 就可以访问共享内存。</p><p>若此时，进程 B 也想访问共享内存，执⾏了 P 操作，结果信号量变为了 -1，这就意味着临界资源已被占⽤，因此进程 B 被阻塞。</p><p>直到进程 A 访问完共享内存，才会执⾏ V 操作，使得信号量恢复为 0，接着就会唤醒阻塞中的线程 B，使得进程 B 可以访问共享内存，最后完成共享内存的访问后，执⾏ V 操作，使信号量恢复到初始值 1。</p><p>可以发现，信号初始化为 1 ，就代表着是互斥信号量，它可以保证共享内存在任何时刻只有⼀个进程在访问，这就很好的保护了共享内存。</p><p>还可以使⽤信号量实现多进程同步，⽐如可以初始化信号量为0</p><p>具体过程：</p><p>如果进程 B ⽐进程 A 先执⾏了，那么执⾏到 P 操作时，由于信号量初始值为 0，故信号量会变为 -1，表示进程 A 还没⽣产数据，于是进程 B 就阻塞等待；</p><p>接着，当进程 A ⽣产完数据后，执⾏了 V 操作，就会使得信号量变为 0，于是就会唤醒阻塞在 P 操作的进程B；</p><p>最后，进程 B 被唤醒后，意味着进程 A 已经⽣产了数据，于是进程 B 就可以正常读取数据了。</p><p>可以发现，信号初始化为 0 ，就代表着是同步信号量，它可以保证进程 A 应在进程 B 之前执⾏。</p>"},{"title":"信号","content":"<p>在 Linux 操作系统中， 为了响应各种各样的事件，提供了⼏⼗种信号，分别代表不同的意义。我们可以通过 kill-l 命令，查看所有的信号。</p><p>信号事件的来源主要有硬件来源（如键盘 Cltr+C ）和软件来源（如 kill 命令）。</p><p>信号是进程间通信机制中唯⼀的异步通信机制，它可以在⼀个进程中通知另⼀个进程发⽣了某种事件从⽽实现进程通信。</p>"},{"title":"Socket通信","content":"<p>Socket 通信是⼀种⽹络编程中常⻅的通信⽅式，但它也可以在同⼀台机器上的不同进程之间进⾏通信。</p><p>创建 socket 的系统调⽤：</p><pre><code class=\"language-txt\">int socket(int domain, int type, int protocol) </code></pre><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">三个参数分别代表：</p><p>domain 参数⽤来指定协议族，⽐如 AF_INET ⽤于 IPV4、AF_INET6 ⽤于 IPV6、AF_LOCAL/AF_UNIX ⽤于本</p><p>机；</p><p>type 参数⽤来指定通信特性，⽐如 SOCK_STREAM 表示的是字节流，对应 TCP、SOCK_DGRAM 表示的是数据报，对应 UDP、SOCK_RAW 表示的是原始套接字；</p><p>protocal 参数原本是⽤来指定通信协议的，但现在基本废弃。因为协议已经通过前⾯两个参数指定完成，protocol ⽬前⼀般写成 0 即可；</p><p>根据创建 socket 类型的不同，通信的⽅式也就不同：</p><p>实现 TCP 字节流通信： socket 类型是 AF_INET 和 SOCK_STREAM；</p><p>实现 UDP 数据报通信：socket 类型是 AF_INET 和 SOCK_DGRAM；</p><p>实现本地进程间通信： 「本地字节流 socket 」类型是 AF_LOCAL 和 SOCK_STREAM，「本地数据报 socket」类型是 AF_LOCAL 和 SOCK_DGRAM。另外，AF_UNIX 和 AF_LOCAL 是等价的，所以 AF_UNIX 也属于本地socket；</p></div>"},{"title":"线程通信","content":"<p>线程间的通信⽬的主要是⽤于线程同步。所以线程没有像进程通信中的⽤于数据交换的通信机制。</p><p>同⼀进程的不同线程共享同⼀份内存区域，所以线程之间可以⽅便、快速地共享信息。只需要将数据复制到共享（全局或堆）变量中即可。但是需要避免出现多个线程试图同时修改同⼀份信息。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、线程属性初始化和销毁</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 初始化线程属性函数，注意：应先初始化线程属性，再pthread_create创建线程。\n * @param attr 线程属性结构体。\n * @return 成功：0；失败：错误号。\n */\nint pthread_attr_init(pthread_attr_t *attr);\n/**\n * 销毁线程属性所占用的资源函数。\n * @param attr 线程属性结构体。\n * @return 成功：0；失败：错误号。\n */\nint pthread_attr_destroy(pthread_attr_t *attr);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）⾮分离状态：</p><p>线程的默认属性是⾮分离状态，这种情况下，原有的线程等待创建的线程结束。只有当pthread_join()函数返回时，创建的线程才算终⽌，才能释放⾃⼰占⽤的系统资源。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）分离状态：</p><p>分离线程没有被其他的线程所等待，⾃⼰运⾏结束了，线程也就终⽌了，⻢上释放系统资源。应该根据⾃⼰的需要，选择适当的分离状态。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">注意：</p><ul><li>如果设置⼀个线程为分离线程，⽽这个线程运⾏⼜⾮常快，它很可能在pthread_create函数返回之前就终⽌了，它终⽌以后就可能将线程号和系统资源移交给其他的线程使⽤，这样调⽤pthread_create的线程就得到了错误的线程号。</li></ul><ul><li>要避免这种情况可以采取⼀定的同步措施，最简单的⽅法之⼀是可以在被创建的线程⾥调⽤pthread_cond_timedwait函数，让这个线程等待⼀会⼉，留出⾜够的时间让函数pthread_create返回。</li></ul><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n\n/**\n * 设置线程分离状态。\n * @param attr 已初始化的线程属性。\n * @detachstate(分离状态)\n *    1. PTHREAD_CREATE_DETACHED（分离线程）；\n *    2. PTHREAD_CREATE_JOINABLE（非分离线程）。\n * @return 成功：0；失败：非0。\n */\n/**\n * 获取线程分离状态。\n * @param attr 已初始化的线程属性。\n * @detachstate(分离状态)\n *    1. PTHREAD_CREATE_DETACHED（分离线程）；\n *    2. PTHREAD_CREATE_JOINABLE（非分离线程）。\n * @return 成功：0；失败：非0。\n */\nint pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、线程栈地址</p><p>当进程栈地址空间不够⽤时，指定新建线程使⽤由malloc分配的空间作为⾃⼰的栈空间。</p><p>通过pthread_attr_setstack和pthread_attr_getstack两个函数分别设置和获取线程的栈地址。</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 设置线程的栈地址。\n * @param attr 指向一个线程属性的指针。\n * @param stackaddr 内存首地址。\n * @param stacksize 返回线程的堆栈大小。\n * @return 成功：0；失败：错误号。\n */\nint pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr, size_t stacksize);\n/**\n * 获取线程的栈地址。\n * @param attr 指向一个线程属性的指针。\n * @param stackaddr 返回获取的栈地址。\n * @param stacksize 返回获取的栈大小。</code></pre><pre><code class=\"language-c\">* @return 成功：0；失败：错误号.\n*/\nint pthread_attr_getstack(const pthread_attr_t *attr, void **stackaddr, size_t *stacksize);-</code></pre><ul><li>线程栈⼤⼩</li></ul><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 设置线程的栈大小。\n * @param attr 指向一个线程属性的指针。\n * @param stacksize 线程的堆栈大小。\n * @return 成功：0；失败：错误号。\n */\nint pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);\n/**\n * 获取线程的栈大小。\n * @param attr 指向一个线程属性的指针。\n * @param stacksize 返回线程的堆栈大小。\n * @return 成功：0；失败：错误号。\n */\nint pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5、线程使⽤注意事项</p><ul><li>主线程退出其他线程不退出，主线程应调⽤pthread_exit</li></ul><ul><li>避免僵⼫线程</li></ul><ul><li>pthread_join</li></ul><ul><li>pthread_detach</li></ul><ul><li>pthread_create指定分离属性</li></ul><p>被join线程可能在join函数返回前就释放完⾃⼰的所有内存资源，所以不应当返回被回收线程栈中的值</p><ul><li>malloc和mmap申请的内存可以被其他线程释放</li></ul><ul><li>应避免在多线程模型中调⽤fork，除⾮⻢上exec，⼦进程中只有调⽤fork的线程存在，其他线程t在⼦进程中均pthread_exit</li></ul><ul><li>信号的复杂语义很难和多线程共存，应避免在多线程引⼊信号机制</li></ul><ul><li>Cache伪共享：</li></ul><p>这种因为多个线程同时读写同⼀个 Cache Line 的不同变量时，⽽导致 CPU Cache 失效的现象。避免的⽅式⼀般有Cache Line ⼤⼩字节对⻬，以及字节填充等⽅法。在 Linux 内核中存在cachelinealignedin_smp 宏定义，是⽤于解决伪共享的问题。</p></div>"},{"title":"多线程","content":"<p>⽤户态的多线程模型，同⼀个进程内部有多个线程，所有的线程共享同⼀个进程的内存空间，进程中定义的全局变量会被所有的线程共享；</p><p>i++在计算机中并不是原⼦操作，涉及内存取数，计算和写⼊内存⼏个环节，⽽线程的切换有可能发⽣在上述任何⼀个环节中间，所以不同的操作顺序很有可能带来意想不到的结果。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">多线程的好处：</p><p>主要原因是许多应⽤中同时发⽣多个活动，某些活动随着时间推移⽽阻塞，将这些应⽤程序分解成并发运⾏的多个线程，简化设计模型。同时多线程有共享同⼀地址空间和可⽤数据的能⼒，这是多进程没有的。</p><p>线程⽐进程开销⼩，更容易创建和释放。</p><p>多个线程是IO密集型时，多线程可以使这些活动彼此重叠运⾏，可以加快程序执⾏的速度。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">对于线程需要考虑：</p><p>线程之间有⽆先后访问顺序（线程依赖关系）</p><p>多个线程共享访问同⼀变量（同步互斥问题）</p><p>同⼀进程的多个线程共享进程的资源，除了标识线程的tid，每个线程还有⾃⼰独⽴的栈空间，线程彼此之间是⽆法访问其他线程栈上内容的。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">进程表：</p><p>为了实现进程模型，操作系统维护着⼀张表格(⼀个结构数组)，即进程表。</p><p>每个进程占有⼀个进程表项。(有些著作称这些为进程控制块)</p><p>该表项包含了⼀个进程状态的重要信息</p><p>包括程序计数器、堆栈指针、内存分配状况、所打开⽂件的状态、账号的调度信息，以及其他在进程由运⾏态转换到就绪态或阻塞态时必须保存的信息，从⽽保证该进程随后能再次启动，就像从未中断过⼀样</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7、进程切换为何⽐线程慢</p><p>涉及到虚拟内存的问题，进程切换涉及虚拟地址空间的切换⽽线程不会。</p><p>因为每个进程都有⾃⼰的虚拟地址空间，⽽线程是共享所在进程的虚拟地址空间的，所以同⼀个进程中的线程进⾏线程切换时不涉及虚拟地址空间的转换。</p><p>把虚拟地址转换为物理地址需要查找⻚表，⻚表查找是⼀个很慢的过程（⾄少访问2次内存），因此通常使⽤Cache来缓存常⽤的地址映射，这样可以加速⻚表查找，这个cache就是TLB（快表）。</p><p>由于每个进程都有⾃⼰的虚拟地址空间，那么显然每个进程都有⾃⼰的⻚表，那么当进程切换后⻚表也要进⾏切换，⻚表切换后TLB就失效了，cache失效导致命中率降低，那么虚拟地址转换为物理地址就会变慢，表现出来的就是程序运⾏会变慢，⽽线程切换则不会导致TLB失效，因为线程线程⽆需切换地址空间，这也就是进程切换要⽐同进程下线程切换慢的原因。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">10、守护进程</p><p>守护进程是指在后台运⾏的，没有控制终端与它相连的进程。它独⽴于控制终端，周期性地执⾏某种任务。</p><p>Linux的⼤多数服务器就是⽤守护进程的⽅式实现的，如web服务器进程http等。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）让程序在后台执⾏。</p><p>⽅法是调⽤fork()产⽣⼀个⼦进程，然后使⽗进程退出。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）调⽤setsid()创建⼀个新对话期。</p><p>守护进程需要摆脱⽗进程的影响，⽅法是调⽤setsid()使进程成为⼀个会话组⻓。setsid()调⽤成功后，进程成为新的会话组⻓和进程组⻓，并与原来的登录会话、进程组和控制终端脱离。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）禁⽌进程重新打开控制终端。</p><p>经过1和2，进程已经成为⼀个⽆终端的会话组⻓，但是它可以重新申请打开⼀个终端。为了避免这种情况发⽣，可以通过使进程不再是会话组⻓来实现。再⼀次通过fork（）创建新的⼦进程，使调⽤fork的进程退出。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（4）关闭不再需要的⽂件描述符。</p><p>⼦进程从⽗进程继承打开的⽂件描述符。如不关闭，将会浪费系统资源，造成进程所在的⽂件系统⽆法卸下以及引起⽆法预料的错误。⾸先获得最⾼⽂件描述符值，然后⽤⼀个循环程序，关闭0到最⾼⽂件描述符值的所有⽂件描述符。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（5）将当前⽬录更改为根⽬录。</p><ul><li>⼦进程从⽗进程继承的⽂件创建屏蔽字可能会拒绝某些许可权。</li></ul><p>为防⽌这⼀点，使⽤unmask(0)将屏蔽字清零。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（7）处理SIGCHLD信号。</p><p>对于服务器进程，在请求到来时往往⽣成⼦进程处理请求。如果⼦进程等待⽗进程捕获状态，则⼦进程将成为僵⼫进程（zombie），从⽽占⽤系统资源。如果⽗进程等待⼦进程结束，将增加⽗进程的负担，影响服务器进程的并发性能。在Linux下可以简单地将SIGCHLD信号的操作设为SIG_IGN。这样，⼦进程结束时不会产⽣僵⼫进程。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">11、僵⼫进程</p><p>多进程程序，⽗进程⼀般需要跟踪⼦进程的退出状态，当⼦进程退出，⽗进程在运⾏，⼦进程必须等到⽗进程捕获到了⼦进程的退出状态才真正结束。在⼦进程结束后，⽗进程读取状态前，此时⼦进程为僵⼫进程。</p><p>设置僵⼫进程的⽬的是维护⼦进程的信息，以便⽗进程在以后某个时候获取。这些信息⾄少包括进程ID，进程的终⽌状态，以及该进程使⽤的CPU时间。所以当终⽌⼦进程的⽗进程调⽤wait或waitpid时就可以得到这些信息。</p><p>但是⼦进程停⽌在僵⼫态会占据内核资源，所以需要避免僵⼫进程的产⽣或⽴即结束⼦进程的僵⼫态。</p><ul><li>⽗进程调⽤wait/waitpid等函数等待⼦进程结束，如果尚⽆⼦进程退出wait会导致⽗进程阻塞。waitpid只会等待由pid参数指定的⼦进程，同时也是⾮阻塞，⽬标进程正常退出返回⼦进程PID，还没结束返回0。</li></ul><ul><li>在事件已经发⽣情况下执⾏⾮阻塞调⽤可以提⾼程序效率。对waitpid，最好在⼦进程退出后调⽤。使⽤SIGCHLD信号通知⽗进程，⼦进程结束。</li></ul><p>⽗进程中捕获信号，然后在信号处理函数中调⽤waitpid以彻底结束⼦进程</p><pre><code class=\"language-c\">static void handle_child(int sig)\n{\n    pid_t pid;\n    int stat;\n    while((pid = waitpid(-1, &amp;stat, WNOHANG)) &gt; 0)\n    {\n    //结束子进程的处理；\n    }\n}</code></pre><ul><li>通过signal(SIGCHLD, SIG_IGN)通知内核对⼦进程的结束不关⼼，由内核回收。如果不想让⽗进程挂起，可以在⽗进程中加⼊⼀条语句：signal(SIGCHLD,SIG_IGN);表示⽗进程忽略SIGCHLD信号，该信号是⼦进程退出的时候向⽗进程发送的。</li></ul><ul><li>忽略SIGCHLD信号，这常⽤于并发服务器的性能的⼀个技巧因为并发服务器常常fork很多⼦进程，⼦进程终结之后需要服务器进程去wait清理资源。如果将此信号的处理⽅式设为忽略，可让内核把僵⼫⼦进程转交给init进程去处理，省去了⼤量僵⼫进程占⽤系统资源。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">12、多进程</p><p>进程结构由以下⼏个部分组成：代码段、堆栈段、数据段。代码段是静态的⼆进制代码，多个程序可以共享。</p><p>⽗进程创建⼦进程之后，⽗、⼦进程除了pid外，⼏乎所有的部分⼏乎⼀样。</p><p>⽗、⼦进程共享全部数据，⼦进程在写数据时会使⽤写时复制技术将公共的数据重新拷⻉⼀份，之后在拷⻉出的数据上进⾏操作；不是对同⼀块数据进⾏操作；</p><p>如果⼦进程想要运⾏⾃⼰的代码段，还可以通过调⽤execv()函数重新加载新的代码段，之后就和⽗进程独⽴开了。</p></div>"},{"title":"共享存储映射","content":"<p>存储映射I/O (Memory-mapped I/O) 使⼀个磁盘⽂件与存储空间中的⼀个缓冲区相映射.</p><p>于是当从缓冲区中取数据，就相当于读⽂件中的相应字节。于此类似，将数据存⼊缓冲区，则相应的字节就⾃动写⼊⽂件。</p><p>这样，就可在不适⽤read和write函数的情况下，使⽤地址（指针）完成I/O操作，进程就可以直接通过读写内存来操作⽂件.</p><p>共享内存可以说是最有⽤的进程间通信⽅式，也是最快的IPC形式, 因为进程可以直接读写内存，⽽不需要任何数据的拷⻉.</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）mmap函数</p><pre><code class=\"language-c\">#include &lt;sys/mman.h&gt;\n/**\n * 一个文件或者其它对象映射进内存。\n * @param addr 指定映射的起始地址，通常设为NULL，由系统指定。\n * @param length 映射到内存的文件长度。\n * @param prot 映射区的保护方式，最常用的：\n *\n *    (1) 读：PROT_READ;\n *\n *    (2) 写：PROT_WRITE;\n *\n *    (3) 读写：PROT_READ | PROT_WRITE.\n * @param flags 映射区的特性，可以是：\n *\n *    (1) MAP_SHARED：写入映射区的数据会复制回文件，\n *\n *    且允许其他映射该文件的进程共享。\n *\n *    (2) MAP_PRIVATE：对映射区的写入操作\n *\n *    会产生一个映射区的复制(copy - on - write),\n *\n *    对此区域所做的修改不会写回原文件。\n * @param fd 由open返回的文件描述符，代表要映射的文件。\n * @param offset 以文件开始处的偏移量，\n *\n *    必须是4k的整数倍，通常为0，表示从文件头开始映射。\n * @return 成功：返回创建的映射区首地址；失败：MAP_FAILED宏。\n */\nvoid *mmap(void *addr, size_t length,\n    int prot, int flags, int fd, off_t offset);</code></pre><p>内存是按照⻚来区别的，通常⼀⻚就是4K</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">总结：</p><ul><li>第⼀个参数写成NULL</li></ul><ul><li>第⼆个参数要映射的⽂件⼤⼩ &gt; 0</li></ul><ul><li>第三个参数：PROT_READ 、PROT_WRITE</li></ul><ul><li>第四个参数：MAP_SHARED 或者 MAP_PRIVATE</li></ul><ul><li>第五个参数：打开的⽂件对应的⽂件描述符</li></ul><ul><li>第六个参数：4k的整数倍，通常为0</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）munmap函数</p><pre><code class=\"language-c\">#include &lt;sys/mman.h&gt;\n/**\n * 释放内存映射区。\n * @param addr 使用mmap函数创建的映射区的首地址。\n * @param length 映射区的大小。\n * @return 成功返回0；失败返回-1。\n */\nint munmap(void *addr, size_t length);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、注意事项:</p><ul><li>创建映射区的过程中，隐含着⼀次对映射⽂件的读操作</li></ul><ul><li>当MAP_SHARED时，要求：映射区的权限应 &lt;=⽂件打开的权限(出于对映射区的保护)。⽽MAP_PRIVATE则⽆所谓，因为mmap中的权限是对内存的限制</li></ul><ul><li>映射区的释放与⽂件关闭⽆关。只要映射建⽴成功，⽂件可以⽴即关闭</li></ul><ul><li>特别注意，当映射⽂件⼤⼩为0时，不能创建映射区。所以，⽤于映射的⽂件必须要有实际⼤⼩。mmap使⽤时常常会出现总线错误，通常是由于共享⽂件存储空间⼤⼩引起的</li></ul><ul><li>munmap传⼊的地址⼀定是mmap的返回地址。坚决杜绝指针++操作</li></ul><ul><li>如果⽂件偏移量必须为4K的整数倍</li></ul><ul><li>mmap创建映射区出错概率⾮常⾼，⼀定要检查返回值，确保映射区建⽴成功再进⾏后续操作</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、匿名映射实现⽗⼦进⾏通信</p><ul><li>为什么使⽤匿名的⽅式实现通信？</li></ul><p>内存映射的需要依赖⽂件。⽽建⽴⽂件建⽴好了只会还要unlink close掉，⽐较麻烦;</p><ul><li>有什么好的不能办法进⾏解决？</li></ul><p>直接使⽤匿名映射来代替;</p><ul><li>Linux系统给我们提供了创建匿名映射区的⽅法，⽆需依赖⼀个⽂件即可创建映射区。同样需要借助标志位参数flags来指定;</li></ul><ul><li>使⽤MAP_ANONYMOUS (或MAP_ANON):</li></ul><pre><code class=\"language-c\">int *p = mmap(NULL, 4, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); </code></pre></div>"},{"title":"消息队列","content":"<p>基本原理：A 进程要给 B 进程发送消息，A 进程把数据放在对应的消息队列后就可以正常返回了，B 进程需要的时候再去读取数据就可以了。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">特点：</p><ul><li>消息队列是保存在内核中的消息链表，每个消息体都是固定⼤⼩的存储块。如果进程从消息队列中读取了消息体，内核就会把这个消息体删除。</li></ul><ul><li>如果没有释放消息队列或者没有关闭操作系统，消息队列会⼀直存在。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">缺点：</p><ul><li>通信不及时，附件也有⼤⼩限制。</li></ul><ul><li>消息队列不适合⽐较⼤数据的传输，每个消息体都有⼀个最⼤⻓度的限制，同时所有队列所包含的全部消息体的总⻓度也是有上限</li></ul><ul><li>消息队列通信过程中，存在⽤户态与内核态之间的数据拷⻉开销</li></ul></div>"},{"title":"信号","content":"<p>信号是linux进程通信的最古⽼的⽅式;</p><p>信号是软件中断，它是在软件层次上对中断机制的⼀种模拟，是⼀种异步通信的⽅式 。信号可以导致⼀个正在运⾏的进程被另⼀个正在运⾏的异步进程中断，转⽽处理某⼀个突发事件;</p><p>信号可以直接进⾏⽤户空间进程和内核空间进程的交互，内核进程可以利⽤它来通知⽤户空间进程发⽣了哪些系统事件.</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、信号的特点</p><ul><li>简单</li></ul><ul><li>不能携带⼤量信息</li></ul><ul><li>满⾜某个特定条件才发送</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、⼀个完整的信号周期</p><ul><li>信号的产⽣</li></ul><ul><li>信号在进程种的注册，信号在进程种的注销</li></ul><ul><li>执⾏信号处理函数</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）不存在编号为0的信号</p><ul><li>其中1-31号信号称之为常规信号（也叫普通信号或标准信号）</li></ul><ul><li>34-64称之为实时信号，驱动编程与硬件相关。名字上区别不⼤。⽽前32个名字各不相同</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）⽐较重要的⼀些，需要记住的⼏个信号</p><ul><li>SIGINT 当⽤户按下了&lt;Ctrl+C&gt;组合键时，⽤户终端向正在运⾏中的由该终端启动的程序发出此信号，终⽌进程</li></ul><ul><li>SIGQUIT ⽤户按下&lt;ctrl+&gt;组合键时产⽣该信号，⽤户终端向正在运⾏中的由该终端启动的程序发出些信号,终⽌进程</li></ul><ul><li>SIGSEGV 指示进程进⾏了⽆效内存访问(段错误), 终⽌进程并产⽣core⽂件</li></ul><ul><li>SIGPIPE Broken pipe向⼀个没有读端的管道写数据,终⽌进程</li></ul><ul><li>SIGCHLD ⼦进程结束时，⽗进程会收到这个信号,忽略这个信号</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、信号四要素</p><ul><li>编号: man 7 signal 查看⽂档帮助</li></ul><ul><li>名称</li></ul><ul><li>事件</li></ul><ul><li>默认处理动作:</li></ul><ul><li>Term：终⽌进程</li></ul><ul><li>Ign： 忽略信号 (默认即时对该种信号忽略操作)</li></ul><ul><li>Core：终⽌进程，⽣成Core⽂件。(查验死亡原因，⽤于gdb调试)</li></ul><ul><li>Stop：停⽌（暂停）进程</li></ul><ul><li>Cont：继续运⾏进程</li></ul><p>特别强调: 9) SIGKILL 和19) SIGSTOP信号，不允许忽略和捕捉，只能执⾏默认动作。甚⾄不能将其设置为阻塞.</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）产⽣</p><ul><li>当⽤户按某些终端键时，将产⽣信号</li></ul><ul><li>硬件异常将产⽣信号</li></ul><ul><li>软件异常将产⽣信号</li></ul><ul><li>调⽤系统函数(如：kill、raise、abort)将发送信号</li></ul><ul><li>运⾏ kill /killall命令将发送信号</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）阻塞信号集</p><p>将某些信号加⼊集合，对他们设置屏蔽，当屏蔽x信号后，再收到该信号，该信号的处理将推后(处理发⽣在解除屏蔽后)</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）未决信号集合</p><p>信号产⽣，未决信号集中描述该信号的位⽴刻翻转为1，表示信号处于未决状态。当信号被处理对应位翻转回为0。这⼀时刻往往⾮常短暂.</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）kill函数：</p><pre><code class=\"language-c\">#include &lt;sys/types.h&gt;\n#include &lt;signal.h&gt;\n\n/**\n * 给指定进程发送指定信号(不一定杀死).\n * @param pid 取值有四种情况:\n *\n * pid &gt; 0: 将信号传送给进程 ID 为pid的进程.\n *\n * pid = 0: 将信号传送给当前进程所在进程组中的所有进程.\n *\n * pid = -1: 将信号传送给系统内所有的进程.\n *\n * pid &lt; -1: 将信号传给指定进程组的所有进程，这个进程组号等于 pid 的绝对值.\n * @param sig 信号的编号，这里可以填数字编号，也可以填信号的宏定义.\n *\n * 可以通过命令 kill - 1(&quot;1&quot; 为字母)进行相应查看.\n *\n * 不推荐直接使用数字，应使用宏名，因为不同操作系统信号编号可能不同，但名称一致.\n * @return 成功：0；失败：-1.\n * 普通用户基本规则是：发送者实际或有效用户ID == 接收者实际或有效用户ID.\n */\nint kill(pid_t pid, int sig);</code></pre><ul><li>raise函数</li></ul><pre><code class=\"language-c\">#include &lt;signal.h&gt;\n/**\n * 给当前进程发送指定信号(自己给自己发)，等价于 kill(getpid(), sig).\n * @param sig 信号编号.\n * @return 成功：0；失败：非0值.\n */\nint raise(int sig);</code></pre><ul><li>abort函数</li></ul><pre><code class=\"language-c\">#include &lt;stdlib.h&gt;\n/**\n * 给自己发送异常终止信号 6) SIGABRT，并产生core文件，等价于kill(getpid(), SIGABRT).\n */\nvoid abort(void);</code></pre><ul><li>alarm函数(闹钟)</li></ul><pre><code class=\"language-c\">#include &lt;unistd.h&gt;\n/**\n * 设置定时器(闹钟)。在指定seconds后，内核会给当前进程发送14）SIGALRM信号。进程收到该信号，默认动作终止。每个进程都有且只有唯一的一个定时器；\n * 取消定时器alarm(0)，返回旧闹钟余下秒数。\n * @param seconds 指定的时间，以秒为单位。\n * @return 返回0或剩余的秒数。\n */\nunsigned int alarm(unsigned int seconds);</code></pre><ul><li>setitimer函数（定时器）</li></ul><pre><code class=\"language-c\">#include &lt;sys/time.h&gt;\n\nstruct itimerval {\n    struct timerval it_interval; // 闹钟触发周期\n    struct timerval it_value; // 闹钟触发时间\n};\n\nstruct timeval {\n    long tv_sec;    // 秒\n    long tv_usec;    // 微秒\n}\n\n/**\n * 设置定时器(闹钟)。 可代替alarm函数。精度微秒us，可以实现周期定时。\n * @param which 指定定时方式：\n * (1) 自然定时：ITIMER_REAL → 14) SIGALRM计算自然时间；\n * (2) 虚拟空间计时(用户空间)：ITIMER_VIRTUAL → 26) SIGVTALRM 只计算进程占用cpu的时间；</code></pre><pre><code class=\"language-c\">* (3) 虚拟空间计时(用户空间): ITIMER_VIRTUAL → 26) SIGVTALRM 只计算进程占用cpu的时间。\n* @param new_value 负责设定timeout时间。\n* @param old_value 存放旧的timeout值，一般指定为NULL。\n* @return 成功：0；失败：-1。\n*/\nint setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value);\n// itimerval.it_value: 设定第一次执行function所延迟的秒数\n// itimerval.it_interval: 设定以后每几秒执行function</code></pre><ul><li>⾃定义信号集函数</li></ul><pre><code class=\"language-c\">#include &lt;signal.h&gt;\nint sigemptyset(sigset_t *set);    // 将set集合置空\nint sigfillset(sigset_t *set);    // 将所有信号加入set集合\nint sigaddset(sigset_t *set, int signo);    // 将signo信号加入到set集合\nint sigdelset(sigset_t *set, int signo);    // 从set集合中移除signo信号\nint sigismember(const sigset_t *set, int signo);    // 判断信号是否存在</code></pre><p>除sigismember外，其余操作函数中的set均为传出参数。sigset_t类型的本质是位图;</p><ul><li>阻塞信号集</li></ul><ul><li>信号阻塞集也称信号屏蔽集、信号掩码;</li></ul><ul><li>信号阻塞集⽤来描述哪些信号递送到该进程的时候被阻塞;</li></ul><ul><li>sigprocmask函数</li></ul><pre><code class=\"language-c\">#include &lt;signal.h&gt;\n/**\n * 检查或修改信号阻塞集，根据 how 指定的方法对进程的阻塞集合进行修改，\n * 新的信号阻塞集由 set 指定，而原先的信号阻塞集合由 oldset 保存。\n *\n * @param how 信号阻塞集合的修改方法，有 3 种情况：\n *\n * (1) SIG_BLOCK: 向信号阻塞集合中添加 set 信号集，\n *\n * 新的信号掩码是set和旧信号掩码的并集。相当于 mask = mask|set;\n *\n * (2) SIG_UNBLOCK: 从信号阻塞集合中删除 set 信号集，\n *\n * 从当前信号掩码中去除 set 中的信号。相当于 mask = mask &amp; ~ set;\n *\n * (3) SIG_SETMASK: 将信号阻塞集合设为 set 信号集，\n *\n * 相当于原来信号阻塞集的内容清空，然后按照 set 中的信号重新设置信号阻塞集。相当于\nmask = set.\n *\n * @set 要操作的信号集地址，若 set 为 NULL，则不改变信号阻塞集合，函数只把当前信号阻塞集合保存到\noldset 中。\n * @oldset 保存原先信号阻塞集地址。\n * @return 成功：0；失败：-1，失败时错误代码只可能是 EINVAL，表示参数 how 不合法。\n */\nint sigprocmask(int how, const sigset_t *set, sigset_t *oldset);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（4）sigpending函数</p><pre><code class=\"language-c\">#include &lt;signal.h&gt;\n/**\n * 读取当前进程的未决信号集。\n * @param set 未决信号集。\n * @return 成功：0；失败：-1。\n */\nint sigpending(sigset_t *set);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">10、信号捕捉</p><p>注意: SIGKILL 和 SIGSTOP 不能更改信号的处理⽅式，因为它们向⽤户提供了⼀种使进程终⽌的可靠⽅法;</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）sigaction函数</p><pre><code class=\"language-c\">#include &lt;signal.h&gt;\n/**\n * 检查或修改指定信号的设置（或同时执行这两种操作）。\n * @param signum 要操作的信号。\n * @param act 要设置的对信号的新处理方式（传入参数）。\n * @param oldact：原来对信号的处理方式（传出参数）。\n *\n * 如果 act 指针非空，则要改变指定信号的处理方式（设置），\n * 如果 oldact 指针非空，则系统将此前指定信号的处理方式存入 oldact。\n *\n * @return 成功：0；失败：-1。\n */\nint sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）sa_handler、sa_sigaction：信号处理函数指针</p><p>和 signal() ⾥的函数指针⽤法⼀样，应根据情况给sa_sigaction、sa_handler 两者之⼀赋值</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">其取值如下：</p><ul><li>SIG_IGN：忽略该信号</li></ul><ul><li>SIG_DFL：执⾏系统默认动作</li></ul><ul><li>处理函数名：⾃定义信号处理函数</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）sa_mask：</p><p>信号阻塞集，在信号处理函数执⾏过程中，临时屏蔽指定的信号;</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（4）sa_flags：</p><p>⽤于指定信号处理的⾏为，通常设置为0，表使⽤默认属性。它可以是⼀下值的“按位或”组合：</p><ul><li>A_RESTART：使被信号打断的系统调⽤⾃动重新发起（已经废弃）</li></ul><ul><li>SA_NOCLDSTOP：使⽗进程在它的⼦进程暂停或继续运⾏时不会收到 SIGCHLD 信号</li></ul><ul><li>SA_NOCLDWAIT：使⽗进程在它的⼦进程退出时不会收到 SIGCHLD 信号，这时⼦进程如果退出也不会成为僵⼫进程</li></ul><ul><li>SA_NODEFER：使对信号的屏蔽⽆效，即在信号处理函数执⾏期间仍能发出这个信号</li></ul><ul><li>SA_RESETHAND：信号处理之后重新设置为默认的处理⽅式</li></ul><ul><li>SA_SIGINFO：使⽤ sa_sigaction 成员⽽不是 sa_handler 作为信号处理函数</li></ul><ul><li>struct sigaction结构体</li></ul><pre><code class=\"language-c\">struct sigaction {\n    void(*sa_handler)(int); //旧的信号处理函数指针\n    void(*sa_sigaction)(int, siginfo_t *, void *); //新的信号处理函数指针\n    sigset_t sa_mask; //信号阻塞集\n    int sa_flags; //信号处理的方式\n    void(*sa_restorer)(void); //已弃用\n};</code></pre><ul><li>信号处理函数</li></ul><pre><code class=\"language-c\">/**\n * @param signum 信号的编号。\n * @param info 记录信号发送进程信息的结构体。\n * @param context 可以赋给指向 ucontext_t 类型的一个对象的指针\n * 以引用在传递信号时被中断的接收进程或线程的上下文。\n */\nvoid(*sa_sigaction)(int signum, siginfo_t *info, void *context);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">13、不可重⼊、可重⼊函数</p><p>如果有⼀个函数不幸被设计成为这样：那么不同任务调⽤这个函数时可能修改其他任务调⽤这个函数的数据，从⽽导致不可预料的后果。</p><p>这样的函数是不安全的函数，也叫不可重⼊函数;</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）不可重⼊函数:</p><ul><li>函数体内使⽤了静态的数据结构;</li></ul><ul><li>函数体内调⽤了malloc() 或者 free() 函数(谨慎使⽤堆);</li></ul><ul><li>函数体内调⽤了标准 I/O 函数;</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）可重⼊函数:</p><ul><li>所谓可重⼊是指⼀个可以被多个任务调⽤的过程，任务在调⽤时不必担⼼数据是否会出错;</li></ul><ul><li>在写函数时候尽量使⽤局部变量（例如寄存器、栈中的变量）;</li></ul><ul><li>对于要使⽤的全局变量要加以保护（如采取关中断、信号量等互斥⽅法），这样构成的函数就⼀定是⼀个可重⼊的函数.</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">14、SIGCHLD信号</p><ul><li>⼦进程终⽌时;</li></ul><ul><li>⼦进程接收到SIGSTOP信号停⽌时;</li></ul><ul><li>⼦进程处在停⽌态，接受到SIGCONT后唤醒时。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）最简单的⽅法:</p><p>⽗进程通过 wait() 和 waitpid() 等函数等待⼦进程结束，但是，这会导致⽗进程挂起;</p><ul><li>如果⽗进程要处理的事情很多，不能够挂起，通过 signal() 函数⼈为处理信号 SIGCHLD:</li></ul><p>只要有⼦进程退出⾃动调⽤指定好的回调函数，因为⼦进程结束后， ⽗进程会收到该信号 SIGCHLD ，可以在其回调函数⾥调⽤ wait() 或 waitpid() 回收;</p><ul><li>如果⽗进程不关⼼⼦进程什么时候结束，那么可以⽤signal（SIGCHLD, SIG_IGN）通知内核:</li></ul><p>⾃⼰对⼦进程的结束不感兴趣，⽗进程忽略此信号，那么⼦进程结束后，内核会回收，并不再给⽗进程发送信号;</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、进程组概述</p><ul><li>代表⼀个或多个进程的集合;</li></ul><ul><li>每个进程都属于⼀个进程组;</li></ul><ul><li>是为了简化对多个进程的管理。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、会话</p><ul><li>⼀个会话可以有⼀个控制终端。这通常是终端设备或伪终端设备;</li></ul><ul><li>建⽴与控制终端连接的会话⾸进程被称为控制进程;</li></ul><ul><li>⼀个会话中的⼏个进程组可被分为⼀个前台进程组以及⼀个或多个后台进程组;</li></ul><ul><li>如果⼀个会话有⼀个控制终端，则它有⼀个前台进程组，其它进程组为后台进程组;</li></ul><ul><li>如果终端接⼝检测到断开连接，则将挂断信号发送⾄控制进程（会话⾸进程。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、创建会话注意事项</p><ul><li>调⽤进程不能是进程组组⻓，该进程变成新会话⾸进程(session header);</li></ul><ul><li>该调⽤进程是组⻓进程，则出错返回;</li></ul><ul><li>该进程成为⼀个新进程组的组⻓进程;</li></ul><ul><li>需有root权限(ubuntu不需要);</li></ul><ul><li>新会话丢弃原有的控制终端，该会话没有控制终端;</li></ul><ul><li>建⽴新会话时，先调⽤fork, ⽗进程终⽌，⼦进程调⽤setsid。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）getsid 函数</p><pre><code class=\"language-c\">#include &lt;unistd.h&gt;\n/**\n * 获取进程所属的会话ID.\n * @param pid 进程号，pid为0表示查看当前进程session ID.\n * @return 成功：返回调用进程的会话ID；失败：-1.\n */\npid_t getsid(pid_t pid);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）setsid函数</p><pre><code class=\"language-c\">#include &lt;unistd.h&gt;\n/**\n * 创建一个会话，并以自己的ID设置进程组ID，同时也是新会话的ID。\n * 调用了 setsid 函数的进程，既是新的会长，也是新的组长。\n *\n * @return 成功：返回调用进程的会话ID；失败：-1.\n */\npid_t setsid(void);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5、守护进程</p><p>守护进程（Daemon Process），也就是通常说的 Daemon 进程（精灵进程），是 Linux 中的后台服务进程</p><ul><li>它是⼀个⽣存期较⻓的进程，通常独⽴于控制终端并且周期性地执⾏某种任务或等待处理某些发⽣的事件</li></ul><ul><li>⼀般采⽤以d结尾的名字</li></ul><ul><li>所有的服务存在于 etc/init.d</li></ul><ul><li>守护进程是个特殊的孤⼉进程</li></ul><ul><li>之所以脱离于终端是为了避免进程被任何终端所产⽣的信息所打断，其在执⾏过程中的信息也不在任何终端上显示</li></ul><ul><li>Linux 的⼤多数服务器就是⽤守护进程实现的</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6、守护进程模型</p><ul><li>创建⼦进程，⽗进程退出(必须)</li></ul><p>所有⼯作在⼦进程中进⾏形式上脱离了控制终端</p><ul><li>在⼦进程中创建新会话(必须)</li></ul><ul><li>setsid()函数</li></ul><ul><li>使⼦进程完全独⽴出来，脱离控制</li></ul><ul><li>改变当前⽬录为根⽬录(不是必须)</li></ul><ul><li>chdir()函数</li></ul><ul><li>防⽌占⽤可卸载的⽂件系统</li></ul><ul><li>也可以换成其它路径</li></ul><ul><li>重设⽂件权限掩码(不是必须)</li></ul><ul><li>umask()函数</li></ul><ul><li>防⽌继承的⽂件创建屏蔽字拒绝某些权限</li></ul><ul><li>增加守护进程灵活性</li></ul><ul><li>关闭⽂件描述符(不是必须)</li></ul><p>继承的打开⽂件不会⽤到，浪费系统资源，⽆法卸载</p><ul><li>开始执⾏守护进程核⼼⼯作(必须)</li></ul><p>守护进程退出处理程序模型</p></div>"},{"title":"互斥锁Mutex","content":"<p>互斥锁（mutex）：</p><p>也叫互斥量，互斥锁是⼀种简单的加锁的⽅法来控制对共享资源的访问，互斥锁只有两种状态,即加锁( lock )和解锁( unlock )</p><ul><li>在访问共享资源后临界区域前，对互斥锁进⾏加锁。</li></ul><ul><li>在访问完成后释放互斥锁导上的锁。</li></ul><ul><li>对互斥锁进⾏加锁后，任何其他试图再次对互斥锁加锁的线程将会被阻塞，直到锁被释放。</li></ul><p>互斥锁的数据类型是： pthread_mutex_t</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 创建互斥锁</p><p>pthread_mutex_init()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 初始化一个互斥锁。\n * @param mutex 互斥锁地址。类型是 pthread_mutex_t。\n * @param attr 设置互斥量的属性，通常可采用默认属性，即可将 attr 设为 NULL。\n * @return 成功：0 成功申请的锁默认是打开的；失败：非0(错误码)。\n */\nint pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_mutexattr_t *restrict attr);\n// 这种方法等价于使用 NULL 指定的 attr 参数调用 pthread_mutex_init() 来完成动态初始化，\n// 不同之处在于 PTHREAD_MUTEX_INITIALIZER 宏不进行错误检查。</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 销毁互斥锁</p><p>pthread_mutex_destroy()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 销毁指定的一个互斥锁。互斥锁在使用完毕后，必须要对互斥锁进行销毁，以释放资源。\n * @param mutex 互斥锁地址。类型是 pthread_mutex_t。\n * @return 成功：0；失败：非0(错误码)。\n */\nint pthread_mutex_destroy(pthread_mutex_t *mutex);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. 互斥锁上锁</p><p>pthread_mutex_lock()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 对互斥锁上锁，若互斥锁已经上锁，则调用者阻塞，直到互斥锁解锁后再上锁。\n * @param mutex 互斥锁地址。\n * @return 成功：0；失败：非0(错误码)。\n */\nint pthread_mutex_lock(pthread_mutex_t *mutex);\n/**\n * 调用该函数时，若互斥锁未加锁，则上锁，返回 0；\n * 若互斥锁已加锁，则函数直接返回失败，即 EBUSY。\n */\nint pthread_mutex_trylock(pthread_mutex_t *mutex);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. 互斥锁解锁</p><p>pthread_mutex_unlock()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 对指定的互斥锁解锁。\n * @param mutex 互斥锁地址。\n * @return 成功：0；失败：非0(错误码)\n */\nint pthread_mutex_unlock(pthread_mutex_t *mutex);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">死锁（DeadLock）</p><p>如果⼀个进程集合中的每⼀个进程都在等待只能由该进程集合中的其他进程才能引发的事件，那么，该进程集合就是死锁</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、可抢占资源</p><p>可以从拥有它的进程中抢占⽽不会产⽣任何副作⽤，存储器就是⼀类可抢占资源</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、不可抢占资源</p><p>是指在不引起相关计算失败的情况下，⽆法把它从占有它的进程处抢占过来</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、互斥</p><p>每个资源要么已经分配给⼀个进程，要么就是可⽤的</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、占有和等待</p><p>已经得到了某个资源的进程可以再请求新的资源</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、不可抢占</p><p>已经分配给⼀个进程的资源不能强制性地被抢占，它只能被占有它的进程显式地释放</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、环路等待</p><p>死锁发⽣时，系统中⼀定有由两个或两个以上的进程组成的⼀条环路，该环路中的每个进程都在等待着下⼀个进程所占有的资源。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、鸵⻦算法</p><p>把头埋在沙⼦⾥，假装根本没发⽣问题。</p><p>因为解决死锁问题的代价很⾼，因此鸵⻦算法这种不采取任务措施的⽅案会获得更⾼的性能。</p><p>当发⽣死锁时不会对⽤户造成多⼤影响，或发⽣死锁的概率很低，可以采⽤鸵⻦算法。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">检测算法：</p><p>通过检测有向图中是否存在环来实现，从⼀个节点出发进⾏深度优先搜索，对访问过的节点进⾏标记，如果访问了已经标记的节点，就表示有向图存在环，也就是检测到死锁发⽣</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">锁检测算法如下：</p><p>每个进程最开始时都不被标记，执⾏过程有可能被标记。当算法结束时，任何没有被标记的进程都是死锁进程。</p><ul><li>寻找⼀个没有标记的进程Pi，它所请求的资源⼩于或等于A</li></ul><ul><li>如果真找到这样⼀个进程，那么将C矩阵的第i⾏向量加到A中，标记该进程，并转回第1步</li></ul><ul><li>如果没有这样的进程，那么算法终⽌</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）利⽤抢占恢复</p><p>将进程挂起，强⾏取⾛资源给另⼀个进程使⽤，⽤完再放回</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）利⽤回滚恢复</p><p>复位到更早的状态，那时它还没有取得所需的资源</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）通过杀死进程恢复</p><p>杀掉环中的⼀个进程或多个，牺牲掉⼀个环外进程</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）破坏互斥条件</p><p>例如假脱机打印机技术允许若⼲个进程同时输出，唯⼀真正请求物理打印机的进程是打印机守护进程。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）破坏占有个等待条件</p><ul><li>规定所有进程在开始执⾏前请求所需要的全部资源。</li></ul><ul><li>要求当⼀个进程请求资源时，先暂时释放其当前占⽤的所有资源，然后在尝试⼀次获得所需的全部资源。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）破坏不可抢占条件</p><ul><li>保证每⼀个进程在任何时刻只能占⽤⼀个资源，如果请求另⼀个资源必须先释放第⼀个资源</li></ul><ul><li>将所有的资源统⼀编号，进程可以在任何时刻提出资源请求，但是所有请求必须按照资源编号的顺序(升序)提出</li></ul><ul><li>破坏环路等待</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）安全状态</p><p>如果没有死锁发⽣，并且即使所有进程突然请求对资源的最⼤需求，也仍然存在某种调度次序能够使得每⼀个进程运⾏完毕，则称该状态是安全的。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）单个资源的银⾏家算法</p><p>⼀个⼩城镇的银⾏家，他向⼀群客户分别承诺了⼀定的贷款额度，算法要做的是判断对请求的满⾜是否会进⼊不安全状态，如果是，就拒绝请求；否则予以分配。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">检查⼀个状态是否安全的算法</p><ul><li>查找右边的矩阵是否存在⼀⾏⼩于等于向量 A。如果不存在这样的⾏，那么系统将会发⽣死锁，状态是不安全的。</li></ul><ul><li>假若找到这样⼀⾏，将该进程标记为终⽌，并将其已分配资源加到 A 中。</li></ul><ul><li>重复以上两步，直到所有进程都标记为终⽌，则状态时安全的。</li></ul><p>如果⼀个状态不是安全的，需要拒绝进⼊这个状态。</p></div>"},{"title":"读写锁","content":"<p>在对数据的读写操作中，更多的是读操作，写操作较少，例如对数据库数据的读写应⽤。</p><p>为了满⾜当前能够允许多个读出，但只允许⼀个写⼊的需求，线程提供了读写锁来实现。</p>"},{"title":"读写锁的特点","content":"<ul><li>如果有其它线程读数据，则允许其它线程执⾏读操作，但不允许写操作</li></ul><ul><li>如果有其它线程写数据，则其它线程都不允许读、写操作</li></ul><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">读写锁分为读锁和写锁，规则如下</p><ul><li>如果某线程申请了读锁，其它线程可以再申请读锁，但不能申请写锁。</li></ul><ul><li>如果某线程申请了写锁，其它线程不能申请读锁，也不能申请写锁。</li></ul><p>POSIX 定义的读写锁的数据类型是： pthread_rwlock_t。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 初始化读写锁</p><p>pthread_rwlock_init()</p><pre><code class=\"language-c\">/**\n * 用来初始化 rwlock 所指向的读写锁。\n * @param rwlock 指向要初始化的读写锁指针。\n * @param attr: 读写锁的属性指针。如果 attr 为 NULL 则会使用默认的属性初始化读写锁，否则使用指定的 attr 初始化读写锁。\n * 可以使用宏 PTHREAD_RWLOCK_INITIALIZER 静态初始化读写锁，比如：\n * pthread_rwlock_t my_rwlock = PTHREAD_RWLOCK_INITIALIZER;\n * 这种方法等价于使用 NULL 指定的 attr 参数调用 pthread_rwlock_init() 来完成动态初始化，\n * 不同之处在于 PTHREAD_RWLOCK_INITIALIZER 宏不进行错误检查。\n * @return 成功：0，读写锁的状态将成为已初始化和已解锁；失败：非 0 错误码。\n */\n#include &lt;pthread.h&gt;\nint pthread_rwlock_init(pthread_rwlock_t *restrict rwlock,\nconst pthread_rwlockattr_t *restrict attr);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 销毁读写锁</p><p>pthread_rwlock_destroy()</p><pre><code class=\"language-c\">/**\n * 用于销毁一个读写锁，并释放所有相关联的资源（所谓的所有指的是由 pthread_rwlock_init() 自动申请的资源。\n * @param rwlock 读写锁指针。\n * @return 成功：0；失败：非0错误码。\n */\n#include &lt;pthread.h&gt;\nint pthread_rwlock_destroy(pthread_rwlock_t *rwlock);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. 读锁定</p><p>pthread_rwlock_rdlock()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n\n/**\n * 以阻塞方式在读写锁上获取读锁（读锁定）。\n * 如果没有写者持有该锁，并且没有写者阻塞在该锁上，则调用线程会获取读锁。\n * 如果调用线程未获取读锁，则它将阻塞直到它获取了该锁。一个线程可以在一个读写锁上多次执行读锁定。\n * 线程可以成功调用 pthread_rwlock_rdlock() 函数 n 次，但是之后该线程必须调用\npthread_rwlock_unlock() 函数 n 次才能解除锁定。\n * @param rwlock 读写锁指针。\n * @return 成功：0；失败：非0错误码。\n */\nint pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);\n\n/**\n * 用于尝试以非阻塞的方式来在读写锁上获取读锁。\n * 如果有任何的写者持有该锁或有写者阻塞在该读写锁上，则立即失败返回。\n */\nint pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. 写锁定</p><p>pthread_rwlock_wrlock()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 在读写锁上获取写锁（写锁定）.\n * 如果没有写者持有该锁，并且没有写者读者持有该锁，则调用线程会获取写锁。\n * 如果调用线程未获取写锁，则它将阻塞直到它获取了该锁。\n * @param rwlock 读写锁指针。\n * @return 成功：0；失败：非0错误码。\n */\nint pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);\n/**\n * 用于尝试以非阻塞的方式来在读写锁上获取写锁。\n * 如果有任何的读者或写者持有该锁，则立即失败返回。\n */\nint pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5. 解锁</p><p>pthread_rwlock_unlock()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 无论是读锁或写锁，都可以通过此函数解锁。\n * @param rwlock 读写锁指针。\n * @return 成功：0；失败：非0错误码。\n */\nint pthread_rwlock_unlock(pthread_rwlock_t *rwlock);</code></pre></div>"},{"title":"条件变量","content":"<p>与互斥锁不同，条件变量是⽤来等待⽽不是⽤来上锁的，条件变量本身不是锁！</p><p>条件变量⽤来⾃动阻塞⼀个线程，直到某特殊情况发⽣为⽌。通常条件变量和互斥锁同时使⽤。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">条件变量的两个动作：</p><ul><li>条件不满, 阻塞线程</li></ul><ul><li>当条件满⾜, 通知阻塞的线程开始⼯作</li></ul><p>条件变量的类型: pthread_cond_t</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 创建条件变量</p><p>pthread_cond_init()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 初始化一个条件变量。\n * @param cond 指向要初始化的条件变量指针。\n * @param attr 条件变量属性，通常为默认值，传NULL即可。\n *\n * 也可以使用静态初始化的方法，初始化条件变量；\n *\n * pthread_cond_t cond = PTHREAD_COND_INITIALIZER.\n * return 成功：0；失败：非0错误号。\n */\nint pthread_cond_init(pthread_cond_t *restrict cond, const pthread_condattr_t *restrict attr);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 删除条件变量</p><p>pthread_cond_destroy()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 销毁一个条件变量。\n * @param cond 指向要初始化的条件变量指针。\n * @return 成功：0；失败：非0错误号。\n */\nint pthread_cond_destroy(pthread_cond_t *cond);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. 唤醒线程</p><p>pthread_cond_signal()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n/**\n * 唤醒至少一个阻塞在条件变量上的线程。\n * @param cond 指向要初始化的条件变量指针。\n * @return 成功：0；失败：非0错误号。\n */\nint pthread_cond_signal(pthread_cond_t *cond);\n/**\n * 唤醒全部阻塞在条件变量上的线程。\n * @param cond 指向要初始化的条件变量指针。\n * @return 成功：0；失败：非0错误号。\n */\nint pthread_cond_broadcast(pthread_cond_t *cond);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. 阻塞线程</p><p>pthread_cond_wait()</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n\nstruct timespec {\n    time_t tv_sec;    /* seconds */ // 秒\n    long tv_nsec; /* nanoseconds */ // 纳秒\n}\n\n// time_t cur = time(NULL);    // 获取当前时间。\n// struct timespec t;    // 定义timespec 结构体变量t\n// t.tv_sec = cur + 1;    // 定时1秒\n// pthread_cond_timedwait(&amp;cond, &amp;t);\n/**\n * 阻塞等待一个条件变量\n *    1. 阻塞等待条件变量cond（参1）满足\n *    2. 释放已掌握的互斥锁（解锁互斥量）相当于pthread_mutex_unlock(&amp;mutex);\n *    ((1), (2)两步为一个原子操作)\n *    3. 当被唤醒，pthread_cond_wait函数返回时，解除阻塞并重新申请获取互斥锁\npthread_mutex_lock(&amp;mutex);\n * @param cond 指向要初始化的条件变量指针.\n * @param mutex 互斥锁.\n * @return 成功：0；失败：非0错误号.\n */\nint pthread_cond_wait(pthread_cond_t *restrict cond,\n    pthread_mutex_t *restrict mutex);\n\n/**\n * 限时等待一个条件变量.\n * @param cond 指向要初始化的条件变量指针.\n * @param mutex 互斥锁.\n * @param abstime 绝对时间.\n * @return 成功：0；失败：非0错误号.\n */\nint pthread_cond_timedwait(pthread_cond_t *restrict cond,\n    pthread_mutex_t *restrict mutex,\n    const struct *restrict abstime);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、条件变量的优缺点</p><p>相较于mutex⽽⾔，条件变量可以减少竞争。</p><p>如直接使⽤mutex，除了⽣产者、消费者之间要竞争互斥量以外，消费者之间也需要竞争互斥量;</p><p>但如果汇聚（链表）中没有数据，消费者之间竞争互斥锁是⽆意义的。</p><p>有了条件变量机制以后，只有⽣产者完成⽣产，才会引起消费者之间的竞争。提⾼了程序效率。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、条件变量流程分析</p><p>场景: 你是个⽼板，招聘了三个员⼯，但是你不是有了活才去招聘员⼯，⽽是先把员⼯招来，没有活的时候员⼯需要在那⾥等着，⼀旦有了活，你要去通知他们，他们要去抢活⼲，⼲完了再等待，你再有活，再通知他们</p><p>代码如下：</p><pre><code class=\"language-c\">#include &lt;pthread.h&gt;\n#include &lt;stdio.h&gt;\n#include &lt;stdlib.h&gt;\n#define NUM_OF_TASKS 3\n#define MAX_TASK_QUEUE 11\n\nchar tasklist[MAX_TASK_QUEUE]=&quot;ABCDEFGHIJ&quot;;\nint head = 0;\nint tail = 0;\nint quit = 0;\npthread_mutex_t g_task_lock;\npthread_cond_t g_task_cv;\n\nvoid *coder(void *notused)\n{\n    pthread_t tid = pthread_self();\n    while(!quit){\n    pthread_mutex_lock(&amp;g_task_lock);\n    while(tail == head){\n    if(quit){\n    pthread_mutex_unlock(&amp;g_task_lock);\n    pthread_exit((void *)0);\n    }\n    printf(&quot;No task now! Thread %u is waiting!\\n&quot;, (unsigned int)tid);\n    pthread_cond_wait(&amp;g_task_cv, &amp;g_task_lock);\n    printf(&quot;Have task now! Thread %u is grabbing the task !\\n&quot;, (unsigned int)tid);\n    }\n    char task = tasklist[head++];\n    pthread_mutex_unlock(&amp;g_task_lock);\n    printf(&quot;Thread %u has a task %c now!\\n&quot;, (unsigned int)tid, task);\n    sleep(5);\n    printf(&quot;Thread %u finish the task %c!\\n&quot;, (unsigned int)tid, task);\n    }\n    pthread_exit((void *)0);\n}\n\nint main(int argc, char *argv[])\n{\n    pthread_t threads[NUM_OF_TASKS];\n    int rc;\n    int t;\n    pthread_mutex_init(&amp;g_task_lock, NULL);\n    pthread_cond_init(&amp;g_task_cv, NULL);\n    for(t=0;t&lt;NUM_OF_TASKS;t++) { </code></pre><pre><code class=\"language-c\">rc = pthread_create(&amp;threads[t], NULL, coder, NULL);\nif (rc){\n    printf(&quot;ERROR; return code from pthread_create() is %d\\n&quot;, rc);\n    exit(-1);\n}\nsleep(5);\nfor (t=1;t&lt;=4;t++) {\n    pthread_mutex_lock(&amp;g_task_lock);\n    tail+=t;\n    printf(&quot;I am Boss, I assigned %d tasks, I notify all coders!\\n&quot;, t);\n    pthread_cond_broadcast(&amp;g_task_cv);\n    pthread_mutex_unlock(&amp;g_task_lock);\n    sleep(20);\n}\npthread_mutex_lock(&amp;g_task_lock);\nquit = 1;\npthread_cond_broadcast(&amp;g_task_cv);\npthread_mutex_unlock(&amp;g_task_lock);\npthread_mutex_destroy(&amp;g_task_lock);\npthread_cond_destroy(&amp;g_task_cv);\npthread_exit(NULL);\n} </code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">下⾯是对于每个输出的分析：</p><pre><code class=\"language-txt\">No task now! Thread 1461831424 is waiting!\nNo task now! Thread 1453438720 is waiting!\nNo task now! Thread 1445046016 is waiting! </code></pre><p>这是主线程新建的三个⼯作线程，这时候⼯作线程都是先获得锁，判断tail==head，阻塞，cond_wait释放了锁，三个⼯作线程都等待信号来唤醒</p><pre><code class=\"language-txt\">I am Boss, I assigned 1 tasks, I notify all coders! </code></pre><p>主线程增加了⼀个任务，引起了head!=tail，这时候broadcast唤醒了所有⼯作线程，之后主线程释放锁，开始睡眠20s</p><pre><code class=\"language-txt\">Have task now! Thread 1453438720 is grabbing the task! </code></pre><p>1⼯作线程在竞争中抢到了锁，退出了while(tail==head)循环，并开始完成A任务，这时候把头加1，释放锁</p><pre><code class=\"language-txt\">Have task now! Thread 1445046016 is grabbing the task!\nNo task now! Thread 1445046016 is waiting! </code></pre><p>1⼯作线程时间⽚到了，2，3⼯作线程对锁进⾏竞争，2得到了锁，但是这时候已经没有⼯作了。while(tail==head)循环没有退出，因此释放锁，等待唤醒</p><pre><code class=\"language-txt\">Thread 1453438720 has a task A now! </code></pre><p>调度程序调度到1线程执⾏，打印了这句话，开始睡眠5s</p><pre><code class=\"language-txt\">Have task now! Thread 1461831424 is grabbing the task!\nNo task now! Thread 1461831424 is waiting! </code></pre><p>3⼯作线程抢到了锁（虽然这时候只有它在抢锁），3得到了锁，但是这时候已经没有⼯作了。while(tail==head)循环没有退出，因此释放锁，等待唤醒</p><pre><code class=\"language-txt\">Thread 1453438720 finish the task A!\nNo task now! Thread 1453438720 is waiting! </code></pre><p>20⼯作线程执⾏完任务，这时候还是没有⼯作。先上锁，后进⼊while(tail==head)循环没有退出，因此释放锁，等待唤醒</p><pre><code class=\"language-txt\">I am Boss, I assigned 2 tasks, I notify all coders! </code></pre><p>主线程醒了，⼜找了两个⼯作B,C，唤醒了所有⼯作线程去做</p><pre><code class=\"language-txt\">Have task now! Thread 1461831424 is grabbing the task!\nThread 1461831424 has a task B now! </code></pre><p>24号线程抢到了锁，执⾏头加1，释放锁，然后睡眠了</p><pre><code class=\"language-txt\">Have task now! Thread 1445046016 is grabbing the task!\nThread 1445046016 has a task C now! </code></pre><p>16号线程抢到了锁，执⾏头加1，释放锁，然后睡眠了</p><pre><code class=\"language-txt\">Have task now! Thread 1453438720 is grabbing the task!\nNo task now! Thread 1453438720 is waiting! </code></pre><p>20号线程抢到了锁，没任务了，就释放锁，等待唤醒</p><pre><code class=\"language-txt\">Thread 1445046016 finish the task C!\nNo task now! Thread 1445046016 is waiting! </code></pre><p>调度16号线程执⾏，16号线程完成任务，得到锁，发现没任务，释放锁，等待唤醒</p><pre><code class=\"language-txt\">Thread 1461831424 finish the task B!\nNo task now! Thread 1461831424 is waiting! </code></pre><p>调度24号线程执⾏，24号线程完成任务，得到锁，发现没任务，释放锁，等待唤醒</p><pre><code class=\"language-txt\">I am Boss, I assigned 3 tasks, I notify all coders! </code></pre><p>主线程醒了，⼜找了三个个⼯作D,E,F，唤醒了所有⼯作线程去做</p><pre><code class=\"language-txt\">Have task now! Thread 1461831424 is grabbing the task!\nThread 1461831424 has a task D now! </code></pre><p>24号线程抢到了锁，执⾏头加1，释放锁，然后睡眠了</p><pre><code class=\"language-txt\">Have task now! Thread 1445046016 is grabbing the task!\nThread 1445046016 has a task E now! </code></pre><p>16号线程抢到了锁，执⾏头加1，释放锁，然后睡眠了</p><pre><code class=\"language-txt\">Have task now! Thread 1453438720 is grabbing the task!\nThread 1453438720 has a task F now! </code></pre><p>20号线程抢到了锁，执⾏头加1，释放锁，然后睡眠了</p><pre><code class=\"language-txt\">Thread 1461831424 finish the task D!\nNo task now! Thread 1461831424 is waiting! </code></pre><p>调度24号线程执⾏，24号线程完成任务，得到锁，发现没任务，释放锁，等待唤醒</p><pre><code class=\"language-txt\">Thread 1445046016 finish the task E!\nNo task now! Thread 1445046016 is waiting! </code></pre><p>调度16号线程执⾏，16号线程完成任务，得到锁，发现没任务，释放锁，等待唤醒</p><pre><code class=\"language-txt\">Thread 1453438720 finish the task F!\nNo task now! Thread 1453438720 is waiting! </code></pre><p>调度20号线程执⾏，20号线程完成任务，得到锁，发现没任务，释放锁，等待唤醒</p><pre><code class=\"language-txt\">I am Boss, I assigned 4 tasks, I notify all coders! </code></pre><p>主线程醒了，⼜找了三个个⼯作G,H,I,J，唤醒了所有⼯作线程去做</p><pre><code class=\"language-txt\">Have task now! Thread 1453438720 is grabbing the task!\nThread 1453438720 has a task G now! </code></pre><p>20号线程抢到了锁，执⾏头加1，释放锁，然后睡眠了</p><pre><code class=\"language-txt\">Have task now! Thread 1461831424 is grabbing the task!\nThread 1461831424 has a task H now! </code></pre><p>24号线程抢到了锁，执⾏头加1，释放锁，然后睡眠了</p><pre><code class=\"language-txt\">Have task now! Thread 1445046016 is grabbing the task!\nThread 1445046016 has a task I now! </code></pre><p>16号线程抢到了锁，执⾏头加1，释放锁，然后睡眠了</p><pre><code class=\"language-txt\">Thread 1453438720 finish the task G!\nThread 1453438720 has a task J now! </code></pre><p>20号线程执⾏完任务，下⼀轮while中，持有了锁，发现还有任务，就继续做J，执⾏头加1，释放了锁，开始睡眠5s</p><pre><code class=\"language-txt\">Thread 1461831424 finish the task H!\nNo task now! Thread 1461831424 is waiting! </code></pre><p>调度24号线程执⾏，24号线程完成任务，得到锁，发现没任务，释放锁，等待唤醒</p><pre><code class=\"language-txt\">Thread 1445046016 finish the task I!\nNo task now! Thread 1445046016 is waiting! </code></pre><p>调度16号线程执⾏，16号线程完成任务，得到锁，发现没任务，释放锁，等待唤醒</p><pre><code class=\"language-txt\">Thread 1453438720 finish the task J!\nNo task now! Thread 1453438720 is waiting! </code></pre><p>20线程完成任务，下⼀轮while中持有锁，发现没任务了，释放锁，等待唤醒主线程抢锁，设置退出标志quit为1，并通知三个⼯作线程</p><pre><code class=\"language-txt\">Have task now! Thread 1461831424 is grabbing the task!\nHave task now! Thread 1445046016 is grabbing the task!\nHave task now! Thread 1453438720 is grabbing the task! </code></pre><p>三个⼯作线程分别抢到了锁，发现quit为1，就释放锁，然后终⽌各⾃的线程主线程销毁了锁和条件变量终⽌了main线程</p></div>"},{"title":"信号量","content":"<p>信号量⼴泛⽤于进程或线程间的同步和互斥，信号量本质上是⼀个⾮负的整数计数器，它被⽤来控制对公共资源的访问。</p><p>编程时可根据操作信号量值的结果判断是否对公共资源具有访问的权限，当信号量值⼤于 0 时，则可以访问，否则将阻塞。</p><p>PV 原语是对信号量的操作，⼀次 P 操作使信号量减1，⼀次 V 操作使信号量加1。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 创建信号量</p><p>sem_init()</p><pre><code class=\"language-c\">#include &lt;semaphore.h&gt;\n/**\n * 创建一个信号量并初始化它的值。一个无名信号量在被使用前必须先初始化。\n * @param sem 信号量的地址。\n * @param pshared 等于 0，信号量在线程间共享（常用）；不等于0，信号量在进程间共享。\n * @param value 信号量的初始值。\n * @return 成功：0；失败：-1。\n */\nint sem_init(sem_t *sem, int pshared, unsigned int value);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 删除信号量</p><p>sem_destroy()</p><pre><code class=\"language-c\">#include &lt;semaphore.h&gt;\n/**\n * 删除 sem 标识的信号量.\n * @return 成功：0；失败：-1.\n */\nint sem_destroy(sem_t *sem);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. P操作</p><p>sem_wait()(P操作)</p><pre><code class=\"language-c\">#include &lt;semaphore.h&gt;\n/**\n * 将信号量的值减 1。操作前，先检查信号量（sem）的值是否为 0；\n * 若信号量为 0，此函数会阻塞，直到信号量大于 0 时才进行减 1 操作。\n * @param sem 信号量的地址。\n * @return 成功：0；失败：-1.\n */\nint sem_wait(sem_t *sem);\n/**\n*/</code></pre><pre><code class=\"language-c\">* 以非阻塞的方式来对信号量进行减 1 操作。\n* 若操作前，信号量的值等于 0，则对信号量的操作失败，函数立即返回。\n*/\nint sem_trywait(sem_t *sem);\n\n/**\n * 限时尝试将信号量的值减 1\n * abs_timeout: 绝对时间\n */\nint sem_timedwait(sem_t *sem, const struct timespec *abs_timeout);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. V操作</p><p>sem_post()(V操作)</p><pre><code class=\"language-c\">#include &lt;semaphore.h&gt;\n/**\n * 将信号量的值加 1 并发出信号唤醒等待线程(sem_wait());\n * @param sem 信号量的地址。\n * @return 成功：0；失败：-1。\n */\nint sem_post(sem_t *sem);</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5. 获取信号量的值</p><p>sem_getvalue()</p><pre><code class=\"language-c\">#include &lt;semaphore.h&gt;\n/**\n * 获取 sem 标识的信号量的值，保存在 sval 中。\n * @param sem 信号量的地址。\n * @param sval 保存信号量值的地址。\n * @return 成功：0；失败：-1。\n */\nint sem_getvalue(sem_t *sem, int *sval);</code></pre></div>"},{"title":"管程","content":"<p>使⽤信号量机制实现的⽣产者消费者问题需要客户端代码做很多控制，</p><p>⽽管程把控制的代码独⽴出来，不仅不容易出错，也使得客户端代码调⽤更容易。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 哲学家进餐问题</p><p>下⾯是⼀种错误的解法，如果所有哲学家同时拿起左⼿边的筷⼦，那么所有哲学家都在等待其它哲学家吃完并释放⾃⼰⼿中的筷⼦，导致死锁。</p><pre><code class=\"language-c\">#define N 5\nvoid philosopher(int i) {\n    while(TRUE) {\n    think();\n    take(i); // 拿起左边的筷子\n    take((i+1)%N); // 拿起右边的筷子\n    eat();\n    put(i);\n    put((i+1)%N);\n    }\n}</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">为了防⽌死锁的发⽣，可以设置两个条件：</p><ul><li>必须同时拿起左右两根筷⼦</li></ul><ul><li>只有在两个邻居都没有进餐的情况下才允许进餐</li></ul><pre><code class=\"language-c\">#define N 5\n#define LEFT (i + N - 1) % N // 左邻居\n#define RIGHT (i + 1) % N // 右邻居\n#define THINKING 0\n#define HUNGRY 1\n#define EATING 2\ntypedef int semaphore;\nint state[N]; // 跟踪每个哲学家的状态\nsemaphore mutex = 1; // 临界区的互斥，临界区是 state 数组，对其修改需要互斥\nsemaphore s[N]; // 每个哲学家一个信号量\n\nvoid philosopher(int i) {\n    while(TRUE) {\n    think(i);\n    take_two(i);\n    eat(i);\n    put_two(i);\n    }\n}\n\nvoid take_two(int i) {\n    down(&amp;mutex);\n    state[i] = HUNGRY;\n    check(i);\n    up(&amp;mutex);\n    down(&amp;s[i]); // 只有收到通知之后才可以开始吃，否则会一直等下去\n}\n\nvoid put_two(i) {\n    down(&amp;mutex);\n    state[i] = THINKING;</code></pre><pre><code class=\"language-c\">check(LEFT); // 尝试通知左右邻居，自己吃完了，你们可以开始吃了\ncheck(RIGHT);\nup(&amp;mutex);\n}\n\nvoid eat(int i) {\n    down(&amp;mutex);\n    state[i] = EATING;\n    up(&amp;mutex);\n}\n\n// 检查两个邻居是否都没有用餐，如果是的话，就 up(&amp;s[i])，使得 down(&amp;s[i]) 能够得到通知并继续执行\nvoid check(i) {\n    if(state[i] == HUNGRY &amp;&amp; state[LEFT] != EATING &amp;&amp; state[RIGHT] !=EATING) {\n    state[i] = EATING;\n    up(&amp;s[i]);\n    }\n}</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 读者-写者问题</p><p>允许多个进程同时对数据进⾏读操作，但是不允许读和写以及写和写操作同时发⽣。</p><p>⼀个整型变量 count 记录在对数据进⾏读操作的进程数量，⼀个互斥量 count_mutex ⽤于对 count 加锁，⼀个互斥量 data_mutex ⽤于对读写的数据加锁。</p><pre><code class=\"language-txt\">typedef int semaphore;\nsemaphore count_mutex = 1;\nsemaphore data_mutex = 1;\nint count = 0;\n\nvoid reader() {\n    while(TRUE) {\n    down(&amp;count_mutex);\n    count++;\n    if(count == 1) down(&amp;data_mutex); // 第一个读者需要对数据进行加锁，防止写进程访问\n    up(&amp;count_mutex);\n    read();\n    down(&amp;count_mutex);\n    count--;\n    if(count == 0) up(&amp;data_mutex);\n    up(&amp;count_mutex);\n    }\n}\n\nvoid writer() {\n    while(TRUE) {\n    down(&amp;data_mutex);\n    write();\n    up(&amp;data_mutex);</code></pre><pre><code class=\"language-txt\">}\n} </code></pre></div>"},{"title":"存储系统","content":"<p>存储系统层级</p><ul><li>存储器的层次结构</li></ul><p>我们从图书馆书架取书，把书放到桌子上，再阅读书，我们大脑就会记忆知识点，然后再经过大脑思考，这一系列过程相当于，数据从硬盘加载到内存，再从内存加载到CPU的寄存器和Cache中，然后再通过CPU 进行处理和计算。</p><p>对于存储器，它的速度越快、能耗会越高、而且材料的成本也是越贵的，以至于速度快的存储器的容量都比较小。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）寄存器</p><p>寄存器的访问速度⾮常快，⼀般要求在半个 CPU 时钟周期内完成读写，CPU 时钟周期跟 CPU 主频息息相关，⽐如2 GHz 主频的 CPU，那么它的时钟周期就是 1/2G，也就是 0.5ns（纳秒）。</p><ul><li>CPU Cache（⽤的是⼀种叫 SRAM（Static Random-Access Memory，静态随机存储器）的芯⽚）</li></ul><p>SRAM 之所以叫「静态」存储器，是因为只要有电，数据就可以保持存在，⽽⼀旦断电，数据就会丢失了。</p><p>CPU Cache 通常分为三层，如下图所示：</p><p>查看各级Cache的⼤⼩：</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）内存</p><p>内存⽤的芯⽚和 CPU Cache 有所不同，它使⽤的是⼀种叫作 DRAM （Dynamic Random Access Memory，动态随机存取存储器） 的芯⽚。相⽐ SRAM，DRAM 的密度更⾼，功耗更低，有更⼤的容量，⽽且造价⽐ SRAM 芯⽚便宜很多。</p><p>DRAM 存储⼀个 bit 数据，只需要⼀个晶体管和⼀个电容就能存储，但是因为数据会被存储在电容⾥，电容会不断漏电，所以需要「定时刷新」电容，才能保证数据不会被丢失，这就是 DRAM 之所以被称为「动态」存储器的原因，只有不断刷新，数据才能被存储起来。</p><p>DRAM 的数据访问电路和刷新电路都⽐ SRAM 更复杂，所以访问的速度会更慢，内存速度⼤概在 200~300 个 时钟周期之间。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（4）SSD/HDD硬盘:</p><p>SSD（Solid-state disk） 就是我们常说的固体硬盘，结构和内存类似，但是它相⽐内存的优点是断电后数据还是存在的，⽽内存、寄存器、⾼速缓存断电后数据都会丢失。内存的读写速度⽐ SSD ⼤概快 10~1000 倍。</p><p>机械硬盘（Hard Disk Drive, HDD），它是通过物理读写的⽅式来访问 数据的，因此它访问速度是⾮常慢的，它的速度⽐内存慢 10W 倍左右。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、存储器的层次关系</p><p>CPU 并不会直接和每⼀种存储器设备直接打交道，⽽是每⼀种存储器设备只和它相邻的存储器设备打交道。</p><p>所以，每个存储器只和相邻的⼀层存储器设备打交道，并且存储设备为了追求更快的速度，所需的材料成本必然也是更⾼，也正因为成本太⾼，所以 CPU 内部的寄存器、L1\\L2\\L3 Cache 只好⽤较⼩的容量，相反内存、硬盘则可⽤更⼤的容量，这就我们今天所说的存储器层次结构。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、存储器之间的实际价格和性能差距</p><p>不同层级的存储器之间的成本对⽐图：</p><table><tr><td>存储器</td><td>硬件介质</td><td>单位成本(美元/MB)</td><td>随机访问延时</td></tr><tr><td>L1 Cache</td><td>SRAM</td><td>7</td><td>1ns</td></tr><tr><td>L2 Cache</td><td>SRAM</td><td>7</td><td>4ns</td></tr><tr><td>Memory</td><td>DRAM</td><td>0.015</td><td>100ns</td></tr><tr><td>Disk</td><td>SSD(NAND)</td><td>0.0004</td><td>150μs</td></tr><tr><td>Disk</td><td>HDD</td><td>0.00004</td><td>10ms</td></tr></table><p>机械硬盘（HDD)到底有多慢：</p><p>·SSD 比机械硬盘快 70 倍左右;</p><p>·内存比机械硬盘快 100000 倍左右;</p><p>·CPUL1Cache比机械硬盘快 10000000 倍左右;</p></div>"},{"title":"虚拟内存","content":"<p>虚拟内存是计算机操作系统中的⼀种内存管理技术，它允许程序访问⽐物理内存（RAM）更⼤的地址空间，但⾸先我们要区分这两个概念：</p><p>虚拟内存地址：程序所使⽤的内存地址</p><p>物理内存地址：实际存在硬件⾥⾯的空间地址</p><p>操作系统会提供⼀种机制，在物理内存和虚拟内存之间建⽴⼀个地址映射表，进程持有的虚拟地址会通过 CPU 芯⽚中的内存管理单元（MMU）的映射关系，来转换变成物理地址，然后再通过物理地址访问内存</p><p>操作系统主要通过内存分段和内存分⻚来管理虚拟内存和物理内存之间的关系。</p>"},{"title":"内存分段","content":"<p>内存分段将物理内存划分成不同的逻辑段或区域，每个段⽤于存储特定类型的数据或执⾏特定类型的任务。每个段具有不同的⼤⼩和属性。常⻅的段包括代码段（存储程序执⾏代码）、数据段（存储程序数据）、堆栈段（存储函数调⽤和局部变量），以及其他⾃定义段，如共享库段等。</p><p>分段机制下的虚拟地址由两部分组成，段选择因⼦和段内偏移量，⽽虚拟地址是通过段表与物理地址进⾏映射的。</p><p>段选择因⼦中的段号与段表对应，作为段表的索引。段表⾥⾯保存的是这个段的基地址、段的界限和特权等级等。虚拟地址中的段内偏移量应该位于 0 和段界限之间，如果段内偏移量是合法的，就将段基地址加上段内偏移量得到物理内存地址。</p>"},{"title":"内存碎⽚","content":"<p>内存碎⽚是指内存中的空闲空间被分割成多个不连续的⼩块，⽽不是⼀个连续的⼤块。这些⼩块空闲内存可能分布在整个内存地址空间中，导致内存资源的不充分利⽤。</p><p>外部碎⽚：虽然整体内存容量⾜够，但⽆法为较⼤的内存请求分配连续的内存块，因为已分配的内存块分散在内存中，它们之间的未分配空间太⼩。</p><p>内部碎⽚：有时分配的内存块⼤于进程实际需要的内存量，这意味着有⼀些内存浪费在内部碎⽚中。</p><p>内存分段</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、最佳⻚⾯置换算法(OPT)</p><p>置换在「未来」最⻓时间不访问的⻚⾯,但是实际系统中⽆法实现，因为程序访问⻚⾯时是动态的</p><p>我们是⽆法预知每个⻚⾯在「下⼀次」访问前的等待时间，因此作为实际算法效率衡量标准。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、先进先出置换算法(FIFO)</p><p>顾名思义，将⻚⾯以队列形式保存，先进⼊队列的⻚⾯先被置换进⼊磁盘。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、最近最久未使⽤的置换算法（LRU）</p><p>根据⻚⾯未被访问时⻓⽤升序列表将⻚⾯排列，每次将最久未被使⽤⻚⾯置换出去。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、时钟⻚⾯置换算法</p><p>把所有的⻚⾯都保存在⼀个类似钟⾯的「环形链表」中，⻚⾯包含⼀个访问位。</p><p>当发⽣缺⻚中断时，顺时针遍历⻚⾯，如果访问位为1，将其改为0，继续遍历，直到访问到访问位为0⻚⾯，进⾏置换。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5、最不常⽤算法</p><p>记录每个⻚⾯访问次数，当发⽣缺⻚中断时候，将访问次数最少的⻚⾯置换出去，此⽅法需要对每个⻚⾯访问次数统计，额外开销。</p></div>"},{"title":"分段","content":"<p>虚拟内存采⽤的是分⻚技术，也就是将地址空间划分成固定⼤⼩的⻚，每⼀⻚再与内存进⾏映射。</p><p>如果使⽤分⻚系统的⼀维地址空间，动态增⻓的特点会导致覆盖问题的出现。</p><p>分段的做法是把每个表分成段，⼀个段构成⼀个独⽴的地址空间。</p><p>每个段的⻓度可以不同，并且可以动态增⻓。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、纯分段</p><p>分段和分⻚本质上是不同的，⻚⾯是定⻓的⽽段不是。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">优点：</p><ul><li>共享：有助于⼏个进程之间共享过程和数据。 ⽐如共享库</li></ul><ul><li>保护：每个段都可以独⽴地增⼤或减⼩⽽不会影响其他的段</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、分段和分⻚结合</p><p>程序的地址空间划分成多个拥有独⽴地址空间的段，每个段上的地址空间划分成⼤⼩相同的⻚。</p><p>这样既拥有分段系统的共享和保护，⼜拥有分⻚系统的虚拟内存功能.</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">对程序员的透明性：</p><p>分⻚透明，但是分段需要程序员显式划分每个段。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">地址空间的维度：</p><p>分⻚是⼀维地址空间，分段是⼆维的。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">⼤⼩是否可以改变：</p><p>⻚的⼤⼩不可变，段的⼤⼩可以动态改变。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">出现的原因：</p><p>分⻚主要⽤于实现虚拟内存，从⽽获得更⼤的地址空间；分段主要是为了使程序和数据可以被划分为逻辑上独⽴的地址空间并且有助于共享和保护。</p></div>"},{"title":"简述","content":"<p>属于计算机系统内存管理的⼀种技术，虚拟地址空间构成虚拟内存，它使得应⽤程序认为⾃⼰拥有连续的可⽤内存空间，但实际上是被分隔的多个物理内存⻚、以及部分暂时存储在磁盘上的交换分区所构成的。虚拟内存的实现通过硬件异常、硬件地址翻译、主存、磁盘以及内核软件共同完成</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、地址空间：</p><p>地址空间是物理内存的抽象，是⼀个进程可⽤于寻址内存的⼀套地址集合。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、分⻚：</p><p>地址空间被分割成多个块，每⼀块称作⼀⻚或⻚⾯(Page)。每⼀⻚有连续的地址范围，这些⻚被映射到连续的物理内存(⻚框)。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、⻚表：</p><p>⻚表的⽬的是把虚拟⻚⾯(虚拟地址)映射为⻚框(物理地址)。⻚表给出了虚拟地址与物理地址的映射关系。从数学的⻆度说⻚表是⼀个函数，他的参数是虚拟⻚号，结果是物理⻚⻚框号</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）TLB加速分⻚</p><p>概念：将虚拟地址直接映射到物理地址，⽽不必再访问⻚表，这种设备被称为转换检测缓冲区（TLB）、相联存储器或快表</p><p>⼯作过程：将⼀个虚拟地址放⼊MMU中进⾏转换时，硬件⾸先通过将该虚拟⻚号与TLB中所有表项同时进⾏匹配，判断虚拟⻚⾯是否在其中：</p><ul><li>虚拟⻚号在TLB中。如果MMU检测⼀个有效的匹配并且访问操作并不违反保护位，则将⻚框号直接从TLB中取出⽽不必访问⻚表。</li></ul><ul><li>虚拟⻚号不在TLB中。如果MMU检测到没有有效的匹配项就会进⾏正常的⻚表查询。接着从TLB中淘汰⼀个表项，然后⽤新的⻚表项替换它。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5、针对⼤内存的⻚表</p><ul><li>多级⻚表</li></ul><ul><li>倒排⻚表</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. ⾼速缓存</p><p>按照存储器层次结构中的缓存划分来看，将位于k层的更⼩更快的存储设备作为存储在k+1层的更⼤更慢的存储设备的缓存。具体如下：</p><p>在虚拟内存中的虚拟⻚共分为三种类型：</p><ul><li>未分配（没有被进程申请使⽤的，也就是空闲的虚拟内存， 不占⽤虚拟内存磁盘的任何空间）</li></ul><ul><li>未缓存（仅仅加载到磁盘中的⻚）</li></ul><ul><li>已缓存（已经加载到内存中的内存⻚（⻚框））</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. 内存保护</p><p>现代操作系统中，⽤户进程不应该被允许修改它的只读代码段;</p><p>⽽且也不应该允许它读取或修改任何内核中的代码和数据结构;</p><p>并且也不允许其读取或者修改其他进程的私有内存，以及修改和其他进程共享的虚拟⻚⾯。</p><p>如果不对进程的内存访问进⾏限制，攻击者就能够访问和修改其他进程的私有内存，进⽽导致整个系统崩溃。⼤体的虚拟寻址如下：</p><p>通过MMU，每次都会读取⻚表中的⼀个⻚表条⽬(PTE)，通过在这些⻚表条⽬(PTE)中添加⼀些标志位，就能够实现对⼀个虚拟⻚的访问控制权限。譬如：</p><p>相关的其他概念</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. ⽤户态和内核态</p><p>为了使操作系统内核提供⼀个⽆懈可击的进程抽象，处理器必须提供⼀种机制，限制⼀个应⽤可以执⾏的指令以及他可以⽤来访问的地址空间范围。</p><p>处理器通常是⽤某个控制寄存器中的⼀个模式位来提供这种观功能的，该寄存器描述了进程当前享有的特权。</p><p>当设置了模式位时：</p><p>进程就运⾏在内核态中。</p><p>运⾏在内核态中的进程可以执⾏指令集中的任何指令，并且可以访问系统中的任何内存位置。</p><p>没有设置模式位时：</p><p>进程就运⾏在⽤户态。⽤户模式中的进程不允许执⾏特权指令。</p><p>⽐如：停⽌处理器、改变模式位、或者发起⼀个I/O操作。同时也不允许⽤户态下的进程直接引⽤地址空间中内核空间的代码和数据。</p><p>任何这样的尝试都会导致致命的保护故障。⽤户态下的程序必须通过系统调⽤接⼝间接的访问内核代码和数据。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 上下⽂切换 &#x27;</p><p>上下⽂切换属于⼀种较⾼层形式的异常控制流，进⾏上下切换涉及到的内容如下：</p><ul><li>各种寄存器，TLB 也是其中之⼀。</li></ul><ul><li>程序计数器</li></ul><ul><li>⽤户栈</li></ul><ul><li>内核栈</li></ul><ul><li>内核中的各种数据结构</li></ul><ul><li>⻚表</li></ul><ul><li>task_struct</li></ul><ul><li>mm_struct</li></ul></div>"},{"title":"⼩总结","content":"<p>虚拟内存的思想，整体来看就是：通过结合磁盘和内存各⾃的优势，利⽤中间层对资源进⾏更合理地调度，充分提⾼资源的利⽤率。并提供和谐以及统⼀的抽象。</p><p>为什么需要虚拟内存：（摘⾃ 为什么Linux需要虚拟内存⼀⽂)</p><ul><li>虚拟内存可以结合磁盘和物理内存的优势为进程提供看起来速度⾜够快并且容量⾜够⼤的存储</li></ul><ul><li>虚拟内存可以为进程提供独⽴的内存空间并引⼊多层的⻚表结构将虚拟内存翻译成物理内存，进程之间可以共享物理内存减少开销，也能简化程序的链接、装载以及内存分配过程;</li></ul><ul><li>虚拟内存可以控制进程对物理内存的访问，隔离不同进程的访问权限，提⾼系统的安全性。</li></ul><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. ⽂件</p><p>⽂件是⼀种抽象机制，它提供了⼀种在磁上保存信息⽽且⽅便以后读取的⽅法。这种⽅法可以使⽤户不必了解存储信息的⽅法、位置和实际磁盘⼯作⽅式等有关细节</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. ⽂件命名</p><p>win95、win98⽤的都是MS-DOS的⽂件系统，即FAT-16， win98扩展了FAT-16成为FAT-32。</p><p>较新版的操作系统NTFS,win8配备ReFS。微软优化FAT,叫作exFAT。prog.c，圆点后⾯的部分称为⽂件扩展名。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、字节结构</p><p>把⽂件看成字节序列为操作系统提供了最⼤的灵活度</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、记录序列</p><p>⽂件结构上的第⼀步改进，这种模型中，⽂件是具有固定⻓度记录的序列</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、树</p><p>⽂件在这种结构中由⼀棵记录树构成，每个记录不必具有相同的⻓度，记录的固定位置上有⼀个键字段。这棵树按“键”字段进⾏排序，从⽽可以对特定“键”进⾏快速查找。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. ⽂件类型</p><ul><li>普通⽂件</li></ul><ul><li>⽬录</li></ul><ul><li>字符特殊⽂件（UNIX）</li></ul><ul><li>块特殊⽂件（UNIX）</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、顺序访问</p><p>按顺序读取⽂件的全部字节，早期操作系统只有这种访问⽅式</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、随机访问⽂件</p><p>当⽤磁盘存储⽂件时，可以以任何次序读取其中字节或记录的⽂件。许多应⽤程序需要这种类型⽂件</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6. ⽂件属性</p><p>除了⽂件名和数据外，所有操作系统还会保存其他的⽂件相关信息，如创建⽇期、时间和⼤⼩等，这些附加的信息称为⽂件属性</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">举例：</p><p>创建者：创建⽂件者ID</p><p>所有者：当前所有者</p><p>当前⼤⼩：⽂件字节数</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7. ⽂件操作</p><p>使⽤⽂件的⽬的是存储信息并⽅便以后检索。对于存储和检索，不同系统提供了不同的操作。</p><p>常⻅的⽂件操作（系统调⽤）:</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、create</p><p>创建不包含任何数据的⽂件</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、delete</p><p>当不再需要某个⽂件时，必须删除该⽂件以释放磁盘空间</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、open</p><p>在使⽤⽂件之前，必须先打开⽂件</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、close</p><p>访问结束后，不再需要⽂件属性和磁盘地址，这时应该关闭⽂件以释放内部表空间</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5、read</p><p>在⽂件中读取数据</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6、write</p><p>向⽂件写数据，写操作⼀般也是从⽂件当前位置开始</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7、append</p><p>此调⽤是write的限制形式，他只能在⽂件末尾添加数据</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">8、seek</p><p>对于随机访问⽂件，要指定从何处开始获取数据，通常的⽅法是⽤seek系统调⽤把当前位置指针指向⽂件中特定的位置。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">9、get attributes</p><p>进程运⾏常需要读取⽂件属性</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">10、set attributes</p><p>某些属性是可由⽤户设置的，甚⾄在⽂件创建之后</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">11、rename</p><p>⽤户尝尝要改变已有的名字，rename系统调⽤⽤于这⼀⽬的</p></div>"},{"title":"⽬录","content":"<p>⽂件系统通常提供⽬录或⽂件夹⽤于记录⽂件的位置，在很多操作系统中⽬录本身也是⽂件</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. ⼀级⽬录系统</p><p>在⼀个⽬录中包含所有⽂件，这有时称为根⽬录</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 层级⽬录系统</p><p>当⽤户有着数以千计的⽂件，为了寻找⽅便。需要层次结构（即⼀个⽬录树）</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、绝对路径名</p><p>它由从根⽬录到⽂件的路径组成。</p><pre><code class=\"language-txt\">Windows : \\usr\\ast\\maibox </code></pre><pre><code class=\"language-txt\">UNIX : /usr/ast/mailbox </code></pre><p>路径名的第⼀个字符是分隔符，则这个路径是绝对路径</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、相对路径名</p><p>它常和⼯作⽬录(working directory)(也和当前⽬录(acurrent directory))⼀起使⽤</p><p>例：UNIX</p><pre><code class=\"language-batch\">cp /usr/ast/mailbox /usr/ast/mailbox/mailbox.bak </code></pre><p>和命令</p><pre><code class=\"language-txt\">cp mailbox mailbox.bak # 具有相同的含义</code></pre></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、特殊⽬录项</p><p>. dot ：指当前⽬录</p><p>.. dotdot 指其⽗⽬录</p><p><strong>eg:</strong></p><pre><code class=\"language-shell\">cp ../lib/dictionay . </code></pre><p>将usr/lib/下的dictionay复制到当前⽬录下</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. ⽬录操作</p><p>管理⽬录的系统调⽤</p><p>举例(Unix):</p><pre><code class=\"language-txt\">create # 创建目录\ndelete # 删除目录\nopendir # 目录内容可被读取\nclosedir # 读目录结束\nreaddir # 返回打开目录下一个目录项\nrename # 改变目录名\nlink # 链接技术允许在多个目录中出现同一个文件\nunlink # 删除目录项</code></pre></div>"},{"title":"⽂件系统的实现","content":"<p>⽂件存储实现的关键问题是记录各个⽂件分别⽤到哪些磁盘块。不同的操作系统⽤到不同的⽅法</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. ⽂件系统布局</p><p>⽂件系统存放在磁盘上。多数磁盘划分为⼀个或多个分区，每个分区中国有⼀个独⽴的⽂件系统。</p><p>磁盘0号扇区称为主引导记录(MBR)，⽤来引导计算机。在MBR结尾是分区表。该表给出每个分区的起始结束地址。</p><p>表中的⼀个分区被标记为活动区。在计算机被引导时，BIOS读⼊并执⾏MBR。MBR做的第⼀件事是确定活动分区，读⼊它的第⼀个块，称为引导块，并执⾏之。</p><p>引导块中的程序将装载该分区中的操作系统。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、连续分配</p><p>最简单的分配是把每个⽂件作为⼀连串连续数据块存储在磁盘</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）实现简单</p><p>记录每个⽂件⽤到磁盘块简化为只需记住两个数字即可：第⼀块的磁盘地址和⽂件的块数。给定了第⼀块编号，⼀个简单的加法就可以找到任何其他块的编号</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）操作性能较好</p><p>因为单个操作中就能从磁盘上读出整个⽂件。只需⼀次寻找。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、链表分配</p><p>为每个⽂件构造磁盘块链表。每⼀块的第⼀个字作为指向下⼀块的指针，块的其他部分存放数据。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">优势：</p><ul><li>可以充分利⽤磁盘块，不会因为磁盘碎⽚浪费存储内存</li></ul><ul><li>随机访问快。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">缺点：</p><p>指针占⽤⼀些字节，每个磁盘块存储数据的字节数不再是2的整数次幂。怪异的⼤⼩降低了系统的运⾏效率，每个块前⼏个字节被指向下⼀个块的指针所占据，需要从两个磁盘中获取拼接信息，这就因复制⽽引发额外的开销。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、采⽤内存中的表进⾏链表分配</p><p>取出每个磁盘块的指针字，把他放在内存的⼀个表中，解决链表分配的不⾜。内存中这样的表格称为⽂件分配表(File Allocation Table，FAT)</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、i节点</p><p>最后⼀个记录各⽂件分别包含哪些磁盘块的⽅法是给每个⽂件赋予⼀个称为i节点的数据结构，其中列出了⽂件属性和⽂件的磁盘地址。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. ⽬录的实现</p><p>在读⽂件之前，必须先打开⽂件。打开⽂件时，操作系统利⽤⽤户给出的路径名找到相应的⽬录项。</p><p>简单⽬录：包含固定⼤⼩的⽬录，在⽬录项中有磁盘地址和属性</p><p>采⽤i节点的系统：把⽂件属性存放在i节点中⽽不是⽬录项中。这种情形下，⽬录项会更短。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. 共享⽂件</p><p>当⼏个⽤户同在⼀个项⽬⾥⼯作时，他们常常需要共享⽂件。</p><p>共享⽂件与⽬录的联系称为⼀个链接（link）。这样⽂件系统本身就是⼀个有向⽆环图（DAG），⽽不是⼀棵树。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5. ⽇志结构⽂件系统</p><p>CPU运⾏速度越来越快，磁盘容量越来越⼤，价格越来越便宜（但磁盘速度并没有增快多少），同时内存容量也以指数形式增⻓。</p><p>⽽没有得到快速发展的参数是磁道的寻道时间。这些成为了⽂件系统性能的瓶颈，为了解决这⼀问题设计了全新的⽂件系统即⽇志结构⽂件系统（LFS）。</p><p>虽然是⼀个很吸引⼈的想法，由于它们和⽂件系统不匹配，该⽂件系统并没有被⼴泛应⽤。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6. ⽇志⽂件系统</p><p>基本的想法是保存⼀个⽤于记录系统下⼀步将要做什么的⽇志。</p><p>这样当系统在完成他们即将完成的任务前崩溃时，重新启动后，可以通过查看⽇志，获取崩溃前计划完成的任务，并完成它们。</p><p>这样的⽂件⽇志系统，并已经被实际应⽤。微软的NTFS、Linux的 ext3和ReiserFS⽂件系统都使⽤⽇志。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7. 虚拟⽂件系统</p><p>将多个⽂件系统整合到⼀个统⼀的结构中。</p><p>⼀个Linux系统可以⽤ext2作为根⽂件系统，ext3分区装载在/usr下，另⼀块采⽤ReiserFS⽂件系统的硬盘装载在/home下，以及⼀个ISO 9660的CD-ROM临时装载在/mnt下。从⽤户的观点来看，只有⼀个⽂件系统层级。</p><p>它们事实上是多种⽂件系统，对于⽤户和进程是不可⻅的。绝⼤多数Unix操作系统都在使⽤虚拟⽂件系统（VirtualFile System, VFS）</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 磁盘空间管理</p><p>⼏乎所有⽂件系统都把⽂件分割成固定⼤⼩的块来存储，各块之间不⼀定相邻</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、块⼤⼩</p><p>从历史的观点上来说，⽂件系统将⼤⼩设在1~4KB之间，但现在随着磁盘超过了1TB，还是将块的⼤⼩提升到64KB并且接受浪费的磁盘孔空间，这样也许更好。磁盘空间⼏乎不再会短缺。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）磁盘块链表</p><p>链表的每个块中包含尽可能多的空闲磁盘块号。</p><p>通常情况下，采⽤空闲块存放空闲表，这样不会影响存储器</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）位图</p><p>在位图中，空闲块⽤1表示，已分配块⽤0表示。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）磁盘配额</p><p>为防⽌⼈们贪⼼⽽占有太多的磁盘空间，⽤户操作系统常常提供⼀种强制性磁盘配额机制。</p><p>其思想是系统管理员分给每个⽤户拥有⽂件和块的最⼤数量，操作系统确保每个⽤户不超过分给他们的配额。（配额表、打开⽂件表）</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. ⽂件系统备份</p><p>做磁盘备份主要是处理好两个潜在问题中的⼀个</p><ul><li>从意外的灾难中恢复</li></ul><ul><li>从错误的操作中恢复</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. ⽂件系统的⼀致性</p><p>很多⽂件系统读取磁盘块，进⾏修改后，再写回磁盘。</p><p>如果在修改过的磁盘块全部写回之前系统崩溃，则⽂件系统有可能处于不⼀致状态。</p><p>如果⼀些未被写回的块是i节点块、⽬录块或者是包含有空闲表的块时，这个问题尤为严重</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、⾼速缓存</p><p>减少磁盘访问次数技术是块⾼速缓存（block cache）或者缓冲区⾼速缓存（buffer cache）。</p><p>本书中，⾼速缓存指的是⼀系列的块，它们在逻辑上属于磁盘，但实际上基于性能的考虑被保存在内存中。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、块提取读</p><p>在需要⽤到块之前，试图提前将其写⼊⾼速缓存，从⽽提⾼命中率。</p><p>块提前读策略只适⽤于实际顺序读取的⽂件。对随机访问⽂件，提前读丝毫不起作⽤。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、减少磁盘臂运动</p><p>把可能顺序访问的块放⼀起，当然最好是同⼀柱⾯上，从⽽减少磁盘臂的移动次数。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5. 磁盘碎⽚整理</p><p>移动⽂件使它们相邻，并把所有的空闲空间放在⼀个或多个⼤的连续区域内。</p></div>"},{"title":"⽣磁盘的使⽤","content":"<p>⽣磁盘：根据盘块号来使⽤磁盘；</p><p>熟磁盘：根据⽂件来使⽤磁盘。</p>"},{"title":"磁盘如何使⽤？","content":"<ul><li>发送 out 指令；</li></ul><ul><li>⽂件视图；</li></ul><ul><li>发送 中断</li></ul>"},{"title":"磁盘的结构","content":"<p>盘⾯：类似于多个堆叠在⼀起的 DVD 光盘</p><p>磁道：每个 DVD 光盘上的同⼼圆</p><p>扇区：每个同⼼圆上的 ⼀段⼉ ⼩区域</p>"},{"title":"磁盘 IO 过程","content":"<p>寻道：将磁头移动到 指定 磁道</p><p>旋转：将磁头旋转到磁道中的指定 扇区</p><p>传输：对指定扇区 进⾏ 磁盘数据 IO 读写</p>"},{"title":"⼀层抽象","content":"<p>通过盘块号读写磁盘</p><p>对于⽤户来说，如果直接利⽤ 盘/柱⾯ C、磁头 H、扇区 S 来进⾏ 磁盘 IO 不太友好，所以通过⼀层抽象，即 ⽤户只⽤利⽤ 盘块号 block 来进⾏ 磁盘IO，然后由系统根据 block 计算出 C、H、S 即可</p>"},{"title":"磁盘编址","content":"<p>由于寻道时间 通常时间更⻓⼀些，所以，为了让 磁盘 IO 时间尽可能短⼀些，则需要使 寻道时间尽量段。即，把当⼀个 磁道编址⽤完后，向下⼀个 柱⾯ 继续编号，⽽不是向 下⼀个 磁道继续编号。</p><p>计算公式：盘块号 block = C (Heads Sectors) + H * Sectors + S</p>"},{"title":"⼆层抽象","content":"<p>多个进程通过队列使⽤磁盘</p><p>虽然⼀层抽象（利⽤ 盘块号）可以达到使⽤磁盘的⽬的，但是如果有多个磁盘访问请求出现在请求队列怎么办?此时，操作系统会根据 磁盘调度算法 来挑选⼀个 磁盘请求服务</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、FCFS：找最先来的请求</p><p>优点：公平</p><p>缺点：并不提供 最快的服务</p><p>FCFS 在寻道过程中，可能已经遇到⼀些以后可能需要访问的 磁道，但是会跳过，⽽造成 访问磁道 耗费时间较多。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、SSTF：类似于 SJF，每次选择距离当前磁头最近的待处理请求</p><p>优点：寻道时间最短</p><p>缺点：可能造成部分请求 “饥饿”（当某个请求的磁盘距离磁头较远，⽽⼀直有⽐其更近的请求时，这个请求⼀直⽆法执⾏）</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、SCAN 算法：类似电梯，先处理向上的请求，然后再处理反⽅向的请求</p><p>优点：不会造成部分请求的 “饥饿”</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">生磁盘(rawdisk)的使用整理</p><p>■(1)进程“得到盘块号”，算出扇区号(sector)</p><p>■(2)用扇区号make req，用电梯算法add_request</p><p>1(3)进程sleep_on static void read intr(void)(4)磁盘中断处理 end_request(1) ; 唤醒进程！do_hd_request() 门</p><p>■(5) do_hd_request算出cyl,head,sector</p><p>■(6) hd_out调用outp(...)完成端口写</p><p>Operating Systems</p><ul><li>15 -</li></ul><p>posper</p></div>"},{"title":"三层抽象","content":"<p>利⽤⽂件使⽤磁盘，就成了熟磁盘</p><p>让普通⽤户使⽤ raw disk： 许多⼈连扇区都不知道是什么? 要求他们根据盘块号来访问磁盘不太便利需要在盘块上引⼊更⾼⼀层次的抽象概念! ⽂件</p><p>⽤户眼⾥的 “⽂件”：⼀堆字符序列（字符流）</p><p>磁盘上的 “⽂件”：多个盘块构成的集合</p><p>所以，如果要利⽤⽂件来进⾏磁盘IO的话，就需要建⽴字符流到盘块集合的映射关系</p><p>常⻅的⽂件映射关系（⽂件实现⽅式）有以下 3 种：</p><ul><li>顺序结构</li></ul><ul><li>链式结构</li></ul><ul><li>索引</li></ul><p>顺序结构-实现⽂件</p><p>FCB：记录⽂件在磁盘中的起始块</p>"},{"title":"⽂件->盘块号","content":"<p>如何根据 ⽂件 找到 盘块号？</p><p>将⽂件按照 连续结构存放；（下 左图）；</p><p>对每个⽂件建⽴⼀个 FCB，记录该⽂件在磁盘中的 起始块号；</p><p>根据⽂件（字符流）中的第 n 个待查字符 + FCB 计算 （n / 每个盘块的⼤⼩ + FCB中的 起始块号】出其在磁盘上对应的 盘块号 【得到盘块号，然后采⽤ SCAN 算法]</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">这种⽅法的缺点：</p><ul><li>利⽤顺序结构存储⽂件，不利⽤⽂件的修改（因为 顺序存储的 增/删 代价⾮常⼤）</li></ul><ul><li>所以，当需要 动态修改 ⽂件时，最好使⽤ 链式存储⽂件</li></ul><p>链式结构-实现⽂件</p><p>优点：利于 增/删</p><p>缺点：不利于查询</p></div>"},{"title":"如何让外设动起来","content":"<ul><li>CPU 向 外设的控制器发送指令，即 out 指令</li></ul><ul><li>形成 ⽂件视图（为了统⼀ out 指令的形式）</li></ul><ul><li>中断（外设处理完事后，需要通知 cpu 继续接⼿ 下⼀步处理）</li></ul><p>显示器如何⼯作？即，printf 函数的⼯作流程</p>"},{"title":"键盘如何⼯作？","content":"<p>中断处理（根据扫描码 获取 对应的 ascii 码）；</p><p>将对应的 ascii 码 加⼊ 缓冲队列 read_que 中，等待上层程序调⽤</p>"},{"title":"什么是IO多路复⽤","content":"<p>I/O多路复⽤是⼀种在单个线程或进程中处理多个输⼊和输出操作的机制。它允许单个进程同时监视多个⽂件描述符(通常是套接字)，当⼀个或多个⽂件描述符准备好读或写时，它就可以⽴即响应。</p><p>I/O多路复⽤通常通过select、poll、epoll等系统调⽤来实现。</p><p>select： select是⼀个最古⽼的I/O多路复⽤机制，它可以监视多个⽂件描述符的可读、可写和错误状态。然⽽，但是它的效率可能随着监视的⽂件描述符数量的增加⽽降低。</p><p>poll： poll是select的⼀种改进，它使⽤轮询⽅式来检查多个⽂件描述符的状态，避免了select中⽂件描述符数量有限的问题。但对于⼤量的⽂件描述符，poll的性能也可能变得不⾜够⾼效。</p><p>epoll： epoll是Linux特有的I/O多路复⽤机制，相较于select和poll，它在处理⼤量⽂件描述符时更加⾼效。epoll使⽤事件通知的⽅式，只有在⽂件描述符就绪时才会通知应⽤程序，⽽不需要应⽤程序轮询。</p><p>I/O多路复⽤允许在⼀个线程中处理多个I/O操作，避免了创建多个线程或进程的开销，允许在⼀个线程中处理多个I/O操作，避免了创建多个线程或进程的开销。</p>"},{"title":"select/poll/epoll的区别和联系","content":"<p>select , poll 和 epoll 都是I/O多路复⽤技术，它们⽤于同时处理多个I/O操作，特别是在⾼并发⽹络编程中。</p>"},{"title":"select","content":"<p>select 是最早的I/O多路复⽤技术，它可以同时监视多个⽂件描述符（file descriptor, FD）的I/O状态（如可读、可写、异常等）。select函数使⽤⼀个⽂件描述符集合（通常是⼀个位图）来表示要监视的⽂件描述符，当有I/O事件发⽣时， select 会返回对应的⽂件描述符集合。</p><p>select的主要限制如下：</p><p>⽂件描述符数量限制： select 使⽤⼀个位图来表示⽂件描述符集合，这限制了它能够处理的⽂件描述符数量（通常是1024个）。</p><p>效率问题：当⽂件描述符数量较⼤时，select需要遍历整个⽂件描述符集合来查找就绪的⽂件描述符，这会导致较低的效率。</p><p>⾮实时性：每次调⽤ select 时，需要重新设置⽂件描述符集合，这会增加函数调⽤的开销。</p>"},{"title":"poll","content":"<p>poll 是为了克服 select 的限制⽽引⼊的⼀种I/O多路复⽤技术。 poll 使⽤⼀个⽂件描述符数组（通常是⼀个结构体数组）来表示要监视的⽂件描述符。与 select 类似， poll 可以监视多个⽂件描述符的I/O状态。</p><p>poll的优点如下：</p><p>⽂件描述符数量不受限制：由于 poll 使⽤⼀个动态数组来表示⽂件描述符，因此它可以处理任意数量的⽂件描述符。</p><p>效率相对较⾼： poll 在查找就绪的⽂件描述符时，只需要遍历实际使⽤的⽂件描述符数组，⽽不是整个⽂件描述符集合。</p><p>然⽽， poll 仍然存在⼀些问题：</p><p>效率问题：尽管 poll 相对于 select 具有较⾼的效率，但当⽂件描述符数量很⼤时，它仍然需要遍历整个⽂件描述符数组。</p><p>⾮实时性：与select类似，每次调⽤poll时，需要重新设置⽂件描述符数组。</p>"},{"title":"epoll","content":"<p>epoll 是Linux特有的⼀种⾼效I/O多路复⽤技术，它克服了 select 和 poll 的主要限制。 epoll 使⽤⼀个事件驱动（event-driven）的⽅式来处理I/O操作，它只会返回就绪的⽂件描述符，⽽不是遍历整个⽂件描述符集合。</p><p>epoll的主要优点如下：</p><p>⾼效： epoll 使⽤事件驱动的⽅式来处理I/O操作，因此它在处理⼤量⽂件描述符时具有很⾼的效率。当有I/O事件发⽣时， epoll 可以⽴即得到通知，⽽⽆需遍历整个⽂件描述符集合。这使得 epoll 在⾼并发场景中具有更好的性能。</p><p>可扩展性：与 poll 类似， epoll 可以处理任意数量的⽂件描述符，因为它使⽤⼀个动态数据结构来表示⽂件描述符。</p><p>实时性： epoll 使⽤⼀个内核事件表来记录要监视的⽂件描述符和事件，因此在每次调⽤ epoll 时⽆需重新设置⽂件描述符集合。这可以减少函数调⽤的开销，并提⾼实时性。</p><p>epoll 具有诸多优点，但它⽬前仅在Linux平台上可⽤。对于其他平台，可能需要使⽤类似的I/O多路复⽤技术，如BSD中的 kqueue 。</p><p>总结：select是最早的I/O多路复⽤技术，但受到⽂件描述符数量和效率⽅⾯的限制。poll克服了⽂件描述符数量的限制，但仍然存在⼀定的效率问题。 epoll 是⼀种⾼效的I/O多路复⽤技术，尤其适⽤于⾼并发场景，但它仅在Linux平台上可⽤。⼀般来说，epoll的效率是要⽐select和poll⾼的，但是对于活动连接较多的时候，由于回调函数触发的很频繁，其效率不⼀定⽐select和poll⾼。所以epoll在连接数量很多，但活动连接较⼩的情况性能体现的⽐较明显。</p><p>Linux 内存管理</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、程序⽂件段</p><p>包括程序的⼆进制可执⾏代码，只读；TEXT</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、已初始化数据段</p><p>包括已初始化的全局变量和静态常量；DATA</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、未初始化数据段</p><p>包括未初始化的静态变量和全局变量；BSS</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、堆段</p><p>包括动态分配的内存，从低地址开始向上增⻓；</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5、⽂件映射段</p><p>包括动态库、共享内存等，从低地址开始向上增⻓（跟硬件和内核版本有关）；</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6、栈段</p><p>包括函数的参数值和局部变量、函数调⽤的上下⽂等。栈的⼤⼩是固定的，⼀般是 8 MB 。当然系统也提供了参数，以便我们⾃定义⼤⼩；栈区是从⾼地址位向低地址位增⻓的</p></div>"},{"title":"Linux虚拟内存","content":"<p>对32位处理器，虚拟内存空间为4G，每个进程都认为⾃⼰拥有4G的空间，实际上，在虚拟内存对应的物理内存上，可能只对应的⼀点点的物理内存。</p><p>进程得到的这4G虚拟内存是⼀个连续的地址空间（这也只是进程认为），⽽实际上，它通常是被分隔成多个物理内存碎⽚，还有⼀部分存储在外部磁盘存储器上，在需要时进⾏数据交换。</p><p>由于存在两个内存地址，因此⼀个应⽤程序从编写到被执⾏，需要进⾏两次映射。第⼀次是映射到虚拟内存空间，第⼆次时映射到物理内存空间。在计算机系统中，第两次映射的⼯作是由硬件和软件共同来完成的。承担这个任务的硬件部分叫做存储管理单元 MMU，软件部分就是操作系统的内存管理模块了。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）内存分⻚</p><p>分⻚就是把整个虚拟和物理内存切成⼀段段固定⼤⼩的空间，连续且尺⼨固定的内存空间叫⻚，Linux下每⼀⻚⼤⼩4KB。虚拟内存和物理内存之间通过⻚表来映射。</p><p>当进程访问的虚拟地址在⻚表中查不到时，系统会产⽣⼀个缺⻚异常，进⼊系统内核空间分配物理内存、更新进程⻚表，最后再返回⽤户空间，恢复进程的运⾏。</p><ul><li>采⽤了分⻚，那么释放的内存都是以⻚为单位释放的，也就不会产⽣⽆法给进程使⽤的⼩内存，解决了内存碎⽚的问题</li></ul><ul><li>内存空间不⾜时，操作系统将正在运⾏的进程中，最近没使⽤的内存⻚⾯释放（暂时写⼊硬盘）需要的时候再加载进来，⼀次性只有少数的⻚，解决了交换效率低的问题</li></ul><ul><li>分⻚使我们在加载程序时，不⽤⼀次性加载到物理内存，可以只有在程序运⾏中，需要⽤到对应虚拟内存⻚⾥⾯的指令和数据时，再加载到物理内存⾥⾯去</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、分⻚虚拟地址和物理地址是如何映射的</p><p>虚拟地址分为：⻚号和⻚内偏移。</p><p>⻚号作为⻚表的索引，⻚表包含物理⻚每⻚所在物理内存的基地址，这个基地址与⻚内偏移的组合就形成了物理内存地址。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、简单的分⻚缺陷</p><p>空间上的缺陷：</p><p>32位，单进程⼀个⻚4KB，虚拟内存4GB，就有2^20个⻚，⼀个⻚表项4字节，结果是4GB空间映射需要4*2^20 =4MB存储⻚表。多进程100，需要400MB。</p><p>以⻚表⼀定要覆盖全部虚拟地址空间，不分级的⻚表就需要有 100 多万个⻚表项来映射，⼆级分⻚则只需要 1024个⻚表项（此时⼀级⻚表覆盖到了全部虚拟地址空间，⼆级⻚表在需要时创建）。</p><ul><li>段⻚式内存管理</li></ul><p>地址结构就由段号、段内⻚号和⻚内位移三部分组成。</p><ul><li>第⼀次访问段表，得到⻚表起始地址</li></ul><ul><li>第⼆次访问⻚表，得到物理⻚号</li></ul><ul><li>第三次将物理⻚号与⻚内位移组合，得到物理地址</li></ul><p>可⽤软、硬件相结合的⽅法实现段⻚式地址变换，这样虽然增加了硬件成本和系统开销，但提⾼了内存的利⽤率。</p></div>"},{"title":"Linux 信号","content":"<p>信号是⽤户、系统、进程发送给⽬标进程的信息，通知某个状态的改变或系统异常。</p><p>linux常⽤信号：</p><ul><li>SIGHUP控制终端挂起</li></ul><ul><li>SIGPIPE向读端关闭的通道或socket连接中写数据</li></ul><ul><li>SIGURG：socket连接上收到紧急数据</li></ul><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、MutiTask 多任务</p><p>多个任务同时执⾏，同时可以是并发或并⾏。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、SMP 对称多处理</p><p>每个CPU地位相等，使⽤权限相同，多个CPU共享⼀个内存，每个 CPU 都可以访问完整的内存和硬件资源。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、ELF 可执⾏⽂件链接格式</p><p>Linux中可执⾏⽂件的存储格式。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4、Monolithic Kerne宏内核的特征是系统内核的所有模块</p><p>⽐如进程调度、内存管理、⽂件系统、设备驱动等，都运⾏在内核态。Linux 的内核是⼀个完整的可执⾏程序，且拥有最⾼的权限。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、背景</p><p>I/O即Input/Output（输⼊和输出），由于程序和运⾏时数据是在内存中驻留，由CPU这个超快的计算核⼼来执⾏，涉及到数据交换的地⽅，通常是磁盘、⽹络等，就需要IO接⼝。</p><p>IO编程中涉及到流，其是相对于内存⽽⾔的，所以，Input Stream就是数据从外⾯（磁盘、⽹络）流进内存，Output Stream就是数据从内存流到外⾯去。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、概念</p><p>I/O操作就是在运⾏代码的过程中，可能需要对⽂件的读写，即将⽂件输⼊（Input）到内存和将代码执⾏结果产⽣的⽂件输出（Output）到外设（⽹络、磁盘）的过程。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、分类</p><ul><li>⽹络I/O：通过⽹络进⾏数据的拉取和输出;</li></ul><ul><li>磁盘I/O：主要是对磁盘进⾏读写⼯作。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、输⼊阶段⼀般操作</p><ul><li>等待数据准备好</li></ul><ul><li>从内核向进程复制数据</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、例如：</p><ul><li>等待数据从⽹络中到达：所等分组到达时，被复制到内核中的某个缓冲区</li></ul><ul><li>把数据从内核缓冲区复制到应⽤进程缓冲区</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、分类</p><ul><li>阻塞式I/O</li></ul><ul><li>⾮阻塞式I/O</li></ul><ul><li>I/O复⽤（select和poll）</li></ul><ul><li>信号驱动式I/O（SIGIO）</li></ul><ul><li>异步I/O（POSIX的aio_系列函数）</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）阻塞式I/O</p><p>进程或线程等待某个条件，如果条件不满⾜，则⼀直等下去。条件满⾜，则进⾏下⼀步操作。（默认情况下）</p><p>应⽤进程通过系统调⽤ recvfrom 接收数据，但由于内核还未准备好数据报，应⽤进程就会阻塞住，直到内核准备好数据报，recvfrom 完成数据报复制⼯作，应⽤进程才能结束阻塞状态。</p><p>懵d</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">优点：</p><p>设备⽂件不可操作时，可进⼊休眠状态，将CPU资源让出；当设备⽂件可以操作的时候就必须唤醒进程，⼀般在中断函数中完成唤醒⼯作;</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">缺点：</p><p>耗费时间，适合并发低，时效性要求低的情况。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）⾮阻塞式I/O</p><p>应⽤进程与内核交互，⽬的未达到之前，不再⼀味的等着，⽽是直接返回;</p><p>通过轮询的⽅式，不停的去问内核数据有没有准备好。如果某⼀次轮询发现数据已经准备好了，那就把数据拷⻉到⽤户空间中。</p><p>图6-2非阻塞式I/O模型</p><p>懵d</p><p>前三次调⽤ recvfrom 时没有数据可返回，内核⽴即返回 EWOULDBLOCK 错误</p><p>第四次调⽤ recvfrom 时，已有⼀个数据报准备好，将其从内核复制到应⽤进程缓冲区， recvfrom 成功返回;</p><p>轮询（polling）：</p><p>应⽤进程持续轮询内核，以查看某个操作是否就绪;</p><p>缺点：往往耗费⼤量CPU时间。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）IO复⽤</p><p>通过调⽤ select 或 poll，阻塞在这两个系统调⽤中的某⼀个之上，⽽不是阻塞在真正的I/O系统调⽤上。</p><p>阻塞于 select 调⽤，等待数据报套接字变为可读，当 select 返回套接字可读这⼀条件时，调⽤ recvfrom 把所读数据报复制到应⽤进程缓存区。</p><p>多个进程I/O注册到同⼀个 select，当⽤户进程调⽤ select，select 监听所有注册好的IO：</p><ul><li>若所有被监听的I/O需要的数据未准备好，则阻塞</li></ul><ul><li>任意⼀个所需数据准备好后，select 调⽤返回</li></ul><ul><li>⽤户进程通过 recvfrom 进⾏数据拷⻉</li></ul><p>优点：可以等待多个描述符就绪。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（4）信号驱动I/O</p><p>懵d</p><p>开启套接字信号驱动I/O功能，通过 sigaction 系统调⽤安装⼀个信号处理函数，该系统函数⽴即返回，不阻塞;</p><p>数据报准备好后，内核为该进程产⽣⼀个 SIGIO 信号递交给进程;</p><p>可以在信号处理函数中调⽤ recvfrom 读取数据报，通知主循环数据已准备好待处理;</p><p>可以⽴即通知主循环，读取数据报。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">优点：</p><p>等待数据报到达期间进程不被阻塞。主循环可以继续执⾏，等待来⾃信号处理函数的通知：既可以是数据已经准备好被处理，也可以是数据报已经准备好被读取。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（5）异步IO</p><p>⽤户进程告知内核启动某个操作，并由内核在整个操作中完成后通知⽤户进程。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">与信号驱动I/O的区别：</p><ul><li>信号驱动I/O是由内核通知我们何时可以启动⼀个I/O操作</li></ul><ul><li>异步I/O是由内核通知我们I/O操作何时完成</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">步骤：</p><ul><li>⽤户进程调⽤aio_read函数，给内核传递描述符、缓冲区指针、缓冲区⼤⼩和⽂件偏移，告诉内核整个操作完成时如何通知我们，然后就⽴刻去做其他事情;</li></ul><ul><li>当内核收到aio_read后，会⽴刻返回，然后内核开始等待数据准备，数据准备好以后，直接把数据拷⻉到⽤户空间，然后再通知进程本次IO已经完成。</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、同步I/O</p><p>导致请求进程阻塞，直到I/O操作完成;</p><p>四种同步模型的区别在于第⼀阶段等待数据的处理⽅式不同，第⼆阶段均为将数据从内核空间复制到⽤户空间缓冲区期间，进程阻塞于recvfrom调⽤。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、异步I/O</p><p>不导致请求进程阻塞。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、I/O复⽤函数</p><p>多路复⽤接⼝ select/poll/epoll ，内核提供给⽤户态的多路复⽤系统调⽤，进程可以通过⼀个系统调⽤函数从内核中获取多个事件：</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）select--&gt;两次遍历+两次拷⻉</p><p>把已连接的socket放在⼀个⽂件描述符集合，调⽤ select 函数将⽂件描述符集合拷⻉到内核⾥，让内核来检查是否有⽹络事件产⽣；</p><p>通过遍历，有事件产⽣就把此socket标记为可读/可写，然后再整个拷⻉回⽤户态；</p><p>⽤户态还需要遍历找到刚刚标记的socket。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）poll</p><p>动态数组，以链表形式来组织，相⽐于select，没有⽂件描述符个数限制，当然还会受到系统⽂件描述符限制。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）epoll(event poll)--&gt;红⿊树</p><p>在内核⾥使⽤红⿊树来跟踪进程所有待检测的⽂件描述字。</p><p>调⽤epoll_ctl() 函数，把需要监控的 socket 加⼊内核中的红⿊树⾥：（红⿊树的增删查时间复杂度是O(logn)，不需要每次操作都传⼊整个集合，只需要传⼊⼀个待检测的socket，减少了内核和⽤户空间的⼤量数据拷⻉和内存分配）</p><p>epoll 使⽤事件驱动的机制，内核⾥维护了⼀个链表来记录就绪事件（当某个 socket 有事件发⽣时，通过回调函数，内核会将其加⼊到这个就绪事件列表中）</p><p>当⽤户调⽤ epoll_wait() 函数时，只会返回有事件发⽣的⽂件描述符的个数，不需要像 select/poll 那样轮询扫描整个 socket 集合，⼤⼤提⾼了检测的效率。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">epoll⽀持的事件触发模式：</p><ul><li>边缘触发ET</li></ul><ul><li>⽔平触发LT</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">边缘触发模式ET：</p><p>当被监控的 Socket 描述符上有可读事件发⽣时，服务器只会从 epoll_wait中苏醒⼀次，即使进程没有调⽤ read 函数从内核读取数据，也依然只苏醒⼀次，因此我们程序要保证⼀次性将内核缓冲区的数据读取完，只有第⼀次满⾜条件的时候才触发，之后就不会再传递同样的事件了。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">⽔平触发模式LT：</p><p>当被监控的 Socket 上有可读事件发⽣时，服务器不断地从 epoll_wait中苏醒，直到内核缓冲区数据被 read 函数读完才结束，⽬的是告诉我们有数据，只要满⾜事件的条件，⽐如内核中有数据需要读，就⼀直不断地把这个事件传递给⽤户。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（5）select和epoll的区别</p><ul><li>select 和 poll 采⽤轮询的⽅式检查就绪事件，每次都要扫描整个⽂件描述符，复杂度O(N);</li></ul><ul><li>epoll 采⽤回调⽅式检查就绪事件，只会返回有事件发⽣的⽂件描述符的个数，复杂度O(1);</li></ul><ul><li>select 只⼯作在低效的LT模式，epoll 可以在 ET ⾼效模式⼯作;</li></ul><ul><li>epoll 是 Linux 所特有，⽽ select 则应该是 POSIX 所规定，⼀般操作系统均有实现;</li></ul><ul><li>select 单个进程可监视的fd数量有限，即能监听端⼝的⼤⼩有限，64位是2048；epoll 没有最⼤并发连接的限制，能打开的 fd 的上限远⼤于2048（1G的内存上能监听约10万个端⼝）;</li></ul><ul><li>select 内核需要将消息传递到⽤户空间，都需要内核拷⻉动作；epoll通过内核和⽤户空间共享⼀块内存来实现的。</li></ul></div>"},{"title":"Linux⽹络","content":"<p>如何在基本⽹络通信模型基础上提升服务器⾃身服务响应？</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1、多进程服务器</p><p>每次的请求⽗进程fork出⼦进程进⾏业务处理，⽗进程⽤于处理请求连接</p><ul><li>⽗⼦进程的⽣命周期绝⼤多数都不相同，如何、何时进⾏销毁，才能确保不会⼤量出僵⼫进程</li></ul><ul><li>⼦⽗进程之间如何进⾏通讯？</li></ul><p>进程的创建、切换都需要都会带来⼤量的开销，同时每个进程都具有⾃⼰独⽴的虚拟内存空间，所以需要使⽤到IPC机制，完成进程间的数据交换</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2、I/O复⽤服务器</p><ul><li>在不额外创建进程的基础上同时为多个请求端提供请求</li></ul><ul><li>select、poll、epoll实现优缺点</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、多线程服务器</p><p>同⼀进程下的多个线程共享进程的系统资源，所以相⽐于多进程，同进程下的多线程通信更加⽅便，并且切换的开销⼩很多。</p><ul><li>如何创建、销毁线程</li></ul><ul><li>如何保证线程的安全</li></ul><ul><li>线程间的通信</li></ul></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">物理实现：</p><p>软链接： 软链接是⼀个独⽴的⽂件，它包含了指向⽬标⽂件或⽬录的路径。软链接实际上是⼀个特殊的⽂件，其中包含有关⽬标⽂件的引⽤。</p><p>硬链接： 硬链接是⽬标⽂件的⼀个额外的⽬录项。⽬录项指向相同的物理数据块，实际上只是⽂件系统中的两个或多个⽬录项指向相同的inode。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">链接的⽬标：</p><p>软链接： 软链接可以链接到⽂件或⽬录，甚⾄可以链接到不存在的⽂件。</p><p>硬链接： 硬链接只能链接到⽂件，⽽且必须是同⼀⽂件系统中的。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">对链接的影响：</p><p>软链接： 如果原始⽂件被删除或移动，软链接仍然存在，但链接将失效。软链接可以跨⽂件系统，但如果⽬标⽂件被删除，软链接将成为坏链接（dangling link）。</p><p>硬链接： 删除或移动原始⽂件并不会影响硬链接，因为硬链接只是inode的另⼀个引⽤。只有当所有硬链接都被删除后，inode的数据块才会被释放。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">创建⽅式：</p><p>软链接： 使⽤ ln -s 命令创建软链接。例如， ln -s target_file link_name 。</p><p>硬链接： 使⽤ ln 命令创建硬链接。例如， ln target_file link_name 。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">链接数量：</p><p>软链接： 软链接只会增加⽬标⽂件的链接计数，⽽不会增加inode的链接计数。</p><p>硬链接： 硬链接会增加⽬标⽂件的链接计数，也会增加inode的链接计数。当链接计数为零时，⽂件系统才会释放相关的数据块。</p></div>"},{"title":"什么是中断和异常","content":"<p>中断和异常都会导致处理器暂停当前正在执⾏的任务，并转向执⾏⼀个特定的处理程序（中断处理程序或异常处理程序）。然后在处理完这些特殊情况后，处理器会返回到被打断的任务继续执⾏。</p><ul><li>中断是由计算机系统外部事件触发的，通常与硬件设备相关。中断的⽬的是为了及时响应重要事件⽽暂时中断正常的程序执⾏。典型的中断包括时钟中断、I/O设备中断（如键盘输⼊、⿏标事件）和硬件错误中断等。操作系统通常会为每种类型的中断分配⼀个中断处理程序，⽤于处理相应的事件。</li></ul><ul><li>异常是由计算机系统内部事件触发的，通常与正在执⾏的程序或指令有关，⽐如程序的⾮法操作码、地址越界、运算溢出等错误引起的事件，异常不能被屏蔽，当出现异常时，计算机系统会暂停正常的执⾏流程，并转到异常处理程序来处理该异常。</li></ul><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. ⽤户态和内核态的区别</p><p>⽤户态 （User Mode） 和内核态 （Kernel Mode） 是操作系统为了保护系统资源和实现权限控制⽽设计的两种不同的CPU运⾏级别，可以控制进程或程序对计算机硬件资源的访问权限和操作范围。</p><p>⽤户态：在⽤户态下，进程或程序只能访问受限的资源和执⾏受限的指令集，不能直接访问操作系统的核⼼部分，也不能直接访问硬件资源。</p><p>核⼼态：核⼼态是操作系统的特权级别，允许进程或程序执⾏特权指令和访问操作系统的核⼼部分。在核⼼态下，进程可以直接访问硬件资源，执⾏系统调⽤，管理内存、⽂件系统等操作。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 在什么场景下，会发⽣内核态和⽤户态的切换</p><p>系统调⽤：当⽤户程序需要请求操作系统提供的服务时，会通过系统调⽤进⼊内核态。</p><p>异常：当程序执⾏过程中出现错误或异常情况时，CPU会⾃动切换到内核态，以便操作系统能够处理这些异常。</p><p>中断：外部设备（如键盘、⿏标、磁盘等）产⽣的中断信号会使CPU从⽤户态切换到内核态。操作系统会处理这些中断，执⾏相应的中断处理程序，然后再将CPU切换回⽤户态。</p></div>"},{"title":"并⾏和并发是什么","content":"<p>并⾏是在同⼀时刻执⾏多个任务。</p><p>并发是在相同的时间段内执⾏多个任务，任务可能交替执⾏，通过调度实现。</p><p>并⾏是指在同⼀时刻执⾏多个任务，这些任务可以同时进⾏，每个任务都在不同的处理单元（如多个CPU核⼼）上执⾏。在并⾏系统中，多个处理单元可以同时处理独⽴的⼦任务，从⽽加速整体任务的完成。</p><p>并发是指在相同的时间段内执⾏多个任务，这些任务可能不是同时发⽣的，⽽是交替执⾏，通过时间⽚轮转或者事件驱动的⽅式。并发通常与任务之间的交替执⾏和任务调度有关。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">说⼀说僵⼫进程和孤⼉进程</p><ul><li>孤⼉进程：⼀个⽗进程退出，⽽它的⼀个或多个⼦进程还在运⾏，那么那些⼦进程将成为孤⼉进程。孤⼉进程将被init进程(进程号为1)所收养，并由init进程对它们完成状态收集⼯作。</li></ul><ul><li>僵⼫进程：⼀个进程使⽤fork创建⼦进程，如果⼦进程退出，⽽⽗进程并没有调⽤wait或waitpid获取⼦进程的状态信息，那么⼦进程的进程描述符仍然保存在系统中。这种进程称之为僵⼫进程。</li></ul></div>"},{"title":"信号和信号量有什么区别","content":"<p>信号：⼀种处理异步事件的⽅式。信号是⽐较复杂的通信⽅式，⽤于通知接收进程有某种事件发⽣，除了⽤于进程外，还可以发送信号给进程本身。</p><p>信号量：进程间通信处理同步互斥的机制。是在多线程环境下使⽤的⼀种设施，它负责协调各个线程，以保证它们能够正确，合理的使⽤公共资源。</p>"},{"title":"常⽤的Linux命令","content":"<p>ls：列出当前⽬录下的⽂件和⼦⽬录。</p><p>cd：切换⽬录。</p><p>pwd：显示当前⼯作⽬录的路径。</p><p>touch：创建新⽂件。</p><p>mkdir：创建新⽬录。</p><p>rm：删除⽂件或⽬录。</p><p>cp：复制⽂件或⽬录。</p><p>mv：移动⽂件或⽬录，也⽤于重命名。</p><p>cat：显示⽂件的内容。</p><p>vi: 编辑⽂件</p><p>head 和 tail：查看⽂件的开头和结尾部分。</p><p>grep：查找⽂件或其他内容⾥符合条件的字符串</p><p>find：查找⽂件和⽬录。</p><p>chmod：更改⽂件或⽬录的权限。</p><p>chown：更改⽂件或⽬录的所有者。</p><p>ps：列出运⾏中的进程。</p><p>kill：终⽌进程。</p><p>df：显示磁盘空间使⽤情况。</p><p>tar：创建和提取归档⽂件（通常是.tar⽂件）。</p><p>ifconfig：查看ip地址</p><p>ping：测试⽹络连接。</p><p>ssh：通过SSH协议远程登录到其他计算机。</p><p>apt（Debian/Ubuntu）或 yum（Red Hat/CentOS）：包管理器，⽤于安装、更新和删除软件包。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">Linux中如何查看⼀个进程</p><p>ps 命令⽤于列出当前⽤户的进程信息如果要查找特定进程。</p><p>可以使⽤ grep 命令来过滤结果。例如，要查找名为 &quot;myprocess&quot; 的进程，可以执⾏以下命令：</p><pre><code class=\"language-txt\">ps aux | grep myprocess </code></pre><p>pgrep 和 pidof 命令⽤于通过进程名称查找进程的PID（进程ID）</p><pre><code class=\"language-txt\">pgrep myprocess\npidof myprocess </code></pre></div>"},{"title":"如何杀死⼀个进程","content":"<p>使⽤ kill 命令可以向⼀个进程发送信号，终⽌进程， kill [options] PID</p><p>killall 命令⽤于根据进程名杀死所有匹配的进程。</p><p>杀死⽗进程并不会同时杀死⼦进程：每个进程都有⼀个⽗进程。可以使⽤ pstree 或 ps ⼯具来观察这⼀点。</p><p>杀死⽗进程后，⼦进程将会成为孤⼉进程，⽽ init 进程将重新成为它的⽗进程。</p>"},{"title":"局部性原理","content":"<p>在⼀段时间内，程序倾向于多次访问相同的数据或接近的数据，⽽不是随机地访问内存中的各个位置。局部性原理通常分为两种类型：时间局部性和空间局部性。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 时间局部性</p><p>如果⼀个数据被访问，那么在不久的将来它很可能会再次被访问。这意味着程序在短时间内倾向于反复使⽤相同的数据项，例如在循环中反复访问数组的元素。</p><p>通过利⽤时间局部性，程序可以将频繁使⽤的数据存储在缓存中，从⽽减少访问主内存的次数，提⾼程序的执⾏速度。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 空间局部性</p><p>如果⼀个数据被访问，那么它附近的数据也很可能会被访问。这意味着程序在访问⼀个数据时，通常会在接近该数据的附近访问其他数据，例如遍历数组时，往往会访问相邻的元素。</p><p>⽂件系统在磁盘上存储数据时，通常会将相关的数据块放在相邻的磁盘扇区上，以便在访问⼀个数据块时能够快速地访问相邻的数据块。</p></div>"},{"title":"进程、线程的区别？","content":"<p>进程是系统进⾏资源分配和调度的基本单位。</p><p>线程是操作系统能够进⾏运算调度的最⼩单位，线程是进程的⼦任务，是进程内的执⾏单元。 ⼀个进程⾄少有⼀个线程，⼀个进程可以运⾏多个线程，这些线程共享同⼀块内存。</p><p>资源开销：</p><p>进程：由于每个进程都有独⽴的内存空间，创建和销毁进程的开销较⼤。进程间切换需要保存和恢复整个进程的状态，因此上下⽂切换的开销较⾼。</p><p>线程：线程共享相同的内存空间，创建和销毁线程的开销较⼩。线程间切换只需要保存和恢复少量的线程上下⽂，因此上下⽂切换的开销较⼩。</p><p>通信与同步：</p><p>进程：由于进程间相互隔离，进程之间的通信需要使⽤⼀些特殊机制，如管道、消息队列、共享内存等。</p><p>线程：由于线程共享相同的内存空间，它们之间可以直接访问共享数据，线程间通信更加⽅便。</p><p>安全性：</p><p>进程：由于进程间相互隔离，⼀个进程的崩溃不会直接影响其他进程的稳定性。</p><p>线程：由于线程共享相同的内存空间，⼀个线程的错误可能会影响整个进程的稳定性。</p>"},{"title":"进程的状态有哪些","content":"<p>进程的3种基本状态：运⾏、就绪和阻塞。</p><ul><li>就绪：当⼀个进程获得了除处理机以外的⼀切所需资源，⼀旦得到处理机即可运⾏，则称此进程处于就绪状态。就绪进程可以按多个优先级来划分队列。例如，当⼀个进程由于时间⽚⽤完⽽进⼊就绪状态时，排⼊低优先级队列；当进程由I／O操作完成⽽进⼊就绪状态时，排⼊⾼优先级队列。</li></ul><ul><li>运⾏：当⼀个进程在处理机上运⾏时，则称该进程处于运⾏状态。处于此状态的进程的数⽬⼩于等于处理器的数⽬，对于单处理机系统，处于运⾏状态的进程只有⼀个。在没有其他进程可以执⾏时（如所有进程都在阻塞状态），通常会⾃动执⾏系统的空闲进程。</li></ul><ul><li>阻塞：也称为等待或睡眠状态，⼀个进程正在等待某⼀事件发⽣（例如请求I/O⽽等待I/O完成等）⽽暂时停⽌运⾏，这时即使把处理机分配给进程也⽆法运⾏，故称该进程处于阻塞状态。</li></ul><p>进程的五种状态</p><p>创建状态：进程在创建时需要申请⼀个空⽩PCB，向其中填写控制和管理进程的信息，完成资源分配。如果创建⼯作⽆法完成，⽐如资源⽆法满⾜，就⽆法被调度运⾏，把此时进程所处状态称为创建状态</p><p>就绪状态：进程已经准备好，已分配到所需资源，只要分配到CPU就能够⽴即运⾏</p><p>执⾏状态：进程处于就绪状态被调度后，进程进⼊执⾏状态</p><p>阻塞状态：正在执⾏的进程由于某些事件（I/O请求，申请缓存区失败）⽽暂时⽆法运⾏，进程受到阻塞。在满⾜请求时进⼊就绪状态等待系统调⽤</p><p>终⽌状态：进程结束，或出现错误，或被系统终⽌，进⼊终⽌状态。⽆法再执⾏</p>"},{"title":"进程之间的通信⽅式","content":"<ul><li>管道：是⼀种半双⼯的通信⽅式，数据只能单向流动⽽且只能在具有⽗⼦进程关系的进程间使⽤。</li></ul><ul><li>命名管道： 也是半双⼯的通信⽅式，但是它允许⽆亲缘关系进程间的通信。</li></ul><ul><li>信号量：是⼀个计数器，可以⽤来控制多个进程对共享资源的访问，常作为⼀种锁机制，防⽌某进程正在访问共享资源时，其他进程也访问该资源。因此主要作为进程间以及同⼀进程内不同线程之间的同步⼿段。</li></ul><ul><li>消息队列：消息队列是消息的链表，存放在内核中并由消息队列标识符标识。消息队列克服了信号传递信息少、管道只能承载⽆格式字节流以及缓冲区⼤⼩受限等缺点。</li></ul><ul><li>信号：⽤于通知接收进程某个事件已经发⽣，从⽽迫使进程执⾏信号处理程序。</li></ul><ul><li>共享内存：就是映射⼀段能被其他进程所访问的内存，这段共享内存由⼀个进程创建，但多个进程都可以访问。共享内存是最快的进程通信⽅式，它是针对其他进程间通信⽅式运⾏效率低⽽专⻔设计的。它往往与其他通信机制，⽐如信号量配合使⽤，来实现进程间的同步和通信。</li></ul><ul><li>Socket 套接字：是⽀持TCP/IP 的⽹络通信的基本操作单元，主要⽤于在客户端和服务器之间通过⽹络进⾏通信。</li></ul>"},{"title":"线程之间的同步⽅式","content":"<p>线程同步机制是指在多线程编程中，为了保证线程之间的互不⼲扰，⽽采⽤的⼀种机制。常⻅的线程同步机制有以下⼏种：</p><ul><li>互斥锁：互斥锁是最常⻅的线程同步机制。它允许只有⼀个线程同时访问被保护的临界区（共享资源）</li></ul><ul><li>条件变量：条件变量⽤于线程间通信，允许⼀个线程等待某个条件满⾜，⽽其他线程可以发出信号通知等待线程。通常与互斥锁⼀起使⽤。</li></ul><ul><li>读写锁： 读写锁允许多个线程同时读取共享资源，但只允许⼀个线程写⼊资源。</li></ul><ul><li>信号量：⽤于控制多个线程对共享资源进⾏访问的⼯具。</li></ul>"},{"title":"介绍⼀下你知道的锁","content":"<p>两个基础的锁：</p><p>互斥锁：互斥锁是⼀种最常⻅的锁类型，⽤于实现互斥访问共享资源。在任何时刻，只有⼀个线程可以持有互斥锁，其他线程必须等待直到锁被释放。这确保了同⼀时间只有⼀个线程能够访问被保护的资源。</p><p>⾃旋锁：⾃旋锁是⼀种基于忙等待的锁，即线程在尝试获取锁时会不断轮询，直到锁被释放。</p><p>其他的锁都是基于这两个锁的</p><p>读写锁：允许多个线程同时读共享资源，只允许⼀个线程进⾏写操作。分为读（共享）和写（排他）两种状态。</p><p>悲观锁：认为多线程同时修改共享资源的概率⽐较⾼，所以访问共享资源时候要上锁</p><p>乐观锁：先不管，修改了共享资源再说，如果出现同时修改的情况，再放弃本次操作</p>"},{"title":"什么情况下会产⽣死锁","content":"<p>死锁是指两个或多个进程在争夺系统资源时，由于互相等待对⽅释放资源⽽⽆法继续执⾏的状态。</p><p>死锁只有同时满⾜以下四个条件才会发⽣：</p><p>互斥条件：⼀个进程占⽤了某个资源时，其他进程⽆法同时占⽤该资源。</p><p>请求保持条件：⼀个线程因为请求资源⽽阻塞的时候，不会释放⾃⼰的资源。</p><p>不可剥夺条件：资源不能被强制性地从⼀个进程中剥夺，只能由持有者⾃愿释放。</p><p>环路等待条件：多个进程之间形成⼀个循环等待资源的链，每个进程都在等待下⼀个进程所占有的资源。</p>"},{"title":"如何解除死锁","content":"<p>只需要破坏上⾯⼀个条件就可以破坏死锁。</p><p>破坏请求与保持条件：⼀次性申请所有的资源。</p><p>破坏不可剥夺条件：占⽤部分资源的线程进⼀步申请其他资源时，如果申请不到，可以主动释放它占有的资源。</p><p>破坏循环等待条件：靠按序申请资源来预防。让所有进程按照相同的顺序请求资源，释放资源则反序释放。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）先来先服务：</p><p>⾮抢占式的调度算法，按照请求的顺序进⾏调度。</p><p>有利于⻓作业，但不利于短作业，因为短作业必须⼀直等待前⾯的⻓作业执⾏完毕才能执⾏，⽽⻓作业⼜需要执⾏很⻓时间，造成了短作业等待时间过⻓。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）最短作业优先：</p><p>⾮抢占式的调度算法，按估计运⾏时间最短的顺序进⾏调度。</p><p>⻓作业有可能会饿死，处于⼀直等待短作业执⾏完毕的状态。因为如果⼀直有短作业到来，那么⻓作业永远得不到调度。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）最短剩余时间优先：</p><p>最短作业优先的抢占式版本，按剩余运⾏时间的顺序进⾏调度。</p><p>当⼀个新的作业到达时，其整个运⾏时间与当前进程的剩余时间作⽐较。如果新的进程需要的时间更少，则挂起当前进程，运⾏新的进程。否则新的进程等待。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（1）时间⽚轮转调度</p><p>将所有就绪进程按 FCFS 的原则排成⼀个队列，每次调度时，把 CPU 时间分配给队⾸进程，该进程可以执⾏⼀个时间⽚。当时间⽚⽤完时，由计时器发出时钟中断，调度程序便停⽌该进程的执⾏，并将它送往就绪队列的末尾，同时继续把 CPU 时间分配给队⾸的进程。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（2）优先级调度</p><p>为每个进程分配⼀个优先级，按优先级进⾏调度。为了防⽌低优先级的进程永远等不到调度，可以随着时间的推移增加等待进程的优先级。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（3）多级队列</p><p>⼀个进程需要执⾏ 100 个时间⽚，如果采⽤时间⽚轮转调度算法，那么需要交换 100 次。</p><p>多级队列是为这种需要连续执⾏多个时间⽚的进程考虑，它设置了多个队列，每个队列时间⽚⼤⼩都不同，例如1,2,4,8,..。进程在第⼀个队列没执⾏完，就会被移到下⼀个队列。这种⽅式下，之前的进程只需要交换 7 次。</p><p>每个队列优先权也不同，最上⾯的优先权最⾼。因此只有上⼀个队列没有进程在排队，才能调度当前队列上的进程。</p><p>可以将这种调度算法看成是时间⽚轮转调度算法和优先级调度算法的结合。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">（4）最短进程优先</p><p>如果我们将每⼀条命令的执⾏看作是⼀个独⽴的“作业”，则我们可以通过⾸先运⾏最短的作业来使响应事件最短</p></div>"},{"title":"分段","content":"<p>基本单位： 地址空间被划分为不同的逻辑段，每个段具有独⽴的含义，如代码段、数据段等。</p><p>段的⻓度： 每个段的⻓度可以动态变化，不同段的⻓度可以不同。</p><p>内部碎⽚： 由于每个段的⻓度可以动态变化，可能会导致内部碎⽚，即段内部的未使⽤空间。</p><p>外部碎⽚： 可能会导致外部碎⽚，即段之间的未使⽤空间。</p><p>逻辑地址： 逻辑地址由两部分组成，⼀个是段号，另⼀个是段内偏移。</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">分⻚（Paging）：</p><p>基本单位： 地址空间被划分为固定⼤⼩的⻚⾯，物理内存也被划分为相同⼤⼩的⻚⾯框。</p><p>⻚⾯的⻓度： ⻚⾯的⻓度是固定的，由操作系统定义。</p><p>内部碎⽚： 由于⻚⾯⻓度固定，可能会导致内部碎⽚，即⻚⾯内部的未使⽤空间。</p><p>外部碎⽚： 由于⻚⾯⻓度固定，不同⻚⾯之间的未使⽤空间⽆法利⽤，可能导致外部碎⽚。</p><p>逻辑地址： 逻辑地址由两部分组成，⼀个是⻚号，另⼀个是⻚内偏移。</p></div>"},{"title":"⻚⾯置换算法","content":"<p>LRU（最近最少使⽤）算法：每次选择最⻓时间没有被使⽤的⻆⾊进⾏切换。这种策略基于你对⻆⾊的喜好，认为最近被使⽤过的⻆⾊很可能还会被使⽤，⽽最久未被使⽤的⻆⾊很可能不会再被使⽤。LRU算法可以有效地减少切换次数，但是实现起来⽐较复杂，需要记录每个⻆⾊的使⽤时间或者维护⼀个使⽤顺序的列表。</p><p>FIFO（先进先出）算法：每次选择最早进⼊内存的⻆⾊进⾏切换。这种策略很简单，只需要维护⼀个⻆⾊队列，每次淘汰队⾸的⻆⾊，然后把新的⻆⾊加⼊队尾。但是FIFO算法可能会淘汰⼀些经常被使⽤的⻆⾊，导致切换次数增加。⽽且FIFO算法有可能出现⻉拉迪异常（Belady anomaly），即当分配给内存的空间增加时，切换次数反⽽增加。</p><p>最佳⻚⾯置换算法(OPT)</p><p>置换在「未来」最⻓时间不访问的⻚⾯,但是实际系统中⽆法实现，因为程序访问⻚⾯时是动态的我们是⽆法预知每个⻚⾯在「下⼀次」访问前的等待时间，因此作为实际算法效率衡量标准。</p><p>时钟⻚⾯置换算法：把所有的⻚⾯都保存在⼀个类似钟⾯的「环形链表」中，⻚⾯包含⼀个访问位。当发⽣缺⻚中断时，顺时针遍历⻚⾯，如果访问位为1，将其改为0，继续遍历，直到访问到访问位为0⻚⾯，进⾏置换。</p><p>最不常⽤算法 ：记录每个⻚⾯访问次数，当发⽣缺⻚中断时候，将访问次数最少的⻚⾯置换出去，此⽅法需要对每个⻚⾯访问次数统计，额外开销。</p>"},{"title":"IO多路复⽤","content":"<p>I/O多路复⽤通常通过select、poll、epoll等系统调⽤来实现。</p><p>select： select是⼀个最古⽼的I/O多路复⽤机制，它可以监视多个⽂件描述符的可读、可写和错误状态。然⽽，但是它的效率可能随着监视的⽂件描述符数量的增加⽽降低。</p><p>poll： poll是select的⼀种改进，它使⽤轮询⽅式来检查多个⽂件描述符的状态，避免了select中⽂件描述符数量有限的问题。但对于⼤量的⽂件描述符，poll的性能也可能变得不⾜够⾼效。</p><p>epoll： epoll是Linux特有的I/O多路复⽤机制，相较于select和poll，它在处理⼤量⽂件描述符时更加⾼效。epoll使⽤事件通知的⽅式，只有在⽂件描述符就绪时才会通知应⽤程序，⽽不需要应⽤程序轮询。</p><p>I/O多路复⽤允许在⼀个线程中处理多个I/O操作，避免了创建多个线程或进程的开销，允许在⼀个线程中处理多个I/O操作，避免了创建多个线程或进程的开销。</p>"},{"title":"计算机系统&Linux","content":"<p>计算机体系结构内容较难，考察也较少，可以仅做了解，重点关注 Linux 相关的⼀些⾯试题</p>"},{"title":"字符编码","content":"<p>我们知道⼀个字节有8位，8位在不考虑正负的情况下，能够表示256个数字。同理2个字节就能表示出65536个数字。那么对于字符该如何表示？</p><p>二进制</p><table><tr><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr></table><p>通过计算机领域的⾄理名⾔：计算机科学领域的任何问题都可以通过增加⼀个间接的中间层来解决。</p><p>我们通过在字符和⼆进制编码之间嵌套⼀个数字编号，通过数字编号，就能实现字符、⼆进制编码之间的关系绑定。</p><p>像这样收录了很多的字符并⾏⼀⼀编号得到的⼀个对照表，我们称之为字符集。从⼆进制 -&gt; 字符 称为解码，从字符 -&gt; ⼆进制 称为编码</p><p>从ASCII字符集表示英⽂、控制符号这些，再到GB2312能表示出中⽂，⽬前存在着很多的字符集，这也就出现了⼀个问题，同⼀个⼆进制，在不同的字符集可能对应的字符不同，这也就导致了同⼀个⽂件，通过不同的字符集进⾏解码，呈现的结果不同（也就是我们所说的乱码）。如果有⼀种统⼀的编码形式（很全的字符集），对所有的字符都能提供唯⼀的⼆进制编码，那么就能解决上述的问题。Unicode就是这个很全的字符集。</p><p>虽然通过Unicode我们实现了对字符的唯⼀表示，但是随之⽽来的还有另⼀个问题，这些⼆进制编码该如何存储？</p><table><tr><td>字符</td><td>编码</td><td>二进制</td></tr><tr><td>代</td><td>20195</td><td>01001110 11100011</td></tr><tr><td>码</td><td>30721</td><td>01111000 00000001</td></tr><tr><td>w</td><td>119</td><td>00000000 01110111</td></tr><tr><td>o</td><td>111</td><td>00000000 01101111</td></tr><tr><td>r</td><td>114</td><td>00000000 01110010</td></tr><tr><td>l</td><td>108</td><td>00000000 01101100</td></tr><tr><td>d</td><td>100</td><td>00000000 01100100</td></tr></table><p>以代码world为例，将⼆进制直接照搬成⼀⾏，按照不同的步⻓进⾏解析，则会得出不同的结果，如何解决？</p>"},{"title":"固定⻓度编码","content":"<p>最直接思路，就是固定⻓度，不管编号多⼤多⼩，统⼀根据最⻓位数来，位数不够，⾼位补零。</p><table><tr><td>字符</td><td>编码</td><td>二进制</td></tr><tr><td>代</td><td>20195</td><td>00000000 00000000 01001110 11100011</td></tr><tr><td>码</td><td>30721</td><td>00000000 00000000 01111000 00000001</td></tr><tr><td>w</td><td>119</td><td>00000000 00000000 00000000 01110111</td></tr><tr><td>o</td><td>111</td><td>00000000 00000000 00000000 01101111</td></tr><tr><td>r</td><td>114</td><td>00000000 00000000 00000000 01110010</td></tr><tr><td>l</td><td>108</td><td>00000000 00000000 00000000 01101100</td></tr><tr><td>d</td><td>100</td><td>00000000 00000000 00000000 01100100</td></tr></table><p>优点：⾼效、快速进⾏编码、解码</p><p>缺点：固定⻓度的形式，会导致内存的浪费，并且随着编码越来越⼤，编码之间的跨度也就越⼤，这样定⻓编码造成的浪费就更加显著</p>"},{"title":"可变⻓度编码","content":"<p>根据固定⻓度编码的缺点，可以采⽤变⻓的形式进⾏解决，⼩编号少占⽤字节，⼤编号多占字节。不过如何划分边界是⼀个问题</p><p>⼀种解决⽅案：</p><table><tr><td>编号</td><td>编码模板</td></tr><tr><td>[0, 127]</td><td>0XXXXXXXX</td></tr><tr><td>[128, 2047]</td><td>110XXXXX 10XXXXXX</td></tr><tr><td>[2048, 65535]</td><td>1110XXXX 10XXXXXX 10XXXXXXXX</td></tr></table><p>可以采⽤类似IPV4中的分类编制的形式，在⼆进制中占⽤⼏位作为标识。</p><p>W 119 01110111</p><p>代 228 11000011 10100100</p><p>码 30721 11100111 10100000 10000001</p><p>上述的解决⽅案，其实就是我们所熟知的UTF-8编码，同时也是Go默认的编码⽅式</p>"},{"title":"冯诺依曼模型","content":"<p>冯诺依曼模型分为 5 ⼤部件：内存、CPU、总线、输⼊设备、输出设备</p><p>posper</p><p>PC 实质上是⼀个⼤⼩为⼀个字的存储区域。对于32位的机器，⼀个字是4个字节；对于64位的机器，⼀I/O设备个字就是8个字节。说⽩了，PC就是⼀个4字节或是8字节的存储空间，⾥⾯存放的是某⼀条指令的地址。</p><p>从系统上电的那⼀瞬间，直到系统断电，处理器就不断地在执⾏ PC 指向的指令，然后更新 PC，使其指向下⼀条要执⾏的指令（注意：这个下⼀条指令与刚刚执⾏的指令不⼀定是相邻的）</p>"},{"title":"内存","content":"<p>从 0 开始编号，最先存储单位是字节（byte）</p><p>处理器在执⾏程序时，内存主要存放程序指令以及数据</p><p>内存和处理器之间通过总线来进⾏数据传递。实际上，总线贯穿了整个计算机系统，它负责将信息从⼀个部件传递到另外⼀个部件。</p>"},{"title":"CPU","content":"<p>CPU 位宽： CPU ⼀次能处理多少字节的数据</p><p>32位CPU⼀次可以计算4个字节;</p><p>64位CPU⼀次可以计算8个字节;</p><p>为了能⼀次计算⼤数的运算，CPU需要⽀持多个byte⼀起计算，所以CPU位宽越⼤，可以计算的数值就越⼤。⽐如说32位CPU能计算的最⼤整数是4294967295。</p><p>CPU内部还有⼀些组件，常⻅的有寄存器、控制单元和逻辑运算单元等</p><p>控制单元： 控制CPU⼯作；</p><p>逻辑运算单元： 负责计算；</p><p>寄存器： 在 CPU 中，计算速度快</p><p>通俗的讲，寄存器可以理解为⼀个临时存放数据的空间。</p><p>例如我们计算两个变量 a+b 的和，处理器从内存中读取 a 的值暂存在寄存器 X 中，读取 B 的值暂存在寄存器 Y中，这个操作会覆盖寄存器中原来的数值，处理器完成加载的操作后，ALU（Arithmatic/logic Unit）会从复制寄存器 X 和 Y 中保存的数值，然后进⾏算术运算，得到的结果会保存到寄存器 X 或者寄存器 Y 中，此时寄存器中原来的数值会被新的数值覆盖</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">常⻅寄存器类型：</p><p>通⽤寄存器：放运算数据</p><p>程序记数器（PC）：⽤来存放 CPU 下⼀条要执⾏指令的 内存地址；</p><p>指令寄存器：⽤来存放 PC 执⾏的指令，即 指令本身（取值后放⼊到 指令寄存器中）</p></div>"},{"title":"总线","content":"<p>⽤于 CPU 和内存以及其他设备之间的通信，总线可分为 3 种:</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">地址总线：</p><p>⽤于指定CPU将要操作的内存地址;</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">数据总线：</p><p>⽤于读写内存的数据;</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">控制总线：</p><p>⽤于发送和接收信号，⽐如中断、设备复位等信号，CPU收到信号后⾃然进⾏响应，这时也需要控制总线;</p><p>当CPU要读写内存数据的时候．⼀般需要通过两个总线:</p><p>⾸先要通过「地址总线」来指定内存的地址;</p><p>再通过「数据总线」来传输数据;</p></div>"},{"title":"程序的执⾏过程","content":"<p>现代⼤多数 CPU 都使⽤来流⽔线的⽅式来执⾏指令，</p><p>所谓的流⽔线就是把⼀个任务拆分成多个⼩任务，于是⼀条指令通常分为 4 个阶段，称为 4 级流⽔线</p><ul><li>取指令</li></ul><ul><li>CPU 的 控制单元向 地址总线 发送 PC 中的地址，从内存中找到 待执⾏指令；</li></ul><ul><li>并将 待执⾏指令 通过 数据总线 传⼊到 CPU 中的 指令寄存器 中</li></ul><ul><li>⾃动更新 PC，指向下⼀条待执⾏指令的地址</li></ul><ul><li>译指（分析指令）</li></ul><ul><li>CPU分析「指令寄存器」中的指令，确定指令的类型和参数：</li></ul><ul><li>如果是计算类型的指令，就把指令交给「逻辑运算单元」运算;</li></ul><ul><li>如果是存储类型的指令，则交由「控制单元」执⾏</li></ul><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7. 执⾏指令</p><ul><li>根据 译指的结果，把指令交给 CPU 中响应的控件（逻辑运算单元/控制单元）执⾏</li></ul><ul><li>数据回写</li></ul><ul><li>CPU 将计算结果存回寄存器或者将寄存器的值存⼊内存</li></ul><p>不同的阶段其实是由计算机中的不同组件完成的：</p><p>取指令、译指令：由 控制器 进⾏；</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">指令执⾏：</p><ul><li>算术操作、逻辑操作、数据传输、条件分⽀都是由 逻辑运算单元（运算器)完成</li></ul><ul><li>跳转语句：由 控制器（控制单元）完成</li></ul></div>"},{"title":"输⼊/输出设备","content":"<p>除了处理器，内存以及总线，计算机系统还包含各种输⼊输出设备，如键盘、⿏标、显示器以及磁盘等等。</p><p>每一个输入输出设备都通过一个控制器或者适配器与I0总线相连</p><p>青</p><p>控制器与适配器主要区别是在于它们的封装⽅式，⽆论是控制器还是适配器，它们的功能都是在 IO 设备与 IO 总线之间传递数据</p>"},{"title":"编译系统如何⼯作","content":"<p>1|linux&gt; gcc -o hello hell.c</p><ul><li>理解编译系统可以优化程序的性能。</li></ul><p>例如：⼀个switch语句是不是要⽐⼀连串的if-else要⾼效得多？函数调⽤的开销有多⼤？while循环⽐for循环更⾼效么？</p><ul><li>理解编译系统可以帮助我们理解链接过程中出现的错误</li></ul><p>例如：静态变量和全局变量的区别是什么？静态库和动态库的区别是什么？</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3、避免安全漏洞</p><p>例如：缓冲区溢出（buffer overflow）是导致互联⽹安全漏洞的主要原因，如何避免写出的代码存在安全漏洞，第⼀步就是要理解数据和控制信息在程序栈上是如何存储的，了解不严谨不规范的书写⽅式会引起什么样的后果</p></div>"},{"title":"处理器解释指令","content":"<p>处理器读并解释储存在内存中的指令</p>"},{"title":"运⾏hello程序","content":"<p>hello.c 经过编译系统得到可执⾏⽬标⽂件 hello，此时可执⾏⽬标⽂件 hello 已经存放在系统的磁盘上，那么，如何运⾏这个可执⾏⽂件呢？</p><p>在 linux 系统上运⾏可执⾏程序：打开⼀个 shell 程序，然后在 shell 中输⼊相应可执⾏程序的⽂件名。</p><pre><code class=\"language-txt\">linux&gt; ./hello </code></pre><p>shell 是⼀个命令解释程序，它输出⼀个提示符 &gt; 来等待⼀个命令⾏的输⼊，然后执⾏这个命令，如果该命令⾏的第⼀个单词不是内置的 shell 命令，那么 shell 就会假设这是⼀个可执⾏⽂件的名字，对这个⽂件进⾏加载并运⾏。</p><p>在这个例⼦中，shell 加载并且运⾏ hello 程序，屏幕上显示 hello,world 内容，hello 程序运⾏结束并退出，shell继续等待下⼀个命令的输⼊。</p>"},{"title":"程序执⾏流程","content":"<p>⾸先我们通过键盘输⼊&quot;./hello&quot; 的字符串，shell 程序会将输⼊的字符逐⼀读⼊寄存器，处理器会把 hello 这个字符串放⼊内存中。</p><p>当我们完成输⼊，按下回⻋键时，shell 程序就知道我们已经完成了命令的输⼊，然后执⾏⼀系列的指令来来加载可执⾏⽂件 hello ，这些指令将 hello 中的数据和代码从磁盘复制到内存。</p><p>数据就是我们要显示输出的 &quot;hello , world\\n&quot; ，这个复制的过程将利⽤DMA（Direct Memory Access）技术，数据可以不经过处理器，从磁盘直接到达内存。当可执⾏⽂件 hello 中的代码和数据被加载到内存中，处理器就开始执⾏ main 函数中的代码，main 函数⾮常简单，只有⼀个打印功能。</p><p>CPU会将 &quot;hello , world\\n&quot; 这个字符串从内存复制到寄存器⽂件。然后再从寄存器⽂件复制到显示设备，最终hello, world显示在屏幕上。</p><p>从 hello 程序执⾏的过程来看，系统即使执⾏如此简单的程序，数据信息仍旧需要在磁盘、内存、处理器以及 IO设备之间进⾏搬运。</p><p>数据从⼀个地⽅搬运到另外⼀个地⽅需要花费时间，系统设计⼈员的⼀个主要任务就是缩短信息搬运所花费的时间。</p>"}];
+
+const countdownEl = document.getElementById('countdown');
+const progressBar = document.getElementById('progress-bar');
+const sidebar = document.getElementById('sidebar-list');
+const sidebarPanel = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebarClose = document.getElementById('sidebar-close');
+const container = document.getElementById('knowledge-container');
+const titleEl = document.getElementById('knowledge-title');
+const nextBtn = document.getElementById('next-btn');
+const clickHint = document.getElementById('click-hint');
+const cardEl = document.getElementById('card');
+const editBtn = document.getElementById('edit-btn');
+const editModal = document.getElementById('edit-modal');
+const editModalEditor = document.getElementById('edit-modal-editor');
+const editModalClose = document.getElementById('edit-modal-close');
+const editCancelBtn = document.getElementById('edit-cancel-btn');
+const editSaveBtn = document.getElementById('edit-save-btn');
+
+let index = 0;
+let timeLeft = 30;
+let phase = 'hidden'; // hidden(仅标题)→shown(展开内容)→下一知识点
+let isEditModalOpen = false;
+const storageKey = `knowledge-point-overrides:${location.pathname}`;
+
+hydrateKnowledgePointContent();
+
+function hydrateKnowledgePointContent() {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return;
+    const overrides = JSON.parse(saved);
+    if (!Array.isArray(overrides)) return;
+    overrides.forEach((content, i) => {
+      if (typeof content === 'string' && knowledgePoints[i]) {
+        knowledgePoints[i].content = content;
+      }
+    });
+  } catch (error) {
+    console.warn('Failed to load saved knowledge point edits.', error);
+  }
+}
+
+function persistKnowledgePointContent() {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(knowledgePoints.map((kp) => kp.content)));
+  } catch (error) {
+    console.warn('Failed to save knowledge point edits.', error);
+  }
+}
+
+function getDetailContentEl() {
+  return document.getElementById('detail-content');
+}
+
+function moveCaretToEnd(element) {
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function syncEditButtonState() {
+  if (editBtn) {
+    editBtn.disabled = isEditModalOpen;
+  }
+}
+
+function closeEditModal(saveChanges = false) {
+  if (!isEditModalOpen) return;
+
+  if (saveChanges && editModalEditor) {
+    const updatedContent = editModalEditor.innerHTML;
+    knowledgePoints[index].content = updatedContent;
+    const detailEl = getDetailContentEl();
+    if (detailEl) {
+      detailEl.innerHTML = updatedContent;
+    }
+    persistKnowledgePointContent();
+  }
+
+  if (editModalEditor) {
+    editModalEditor.innerHTML = '';
+  }
+
+  if (editModal) {
+    editModal.hidden = true;
+    editModal.classList.remove('open');
+  }
+
+  document.body.classList.remove('modal-open');
+  isEditModalOpen = false;
+  syncEditButtonState();
+}
+
+function openEditModal() {
+  if (isEditModalOpen || !editModal || !editModalEditor) return;
+
+  editModalEditor.innerHTML = knowledgePoints[index].content;
+  editModal.hidden = false;
+  editModal.classList.add('open');
+  document.body.classList.add('modal-open');
+  isEditModalOpen = true;
+  syncEditButtonState();
+
+  window.requestAnimationFrame(() => {
+    editModalEditor.focus();
+    moveCaretToEnd(editModalEditor);
+  });
+}
+
+if (editBtn) {
+  editBtn.addEventListener('click', openEditModal);
+}
+
+if (editModalClose) {
+  editModalClose.addEventListener('click', () => closeEditModal(false));
+}
+
+if (editCancelBtn) {
+  editCancelBtn.addEventListener('click', () => closeEditModal(false));
+}
+
+if (editSaveBtn) {
+  editSaveBtn.addEventListener('click', () => closeEditModal(true));
+}
+
+if (editModal) {
+  editModal.addEventListener('click', (event) => {
+    if (event.target === editModal) {
+      closeEditModal(false);
+    }
+  });
+}
+
+document.addEventListener('keydown', (event) => {
+  if (!isEditModalOpen) return;
+
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeEditModal(false);
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault();
+    closeEditModal(true);
+  }
+});
+
+syncEditButtonState();
+
+// ===== 侧边栏切换 =====
+function openSidebar() {
+  sidebarPanel.classList.add('open');
+  sidebarOverlay.classList.add('show');
+}
+function closeSidebar() {
+  sidebarPanel.classList.remove('open');
+  sidebarOverlay.classList.remove('show');
+}
+sidebarToggle.addEventListener('click', openSidebar);
+sidebarClose.addEventListener('click', closeSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+
+// 初始化侧边栏
+knowledgePoints.forEach((kp, i) => {
+  const li = document.createElement('li');
+  li.textContent = kp.title;
+  li.dataset.index = i;
+  li.onclick = () => {
+    closeEditModal(true);
+    index = i;
+    showKnowledge();
+    closeSidebar();
+  };
+  sidebar.appendChild(li);
+});
+
+function updateSidebarActive() {
+  const items = sidebar.querySelectorAll('li');
+  items.forEach((li, i) => {
+    li.classList.toggle('active', i === index);
+  });
+}
+
+function toggleContent(show) {
+  const detailEl = getDetailContentEl();
+  if (!detailEl) return;
+  detailEl.style.display = show ? 'block' : 'none';
+  if (clickHint) clickHint.style.display = show ? 'none' : 'block';
+}
+
+function showKnowledge() {
+  const kp = knowledgePoints[index];
+  phase = 'hidden';
+
+  // 更新粘性标题
+  titleEl.textContent = kp.title;
+  titleEl.style.cursor = 'pointer';
+
+  // 更新内容区
+  container.innerHTML = `<div id="detail-content" style="display:none;">${kp.content}</div>`;
+  if (clickHint) clickHint.style.display = 'block';
+  // 点击卡片任意空白区域都切换
+  if (window._cardClickHandler) {
+    cardEl.removeEventListener('click', window._cardClickHandler);
+  }
+  window._cardClickHandler = (e) => {
+    // 排除标题、按钮、侧边栏切换、正文编辑区等交互元素
+    const ignoreTags = ['BUTTON', 'H2'];
+    if (ignoreTags.includes(e.target.tagName)) return;
+    if (isEditModalOpen || e.target.closest('#detail-content')) return;
+    if (e.target.closest('.next-btn') || e.target.closest('.sidebar-toggle') || e.target.closest('.countdown')) return;
+    const detailEl = getDetailContentEl();
+    if (detailEl) {
+      const isHidden = detailEl.style.display === 'none';
+      toggleContent(isHidden);
+    }
+  };
+  cardEl.addEventListener('click', window._cardClickHandler);
+
+  // 重置计时
+  timeLeft = 30;
+  countdownEl.textContent = timeLeft;
+  progressBar.style.width = '0%';
+  updateSidebarActive();
+}
+
+function goToNext() {
+  stopEditing(true);
+  index = (index + 1) % knowledgePoints.length;
+  showKnowledge();
+}
+
+nextBtn.addEventListener('click', goToNext);
+
+setupTtsPlayer({
+  pageId: 'operating-system',
+  knowledgePoints,
+  getIndex: () => index,
+  navigateToIndex: (targetIndex) => {
+    closeEditModal(true);
+    index = targetIndex;
+    showKnowledge();
+  },
+  ensureExpanded: () => toggleContent(true),
+  apiUrl: '/api/tts'
+});
+
+// 初始显示
+showKnowledge();
+
+// 每秒倒计时
+setInterval(() => {
+  if (isEditModalOpen) return;
+  if (timeLeft > 0) {
+    timeLeft--;
+    countdownEl.textContent = timeLeft;
+    progressBar.style.width = `${((30 - timeLeft) / 30) * 100}%`;
+  } else {
+    if (phase === 'hidden') {
+      // 30秒结束 → 自动展开内容
+      toggleContent(true);
+      phase = 'shown';
+      timeLeft = 30;
+      countdownEl.textContent = timeLeft;
+      progressBar.style.width = '0%';
+    } else {
+      // 再30秒结束 → 收起内容
+      toggleContent(false);
+      phase = 'hidden';
+      timeLeft = 30;
+      countdownEl.textContent = timeLeft;
+      progressBar.style.width = '0%';
+    }
+  }
+}, 1000);
+</script>
+</body>
+</html>
+
+

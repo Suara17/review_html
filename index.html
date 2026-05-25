@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>面试准备导航中心</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ffffff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #000;
+}
+#matrix-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  opacity: 0.28;
+}
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,255,255,0.02) 2px,
+    rgba(0,255,255,0.02) 4px
+  );
+}
+.page-shell {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  padding: 28px 24px 40px;
+}
+.hero {
+  max-width: 980px;
+  margin: 0 auto 24px;
+  background: rgba(0,8,16,0.82);
+  border: 1px solid rgba(0,255,255,0.18);
+  border-radius: 18px;
+  padding: 24px 24px 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+}
+.hero-kicker {
+  font-size: 0.82em;
+  letter-spacing: 2px;
+  color: rgba(0,255,255,0.76);
+  margin-bottom: 10px;
+}
+.hero h1 {
+  font-size: 1.8em;
+  color: #00ffff;
+  text-shadow: 0 0 8px rgba(0,255,255,0.35);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.hero p {
+  color: rgba(255,255,255,0.82);
+  line-height: 1.8;
+  font-size: 1em;
+}
+.card-grid {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.nav-card {
+  background: rgba(0,10,20,0.78);
+  border: 1px solid rgba(0,255,255,0.18);
+  border-radius: 18px;
+  padding: 18px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.24);
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+}
+.nav-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0,255,255,0.34);
+  box-shadow: 0 0 24px rgba(0,255,255,0.12), 0 12px 28px rgba(0,0,0,0.3);
+}
+.card-tag {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 12px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,255,255,0.26);
+  background: rgba(0,255,255,0.08);
+  color: #00ffff;
+  font-size: 0.8em;
+  letter-spacing: 0.5px;
+}
+.nav-card h2 {
+  font-size: 1.08em;
+  line-height: 1.5;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+.route {
+  color: rgba(0,255,255,0.82);
+  font-size: 0.84em;
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+.description {
+  color: rgba(255,255,255,0.82);
+  line-height: 1.72;
+  font-size: 0.95em;
+  flex: 1;
+}
+.enter-btn {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: bold;
+  color: #00ffff;
+  background: rgba(0,255,255,0.14);
+  border: 1px solid rgba(0,255,255,0.36);
+  transition: all 0.25s;
+}
+.enter-btn:hover {
+  background: rgba(0,255,255,0.22);
+  box-shadow: 0 0 20px rgba(0,255,255,0.16);
+}
+@media (max-width: 900px) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .page-shell {
+    padding: 16px 14px 28px;
+  }
+  .hero {
+    padding: 18px 16px 16px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-size: 1.28em;
+  }
+  .hero p {
+    font-size: 0.92em;
+    line-height: 1.68;
+  }
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .nav-card {
+    min-height: auto;
+    border-radius: 16px;
+    padding: 16px;
+  }
+}
+</style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+<div class="page-shell">
+  <section class="hero">
+    <div class="hero-kicker">INTERVIEW HUB</div>
+    <h1>知识点 / 项目面试导航页</h1>
+    <p>这里统一放面试准备相关页面，直接点击对应卡片进入。后面新增页面时，再补到这里即可。</p>
+  </section>
+  <main class="card-grid" id="card-grid"></main>
+</div>
+<script>
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789<>/{}[]|&^%$#@!';
+const fontSize = 14;
+const columns = Math.floor(canvas.width / fontSize);
+const drops = [];
+for (let i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * -canvas.height / fontSize);
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00ffff';
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#00ffff';
+  ctx.font = fontSize + 'px monospace';
+  for (let i = 0; i < drops.length; i++) {
+    const text = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillStyle = i % 3 === 0 ? '#00ffaa' : '#00ffff';
+    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 35);
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  drops.length = 0;
+  const newCols = Math.floor(canvas.width / fontSize);
+  for (let i = 0; i < newCols; i++) drops[i] = Math.floor(Math.random() * -canvas.height / fontSize);
+});
+const pages = [
+  {
+    title: 'Python 高频知识点',
+    category: '知识点速刷',
+    route: '/python-notes',
+    localPath: './python.html',
+    description: '保留原来的 Python 精讲页，适合按目录快速回顾高频八股。'
+  },
+  {
+    title: '天工·弈控项目面试讲稿',
+    category: '项目面试',
+    route: '/guanlan',
+    localPath: './guanlan.html',
+    description: '围绕项目背景、个人职责、关键决策、结果量化和复盘成长整理的讲稿页。'
+  },
+  {
+    title: 'Learning Research Agent 面试讲稿',
+    category: '项目面试',
+    route: '/learning-research-agent',
+    localPath: './learning-research-agent.html',
+    description: '围绕比赛背景、技术路线、控制策略、结果量化和复盘整理的 Agent 项目讲稿页。'
+  },
+  {
+    title: '计算机网络知识点',
+    category: '计算机基础八股',
+    route: '/computer-network',
+    localPath: './computer-network.html',
+    description: '按细颗粒拆分浏览器输入 URL、DNS、HTTP、HTTPS、TCP/UDP、IP 等高频网络问题。'
+  },
+  {
+    title: '操作系统知识点',
+    category: '计算机基础八股',
+    route: '/operating-system',
+    localPath: './operating-system.html',
+    description: '覆盖操作系统基础、进程线程、内存管理、调度、并发、Linux 与字符编码等内容。'
+  },
+  {
+    title: 'MySQL 高频知识点',
+    category: '计算机基础八股',
+    route: '/mysql-topics',
+    localPath: './mysql-topics.html',
+    description: '集中整理 MySQL 基础、索引、事务、锁、主从复制、分库分表与架构升级问题。'
+  },
+  {
+    title: 'Redis 高频知识点',
+    category: '计算机基础八股',
+    route: '/redis-topics',
+    localPath: './redis-topics.html',
+    description: '围绕数据类型、持久化、缓存、哨兵、集群、分布式锁与淘汰策略展开。'
+  },
+  {
+    title: '设计模式知识点',
+    category: '计算机基础八股',
+    route: '/design-patterns-topics',
+    localPath: './design-patterns-topics.html',
+    description: '整理常见设计模式、设计原则以及代理、适配器等高频问答。'
+  },
+  {
+    title: '场景题与系统设计',
+    category: '计算机基础八股',
+    route: '/system-design-topics',
+    localPath: './system-design-topics.html',
+    description: '聚合高频场景题、系统设计题以及秒杀、高性能架构等面试思路。'
+  }
+];
+const cardGrid = document.getElementById('card-grid');
+function getLink(page) {
+  const isLocalStatic = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' || window.location.protocol === 'file:';
+  return isLocalStatic ? page.localPath : page.route;
+}
+pages.forEach((page) => {
+  const card = document.createElement('article');
+  card.className = 'nav-card';
+  card.innerHTML = `
+    <span class="card-tag">${page.category}</span>
+    <h2>${page.title}</h2>
+    <div class="route">${page.route}</div>
+    <p class="description">${page.description}</p>
+    <a class="enter-btn" href="${getLink(page)}">进入页面</a>
+  `;
+  cardGrid.appendChild(card);
+});
+</script>
+</body>
+</html>

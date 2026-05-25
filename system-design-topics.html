@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>系统设计场景题动态展示 - 精讲版</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ffffff;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* ===== 数字雨背景 ===== */
+#matrix-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  opacity: 0.3;
+}
+
+/* ===== 扫描线覆盖 ===== */
+.scanlines {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,255,255,0.02) 2px,
+    rgba(0,255,255,0.02) 4px
+  );
+}
+
+/* ===== 主内容 & 侧边栏 ===== */
+.main-content, .sidebar { position: relative; z-index: 2; }
+
+/* ----- 桌面端主区域 ----- */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 粘性头部：进度条 + 标题 */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(0,8,16,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(0,255,255,0.2);
+}
+
+.sticky-header .progress-bar-container {
+  width: 100%;
+  height: 5px;
+  background: rgba(0,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.sticky-header .progress-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #00ffff, #00ccff, #00ffff);
+  box-shadow: 0 0 12px #00ffff, 0 0 24px rgba(0,255,255,0.4);
+  transition: width 1s linear;
+  background-size: 200% 100%;
+  animation: progressGlow 2s ease infinite;
+  border-radius: 3px;
+}
+@keyframes progressGlow {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+#knowledge-title {
+  font-size: 1.1em;
+  color: #00ffff;
+  text-shadow: 0 0 8px rgba(0,255,255,0.4);
+  cursor: pointer;
+  padding-right: 60px;
+  line-height: 1.4;
+  min-height: 1.6em;
+}
+#knowledge-title:hover {
+  text-shadow: 0 0 15px #00ffff, 0 0 30px rgba(0,255,255,0.3);
+}
+
+/* 卡片（滚动区域） */
+.card {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px 80px;
+  background: rgba(0,10,20,0.35);
+  margin: 0;
+  position: relative;
+}
+
+.card .content {
+  font-size: 1.18em;
+  line-height: 1.85em;
+}
+.card .content strong {
+  color: #00ffcc;
+  text-shadow: 0 0 8px rgba(0,255,204,0.4);
+}
+
+/* 倒计时（固定在头部右侧） */
+.countdown {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  font-size: 1.3em;
+  background: rgba(0,255,255,0.12);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 6px 16px;
+  border-radius: 10px;
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.5);
+  font-weight: bold;
+  border: 1px solid rgba(0,255,255,0.4);
+  letter-spacing: 1px;
+  z-index: 11;
+}
+
+/* ===== 下一个按钮 ===== */
+.next-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 30px;
+  z-index: 20;
+  background: rgba(0,255,255,0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0,255,255,0.4);
+  color: #00ffff;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 1.05em;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s;
+  text-shadow: 0 0 8px rgba(0,255,255,0.5);
+  letter-spacing: 1px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.next-btn:hover {
+  background: rgba(0,255,255,0.25);
+  box-shadow: 0 0 30px rgba(0,255,255,0.3), 0 4px 20px rgba(0,0,0,0.5);
+  transform: scale(1.05);
+}
+.next-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===== 侧边栏 ===== */
+.sidebar {
+  width: 340px;
+  background: rgba(0,10,20,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 20px;
+  overflow-y: auto;
+  border-left: 2px solid rgba(0,255,255,0.3);
+  position: relative;
+  z-index: 2;
+}
+.sidebar h3 {
+  color: #00ffff;
+  text-align: center;
+  margin-top: 0;
+  text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.3);
+  font-size: 1.15em;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,255,255,0.15);
+  letter-spacing: 2px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(0,255,255,0.15);
+  padding-bottom: 12px;
+}
+.sidebar-header h3 {
+  text-align: left;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  color: #00ffff;
+  font-size: 1.4em;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.3s;
+}
+.sidebar-close:hover {
+  background: rgba(0,255,255,0.15);
+}
+
+.sidebar ul {
+  list-style: none;
+}
+.sidebar li {
+  padding: 12px 16px;
+  margin: 5px 0;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.3s;
+  font-size: 1em;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.sidebar li::before {
+  content: '>';
+  position: absolute;
+  left: -20px;
+  color: #00ffff;
+  opacity: 0;
+  transition: all 0.3s;
+}
+.sidebar li:hover {
+  background: rgba(0,255,255,0.15);
+  border-color: rgba(0,255,255,0.3);
+  transform: translateX(12px);
+  box-shadow: 0 0 20px rgba(0,255,255,0.1);
+}
+.sidebar li:hover::before {
+  left: 6px;
+  opacity: 1;
+}
+.sidebar li.active {
+  background: rgba(0,255,255,0.12);
+  border-color: rgba(0,255,255,0.4);
+}
+
+/* ===== 侧边栏切换按钮（手机端显示） ===== */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 30;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(0,255,255,0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0,255,255,0.4);
+  color: #00ffff;
+  font-size: 1.5em;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+}
+.sidebar-toggle:hover {
+  background: rgba(0,255,255,0.25);
+  box-shadow: 0 0 30px rgba(0,255,255,0.2), 0 4px 20px rgba(0,0,0,0.5);
+}
+.sidebar-toggle:active {
+  transform: scale(0.9);
+}
+
+/* 侧边栏遮罩 */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.6);
+  z-index: 25;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); border-radius: 3px; }
+
+/* ===== 内容操作 ===== */
+.content-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.edit-btn,
+.edit-modal-close,
+.edit-modal-btn {
+  border: 1px solid rgba(0,255,255,0.35);
+  background: rgba(0,255,255,0.12);
+  color: #00ffff;
+}
+
+.edit-btn,
+.edit-modal-btn {
+  min-width: 72px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 0.92em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.edit-btn:hover,
+.edit-modal-btn:hover {
+  background: rgba(0,255,255,0.2);
+  box-shadow: 0 0 18px rgba(0,255,255,0.18);
+}
+
+.edit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+#click-hint {
+  margin-top: 12px;
+  font-size: 0.85em;
+  opacity: 0.35;
+  color: #00ffff;
+}
+
+.edit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,0.72);
+}
+
+.edit-modal[hidden] {
+  display: none;
+}
+
+.edit-modal.open {
+  display: flex;
+}
+
+.edit-modal-panel {
+  width: min(860px, 100%);
+  max-height: min(80vh, 760px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,12,24,0.96);
+  border: 1px solid rgba(0,255,255,0.24);
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.45);
+  overflow: hidden;
+}
+
+.edit-modal-header,
+.edit-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: rgba(0,255,255,0.06);
+}
+
+.edit-modal-header h3 {
+  margin: 0;
+  font-size: 1em;
+  color: #9fffe7;
+}
+
+.edit-modal-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+.edit-modal-body {
+  padding: 18px;
+  overflow: auto;
+}
+
+.edit-modal-editor {
+  min-height: 280px;
+  padding: 18px;
+  border: 1px solid rgba(0,255,255,0.18);
+  border-radius: 14px;
+  background: rgba(0,0,0,0.38);
+  color: #ffffff;
+  line-height: 1.8;
+  outline: none;
+}
+
+.edit-modal-editor:focus {
+  border-color: rgba(0,255,255,0.45);
+  box-shadow: 0 0 20px rgba(0,255,255,0.16);
+}
+
+.edit-modal-editor strong {
+  color: #00ffcc;
+}
+
+.edit-modal-editor p {
+  margin: 0 0 1em;
+}
+
+.edit-modal-editor ul,
+.edit-modal-editor ol {
+  margin: 0 0 1.2em 1.4em;
+}
+
+.edit-modal-editor li {
+  margin-bottom: 0.45em;
+}
+
+.edit-modal-editor .embedded-entry {
+  margin: 0 0 1.1em;
+}
+
+.edit-modal-editor .embedded-entry-title {
+  margin: 0 0 0.55em;
+  color: #9fffe7;
+  font-weight: 700;
+}
+
+.edit-modal-editor pre {
+  margin: 0 0 1.2em;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0,255,255,0.16);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+  line-height: 1.7;
+}
+
+.edit-modal-editor code {
+  font-family: 'Consolas', 'SFMono-Regular', monospace;
+  color: #9fffe7;
+}
+
+.edit-modal-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+
+.edit-modal-editor th,
+.edit-modal-editor td {
+  border: 1px solid rgba(0,255,255,0.18);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.edit-modal-editor th {
+  background: rgba(0,255,255,0.08);
+  color: #9fffe7;
+}
+
+.edit-modal-actions {
+  justify-content: flex-end;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+/* ===== 手机适配 ===== */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #matrix-canvas { opacity: 0.15; }
+
+  .main-content {
+    flex: 1;
+    height: 100vh;
+  }
+
+  .sticky-header {
+    padding: 10px 14px 10px;
+  }
+  .sticky-header .progress-bar-container {
+    height: 4px;
+    margin-bottom: 8px;
+  }
+  #knowledge-title {
+    font-size: 0.95em;
+    padding-right: 50px;
+  }
+
+  .card {
+    padding: 14px 14px 90px;
+  }
+  .card .content {
+    font-size: 0.95em;
+    line-height: 1.6em;
+  }
+
+  .countdown {
+    top: 10px;
+    right: 14px;
+    font-size: 1.05em;
+    padding: 4px 12px;
+  }
+
+  .next-btn {
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 22px;
+    font-size: 0.9em;
+  }
+
+  /* 侧边栏切换按钮始终显示（手机端） */
+  .sidebar-toggle {
+    display: flex;
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  /* 侧边栏：从左侧滑入覆盖 */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100vh;
+    z-index: 30;
+    border-left: none;
+    border-right: 2px solid rgba(0,255,255,0.3);
+    padding: 16px;
+    transition: left 0.3s ease;
+    background: rgba(0,8,16,0.92);
+  }
+  .sidebar.open {
+    left: 0;
+  }
+  .sidebar-close {
+    display: block;
+  }
+  .sidebar ul {
+    padding-bottom: 60px;
+  }
+  .sidebar li {
+    padding: 10px 14px;
+    font-size: 0.92em;
+    margin: 3px 0;
+  }
+
+  .sidebar-overlay.show {
+    display: block;
+    opacity: 1;
+  }
+
+  
+#click-hint {
+    font-size: 0.78em;
+    margin-top: 14px;
+  }
+}
+
+.content p { margin: 0 0 1em; }
+.content ul, .content ol { margin: 0 0 1.2em 1.4em; }
+.content li { margin-bottom: 0.45em; }
+.content .embedded-entry { margin: 0 0 1.1em; }
+.content .embedded-entry-title {
+  margin: 0 0 0.55em;
+  color: #9fffe7;
+  font-weight: 700;
+}
+.content pre {
+  margin: 0 0 1.2em;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0,255,255,0.16);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+  line-height: 1.7;
+}
+.content code {
+  font-family: 'Consolas', 'SFMono-Regular', monospace;
+  color: #9fffe7;
+}
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+.content th, .content td {
+  border: 1px solid rgba(0,255,255,0.18);
+  padding: 8px 10px;
+  text-align: left;
+}
+.content th {
+  background: rgba(0,255,255,0.08);
+  color: #9fffe7;
+}
+</style>
+</head>
+<body>
+
+<!-- 数字雨 Canvas -->
+<canvas id="matrix-canvas"></canvas>
+<!-- 扫描线叠层 -->
+<div class="scanlines"></div>
+
+<div class="main-content">
+  <!-- 粘性头部：进度条 + 标题 -->
+  <div class="sticky-header">
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <h2 id="knowledge-title" onclick="toggleContent(true)">加载中...</h2>
+  </div>
+
+  <!-- 倒计时（固定在头部右上角） -->
+  <div class="countdown" id="countdown">30</div>
+
+  <!-- 卡片（滚动区域） -->
+  <div class="card" id="card">
+    <div id="knowledge-container" class="content"></div>
+    <div class="content-toolbar">
+      <button class="edit-btn" id="edit-btn" type="button">修改</button>
+    </div>
+    <div id="click-hint">点标题展开，点修改编辑</div>
+  </div>
+
+  <button class="next-btn" id="next-btn">下一个 →</button>
+</div>
+
+
+<div class="edit-modal" id="edit-modal" hidden>
+  <div class="edit-modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div class="edit-modal-header">
+      <h3 id="edit-modal-title">修改内容</h3>
+      <button class="edit-modal-close" id="edit-modal-close" type="button">✕</button>
+    </div>
+    <div class="edit-modal-body">
+      <div class="edit-modal-editor" id="edit-modal-editor" contenteditable="true" spellcheck="false"></div>
+    </div>
+    <div class="edit-modal-actions">
+      <button class="edit-modal-btn" id="edit-cancel-btn" type="button">取消</button>
+      <button class="edit-modal-btn" id="edit-save-btn" type="button">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 侧边栏（桌面端侧栏 / 手机端滑动抽屉） -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>场景题与系统设计</h3>
+    <button class="sidebar-close" id="sidebar-close">✕</button>
+  </div>
+  <ul id="sidebar-list"></ul>
+</div>
+
+<!-- 侧边栏切换按钮（手机端） -->
+<button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+
+<script src="./tts-player.js"></script>
+<script>
+// ===== 数字雨背景动画 =====
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789<>/{}[]|&^%$#@!';
+const fontSize = 14;
+const columns = Math.floor(canvas.width / fontSize);
+const drops = [];
+for (let i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * -canvas.height / fontSize);
+
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00ffff';
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#00ffff';
+  ctx.font = fontSize + 'px monospace';
+  for (let i = 0; i < drops.length; i++) {
+    const text = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillStyle = i % 3 === 0 ? '#00ffaa' : '#00ffff';
+    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+
+let matrixInterval = setInterval(drawMatrix, 35);
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  drops.length = 0;
+  const newCols = Math.floor(canvas.width / fontSize);
+  for (let i = 0; i < newCols; i++) drops[i] = Math.floor(Math.random() * -canvas.height / fontSize);
+});
+
+// ===== 知识点展示逻辑 =====
+const knowledgePoints = [{"title":"如何设计⼀个⾼性能的系统","content":"<p>后台服务架构⾼性能设计之道</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 秒杀系统场景特点</p><p>秒杀⼀般是访问请求数量远远⼤于库存数量，只有少部分⽤户能够秒杀成功</p><p>秒杀时⼤量⽤户会在同⼀时间同时进⾏抢购，⽹站瞬时访问流量激增</p><p>秒杀业务流程⽐较简单，⼀般就是下订单减库存</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 秒杀架构设计理念</p><p>限流： 鉴于只有少部分⽤户能够秒杀成功，所以要限制⼤部分流量，只允许少部分流量进⼊服务后端秒杀程序。</p><p>削峰：对于秒杀系统瞬时会有⼤量⽤户涌⼊，所以在抢购⼀开始会有很⾼的瞬间峰值。⾼峰值流量是压垮系统很重要的原因，所以如何把瞬间的⾼流量变成⼀段时间平稳的流量也是设计秒杀系统很重要的思路。实现削峰的常⽤的⽅法有前端添加⼀定难度的验证码后端利⽤缓存和消息中间件等技术。</p><p>异步处理：秒杀系统是⼀个⾼并发系统，采⽤异步处理模式可以极⼤地提⾼系统并发量，其实异步处理就是削峰的⼀种实现⽅式。</p><p>内存缓存：秒杀系统最⼤的瓶颈⼀般都是数据库读写，由于数据库读写属于磁盘IO，性能很低，如果能够把部分数据或业务逻辑转移到内存缓存，效率会有极⼤地提升。</p><p>可拓展：当然如果我们想⽀持更多⽤户，更⼤的并发，最好就将系统设计成弹性可拓展的，如果流量来了，拓展机器就好了。像淘宝、京东等双⼗⼀活动时会增加⼤量机器应对交易⾼峰。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. 架构⽅案</p><p>⼀般的秒杀系统架构</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. 设计思路</p><p>将请求拦截在系统上游，降低下游压⼒：秒杀系统特点是并发量极⼤，但实际秒杀成功的请求数量却很少，所以如果不在前端拦截很可能造成数据库读写锁冲突，甚⾄导致死锁，最终请求超时</p><p>充分利⽤缓存：利⽤缓存预减库存，拦截掉⼤部分请求</p><p>消息队列：这是⼀个异步处理过程，后台业务根据⾃⼰的处理能⼒，从消息队列中主动的拉取请求消息进⾏业务处理</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5. 前端⽅案</p><p>⻚⾯静态化：将活动⻚⾯上的所有可以静态的元素全部静态化，并尽量减少动态元素。通过CDN来抗峰值。</p><p>禁⽌重复提交：⽤户提交之后按钮置灰，禁⽌重复提交</p><p>⽤户限流：在某⼀时间段内只允许⽤户提交⼀次请求，⽐如可以采取IP限流</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6. 后端⽅案</p><p>服务端控制器层(⽹关层)</p><p>限制uid（UserID）访问频率：我们上⾯拦截了浏览器访问的请求，但针对某些恶意攻击或其它插件，在服务端控制层需要针对同⼀个访问uid，限制访问频率。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7. 服务层</p><p>上⾯只拦截了⼀部分访问请求，当秒杀的⽤户量很⼤时，即使每个⽤户只有⼀个请求，到服务层的请求数量还是很⼤。⽐如我们有100W⽤户同时抢100台⼿机，服务层并发请求压⼒⾄少为100W。</p><p>把需要秒杀的商品的主要信息以及库存初始化到redis缓存中</p><p>做请求合法性的校验（⽐如是否登录），如果请求⾮法，直接给前端返回错误码，进⾏相应的提示</p><p>进⾏内存标识的判断(true 已经秒杀结束，false 未秒杀结束，下⾯第4步会写⼊)，如果内存标识为true，直接返回秒杀结束</p><p>redis中使⽤decr 进⾏预减库存操作，判断：如果decr后库存量⼩于0，则把内存标记置为true(已经秒杀结束，第3步会⽤到)，且返回秒杀结束</p><p>⽤redis的布隆过滤器来判断是否已经秒杀到了（下⾯第7步会写⼊），防⽌重复秒杀，如果重复秒杀，直接返回重复秒杀的错误码。具体做法是：先⽤redis的布隆过滤器来判断是否秒杀过，如果布隆过滤器判断已经秒杀过了， 则再次查库确认是否秒杀过了，之所以再次查库确认是因为布隆过滤器对可能存在的数据是有误判率的；但是它对不存在的数据的判断是百分百准确的，所以如果redis的布隆过滤器判断没秒杀过，就直接放</p><p>过去进⾏秒杀</p><p>发送成功秒杀到的MQ消息给相应的业务端进⾏处理，并给⽤户端返回排队中，如果客户端收到排队中的消息，则⾃动进⾏轮询查询，直到返回秒杀成功或者秒杀失败为⽌</p><p>相应的业务端进⾏处理：真正处理秒杀的业务端，再次进⾏校验（⽐如秒杀是否结束，库存是否充⾜等）、将⽤户和商品id作为key存⼊redis的布隆过滤器来标识该⽤户秒杀该商品成功（第5步会⽤到）、减库存（这⾥的是真正的减库存，操作数据库的库存）、⽣成秒杀订单、返回秒杀成功</p><p>注意：就算请求⾛到了真正处理业务的这⼀端，也有可能秒杀失败，⽐如秒杀结束，库存不⾜，真正减库存失败，秒杀单⽣成失败等等，⼀旦失败，则返回秒杀结束</p><p>优化：将秒杀接⼝隐藏：⽤户点击秒杀按钮的时候，根据⽤户id⽣成唯⼀的加密串存⼊缓存并返回给客户端，然后客户端再次请求的时候带着加密串过来，后端进⾏校验是否合法，若不合法，直接返回请求⾮法；</p><p>限制某个接⼝的访问频率：可以⽤拦截器配合⾃定义注解来实现，这么做可以和具体的业务分离减少⼊侵，使⽤起来也⾮常⽅便</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">8. 数据库层</p><p>数据库层是最脆弱的⼀层，⼀般在应⽤设计时在上游就需要把请求拦截掉，数据库层只承担“能⼒范围内”的访问请求。所以，上⾯通过在服务层引⼊队列和缓存，让最底层的数据库⾼枕⽆忧</p><p>为防⽌秒杀出现负数订单数⼤于真正的库存数，所以在真正减库存，update库存的时候应该加上where 库存&gt;0，⽽且需要给秒杀订单表加上⽤户id和商品id联合的唯⼀索引</p></div>"},{"title":"如何设计⼀个本地缓存","content":"<p>想要设计⼀个本地缓存，考虑点主要在数据⽤何种⽅式存储，能存储多少数据，多余的数据如何处理等⼏个点，下⾯我们来详细的介绍每个考虑点：</p><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">1. 数据结构</p><p>⾸要考虑的就是数据该如何存储，⽤什么数据结构存储。最简单的就直接⽤Map来存储数据，或者复杂的如redis⼀样提供了多种数据类型哈希，列表，集合，有序集合等，底层使⽤了双端链表，压缩列表，集合，跳跃表等数据结构。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">2. 对象上限</p><p>因为是本地缓存，内存有上限，所以⼀般都会指定缓存对象的数量⽐如1024，当达到某个上限后需要有某种策略去删除多余的数据。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">3. 清除策略</p><p>上⾯说到当达到对象上限之后需要有清除策略，常⻅的⽐如有LRU(最近最少使⽤)、FIFO(先进先出)、LFU(最近最不常⽤)、SOFT(软引⽤)、WEAK(弱引⽤)等策略。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">4. 过期时间</p><p>除了使⽤清除策略，⼀般本地缓存也会有⼀个过期时间设置，⽐如redis可以给每个key设置⼀个过期时间，这样当达到过期时间之后直接删除，采⽤清除策略+过期时间双重保证。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">5. 线程安全</p><p>像redis是直接使⽤单线程处理，所以就不存在线程安全问题。⽽我们现在提供的本地缓存往往是可以多个线程同时访问的，所以线程安全是不容忽视的问题，并且线程安全问题是不应该抛给使⽤者去保证。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">6. 简明的接⼝</p><p>提供⼀个傻⽠式的对外接⼝是很有必要的，对使⽤者来说使⽤此缓存不是⼀种负担⽽是⼀种享受，提供常⽤的get，put，remove，clear，getSize等⽅法即可。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">7. 是否持久化</p><p>这个其实不是必须的，是否需要将缓存数据持久化看需求。本地缓存如ehcache是⽀持持久化的，⽽guava是没有持久化功能的。分布式缓存如redis是有持久化功能的，memcached是没有持久化功能的。</p></div><div class=\"embedded-entry\"><p class=\"embedded-entry-title\">8. 阻塞机制</p><p>我们使⽤缓存的⽬的就是因为被缓存的数据⽣成⽐较费时，⽐如调⽤对外的接⼝，查询数据库，计算量很⼤的结果等等。这时候如果多个线程同时调⽤get⽅法获取的结果都为null，每个线程都去执⾏⼀遍费时的计算，其实也是对资源的浪费。最好的办法是只有⼀个线程去执⾏，其他线程等待，计算⼀次就够了。但是此功能基本上都交给使⽤者来处理，很少有本地缓存有这种功能。</p></div>"},{"title":"如何设计⼀个RPC框架","content":"<ul><li>定义RPC接⼝： 定义服务接⼝及其⽅法。这是RPC的核⼼，决定了客户端可以调⽤哪些⽅法。</li></ul><ul><li>选择通信协议： 选择合适的通信协议，如HTTP/REST、TCP、UDP等。不同的协议有不同的优劣势，取决于你的应⽤需求。</li></ul><ul><li>选择序列化协议： 选择序列化协议，将数据转换为字节流以在⽹络上传输。常⻅的有JSON、Protobuf、Thrift等。考虑效率、可读性和平台兼容性。</li></ul><ul><li>实现远程调⽤： 实现将RPC请求发送到远程服务并接收响应的机制。这可能涉及到⽹络通信、数据解析和错误处理。</li></ul><ul><li>服务注册与发现： 提供服务注册中⼼，使服务能够动态注册和发现。Zookeeper、Consul、etcd等⼯具可以⽤于服务注册与发现。</li></ul><ul><li>负载均衡： 实现负载均衡机制，确保请求在多个服务节点之间分布均匀。常⻅的负载均衡算法有轮询、随机、最⼩连接数等。</li></ul><ul><li>安全性： 考虑数据在传输中的安全性，可以使⽤加密协议（如TLS/SSL）来保护通信。</li></ul><ul><li>错误处理： 设计良好的错误处理机制，包括定义错误码、异常传播和⽇志记录。确保客户端能够得知发⽣了什么问题。</li></ul><ul><li>性能优化： 考虑并发性、延迟和吞吐量等性能⽅⾯的问题。使⽤连接池、异步IO等技术进⾏优化。</li></ul><ul><li>监控和⽇志： 实现监控和⽇志记录，以便及时发现问题并进⾏故障排除。集成⽇志系统和监控⼯具，如Prometheus、Grafana等。</li></ul>"},{"title":"微信红包怎么设计？","content":"<p>微信红包架构设计</p>"},{"title":"扫码登录怎么设计？","content":"<p>扫码登录流程</p>"}];
+
+const countdownEl = document.getElementById('countdown');
+const progressBar = document.getElementById('progress-bar');
+const sidebar = document.getElementById('sidebar-list');
+const sidebarPanel = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebarClose = document.getElementById('sidebar-close');
+const container = document.getElementById('knowledge-container');
+const titleEl = document.getElementById('knowledge-title');
+const nextBtn = document.getElementById('next-btn');
+const clickHint = document.getElementById('click-hint');
+const cardEl = document.getElementById('card');
+const editBtn = document.getElementById('edit-btn');
+const editModal = document.getElementById('edit-modal');
+const editModalEditor = document.getElementById('edit-modal-editor');
+const editModalClose = document.getElementById('edit-modal-close');
+const editCancelBtn = document.getElementById('edit-cancel-btn');
+const editSaveBtn = document.getElementById('edit-save-btn');
+
+let index = 0;
+let timeLeft = 30;
+let phase = 'hidden'; // hidden(仅标题)→shown(展开内容)→下一知识点
+let isEditModalOpen = false;
+const storageKey = `knowledge-point-overrides:${location.pathname}`;
+
+hydrateKnowledgePointContent();
+
+function hydrateKnowledgePointContent() {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return;
+    const overrides = JSON.parse(saved);
+    if (!Array.isArray(overrides)) return;
+    overrides.forEach((content, i) => {
+      if (typeof content === 'string' && knowledgePoints[i]) {
+        knowledgePoints[i].content = content;
+      }
+    });
+  } catch (error) {
+    console.warn('Failed to load saved knowledge point edits.', error);
+  }
+}
+
+function persistKnowledgePointContent() {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(knowledgePoints.map((kp) => kp.content)));
+  } catch (error) {
+    console.warn('Failed to save knowledge point edits.', error);
+  }
+}
+
+function getDetailContentEl() {
+  return document.getElementById('detail-content');
+}
+
+function moveCaretToEnd(element) {
+  const selection = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+
+function syncEditButtonState() {
+  if (editBtn) {
+    editBtn.disabled = isEditModalOpen;
+  }
+}
+
+function closeEditModal(saveChanges = false) {
+  if (!isEditModalOpen) return;
+
+  if (saveChanges && editModalEditor) {
+    const updatedContent = editModalEditor.innerHTML;
+    knowledgePoints[index].content = updatedContent;
+    const detailEl = getDetailContentEl();
+    if (detailEl) {
+      detailEl.innerHTML = updatedContent;
+    }
+    persistKnowledgePointContent();
+  }
+
+  if (editModalEditor) {
+    editModalEditor.innerHTML = '';
+  }
+
+  if (editModal) {
+    editModal.hidden = true;
+    editModal.classList.remove('open');
+  }
+
+  document.body.classList.remove('modal-open');
+  isEditModalOpen = false;
+  syncEditButtonState();
+}
+
+function openEditModal() {
+  if (isEditModalOpen || !editModal || !editModalEditor) return;
+
+  editModalEditor.innerHTML = knowledgePoints[index].content;
+  editModal.hidden = false;
+  editModal.classList.add('open');
+  document.body.classList.add('modal-open');
+  isEditModalOpen = true;
+  syncEditButtonState();
+
+  window.requestAnimationFrame(() => {
+    editModalEditor.focus();
+    moveCaretToEnd(editModalEditor);
+  });
+}
+
+if (editBtn) {
+  editBtn.addEventListener('click', openEditModal);
+}
+
+if (editModalClose) {
+  editModalClose.addEventListener('click', () => closeEditModal(false));
+}
+
+if (editCancelBtn) {
+  editCancelBtn.addEventListener('click', () => closeEditModal(false));
+}
+
+if (editSaveBtn) {
+  editSaveBtn.addEventListener('click', () => closeEditModal(true));
+}
+
+if (editModal) {
+  editModal.addEventListener('click', (event) => {
+    if (event.target === editModal) {
+      closeEditModal(false);
+    }
+  });
+}
+
+document.addEventListener('keydown', (event) => {
+  if (!isEditModalOpen) return;
+
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeEditModal(false);
+  }
+
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault();
+    closeEditModal(true);
+  }
+});
+
+syncEditButtonState();
+
+// ===== 侧边栏切换 =====
+function openSidebar() {
+  sidebarPanel.classList.add('open');
+  sidebarOverlay.classList.add('show');
+}
+function closeSidebar() {
+  sidebarPanel.classList.remove('open');
+  sidebarOverlay.classList.remove('show');
+}
+sidebarToggle.addEventListener('click', openSidebar);
+sidebarClose.addEventListener('click', closeSidebar);
+sidebarOverlay.addEventListener('click', closeSidebar);
+
+// 初始化侧边栏
+knowledgePoints.forEach((kp, i) => {
+  const li = document.createElement('li');
+  li.textContent = kp.title;
+  li.dataset.index = i;
+  li.onclick = () => {
+    closeEditModal(true);
+    index = i;
+    showKnowledge();
+    closeSidebar();
+  };
+  sidebar.appendChild(li);
+});
+
+function updateSidebarActive() {
+  const items = sidebar.querySelectorAll('li');
+  items.forEach((li, i) => {
+    li.classList.toggle('active', i === index);
+  });
+}
+
+function toggleContent(show) {
+  const detailEl = getDetailContentEl();
+  if (!detailEl) return;
+  detailEl.style.display = show ? 'block' : 'none';
+  if (clickHint) clickHint.style.display = show ? 'none' : 'block';
+}
+
+function showKnowledge() {
+  const kp = knowledgePoints[index];
+  phase = 'hidden';
+
+  // 更新粘性标题
+  titleEl.textContent = kp.title;
+  titleEl.style.cursor = 'pointer';
+
+  // 更新内容区
+  container.innerHTML = `<div id="detail-content" style="display:none;">${kp.content}</div>`;
+  if (clickHint) clickHint.style.display = 'block';
+  // 点击卡片任意空白区域都切换
+  if (window._cardClickHandler) {
+    cardEl.removeEventListener('click', window._cardClickHandler);
+  }
+  window._cardClickHandler = (e) => {
+    // 排除标题、按钮、侧边栏切换、正文编辑区等交互元素
+    const ignoreTags = ['BUTTON', 'H2'];
+    if (ignoreTags.includes(e.target.tagName)) return;
+    if (isEditModalOpen || e.target.closest('#detail-content')) return;
+    if (e.target.closest('.next-btn') || e.target.closest('.sidebar-toggle') || e.target.closest('.countdown')) return;
+    const detailEl = getDetailContentEl();
+    if (detailEl) {
+      const isHidden = detailEl.style.display === 'none';
+      toggleContent(isHidden);
+    }
+  };
+  cardEl.addEventListener('click', window._cardClickHandler);
+
+  // 重置计时
+  timeLeft = 30;
+  countdownEl.textContent = timeLeft;
+  progressBar.style.width = '0%';
+  updateSidebarActive();
+}
+
+function goToNext() {
+  stopEditing(true);
+  index = (index + 1) % knowledgePoints.length;
+  showKnowledge();
+}
+
+nextBtn.addEventListener('click', goToNext);
+
+setupTtsPlayer({
+  pageId: 'system-design-topics',
+  knowledgePoints,
+  getIndex: () => index,
+  navigateToIndex: (targetIndex) => {
+    closeEditModal(true);
+    index = targetIndex;
+    showKnowledge();
+  },
+  ensureExpanded: () => toggleContent(true),
+  apiUrl: '/api/tts'
+});
+
+// 初始显示
+showKnowledge();
+
+// 每秒倒计时
+setInterval(() => {
+  if (isEditModalOpen) return;
+  if (timeLeft > 0) {
+    timeLeft--;
+    countdownEl.textContent = timeLeft;
+    progressBar.style.width = `${((30 - timeLeft) / 30) * 100}%`;
+  } else {
+    if (phase === 'hidden') {
+      // 30秒结束 → 自动展开内容
+      toggleContent(true);
+      phase = 'shown';
+      timeLeft = 30;
+      countdownEl.textContent = timeLeft;
+      progressBar.style.width = '0%';
+    } else {
+      // 再30秒结束 → 收起内容
+      toggleContent(false);
+      phase = 'hidden';
+      timeLeft = 30;
+      countdownEl.textContent = timeLeft;
+      progressBar.style.width = '0%';
+    }
+  }
+}, 1000);
+</script>
+</body>
+</html>
+
+

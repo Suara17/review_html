@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/python-notes", "destination": "/python" },
+    { "source": "/guanlan", "destination": "/guanlan.html" },
+    { "source": "/learning-research-agent", "destination": "/learning-research-agent.html" },
+    { "source": "/computer-network", "destination": "/computer-network.html" },
+    { "source": "/operating-system", "destination": "/operating-system.html" },
+    { "source": "/mysql-topics", "destination": "/mysql-topics.html" },
+    { "source": "/redis-topics", "destination": "/redis-topics.html" },
+    { "source": "/design-patterns-topics", "destination": "/design-patterns-topics.html" },
+    { "source": "/system-design-topics", "destination": "/system-design-topics.html" }
+  ],
+  "functions": {
+    "api/**/*.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{.playwright-mcp/**,.serena/**,__pycache__/**}"
+    }
+  },
+  "cleanUrls": true,
+  "trailingSlash": false
+}

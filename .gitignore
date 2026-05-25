@@ -1,0 +1,4 @@
+.vercel
+.playwright-mcp/
+.serena/
+__pycache__/
