@@ -787,7 +787,7 @@ a[4].append('c')  # 修改内层<br><br>
 • c 外层不变但内层跟着变（浅拷贝只复制引用）→ [1,2,3,4,['a','b','c']]<br>
 • d 完全独立，什么都不变 → [1,2,3,4,['a','b']]<br><br>
 <strong>一句话记忆：</strong>赋值是起别名，浅拷贝只剥一层皮，深拷贝完全克隆。`},
-{title:"7. 装饰器", content:`<strong>作用：</strong>一种在不修改原函数代码的情况下，为函数动态添加功能（如日志、计时、权限检查）的强大语法。<br><br>
+{title:"7. 装饰器定义", content:`<strong>作用：</strong>一种在不修改原函数代码的情况下，为函数动态添加功能（如日志、计时、权限检查）的强大语法。<br><br>
 <strong>AOP（面向切面编程）：</strong>装饰器是Python实现AOP的方式。AOP将日志、性能测试、事务等"横切关注点"从业务逻辑中抽离出来，避免代码重复和侵入。装饰器就是为已经存在的对象动态添加额外功能的绝佳设计。<br><br>
 <strong>结构：</strong>装饰器本身是一个函数，它接收一个函数作为参数，并返回一个新的函数（通常是一个内部包装函数）。在包装函数内部，可以添加新功能，并调用原函数。<br><br>
 <strong>计时装饰器讲解：</strong>可以创建一个timer装饰器。在其内部包装函数wrapper中，在调用被装饰的原函数func之前记录开始时间，在调用之后记录结束时间，然后计算并打印时间差。最后返回原函数的结果。`},
@@ -809,7 +809,7 @@ a[4].append('c')  # 修改内层<br><br>
 • 关系：可迭代对象 ≠ 迭代器。iter() 将可迭代对象转为迭代器；迭代器本身也是可迭代的（其 __iter__() 返回自身）。`},
 {title:"9. 可变对象作为默认参数的陷阱与修复", content:`<strong>陷阱原因：</strong>函数的默认参数值在函数定义时就被创建并绑定，之后每次调用函数时，如果不显式提供该参数，使用的都是同一个默认对象。如果这个默认对象是可变对象（如列表、字典），多次调用会修改同一个对象，导致意料之外的"记忆"效果。<br><br>
 <strong>修复方法：</strong>将默认值设为不可变对象None，在函数体内部进行判断。如果参数为None，则创建一个新的空列表（或字典等），这样就确保了每次调用都使用一个独立的新对象。`},
-{title:"10. if __name__ == \"__main__\"的作用", content:`<strong>作用：</strong>判断当前模块是作为主程序运行，还是被导入到其他模块中。<br><br>
+{title:"10. if __name__ == "__main__"的作用", content:`<strong>作用：</strong>判断当前模块是作为主程序运行，还是被导入到其他模块中。<br><br>
 <strong>执行时机：</strong>当直接运行本脚本时，__name__的值为"__main__"，if块下的代码（通常是测试代码或程序入口）会执行。当本脚本被import到其他脚本时，__name__的值为模块名，if块下的代码不会执行。<br><br>
 <strong>用途：</strong>将模块的可复用代码（函数、类定义）与执行代码分离，使得模块既能独立运行测试，又能被安全地导入而不触发不必要的执行。`},
 {title:"11. __slots__的作用", content:`<strong>定义：</strong>__slots__是一个类级别的特殊变量，通过在类内定义一个元组或列表来声明该类实例只允许拥有的属性名称。例如 class A: __slots__ = ('name', 'age') 表示A的实例只能有name和age属性。<br><br>
@@ -1292,7 +1292,7 @@ PEP = Python Enhancement Proposal（Python 增强建议书）。PEP8 是 Python 
 • 面对不确定性，拒绝猜测（In the face of ambiguity, refuse the temptation to guess）<br>
 • 如果实现难以解释，那可能是个坏主意（If the implementation is hard to explain, it's a bad idea）`},
 {title:"54. docstring 文档字符串与类型注解", content:`<strong>docstring（文档字符串）：</strong><br>
-Python 的一个特性，在模块、函数、类或方法的第一行用三引号 <code>\"\"\" xxx \"\"\"</code> 包裹的字符串，用于说明其用途、参数和返回值。可通过 <code>对象.__doc__</code> 在运行时获取 docstring 内容。<br><br>
+Python 的一个特性，在模块、函数、类或方法的第一行用三引号 <code>""" xxx """</code> 包裹的字符串，用于说明其用途、参数和返回值。可通过 <code>对象.__doc__</code> 在运行时获取 docstring 内容。<br><br>
 <strong>示例：</strong><br>
 def add(a, b):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;"""返回两个数的和<br>
@@ -1319,7 +1319,7 @@ def add(x: int, y: int) -> int:<br>
 • <strong>文件命名：</strong>全小写字母，单词之间用下划线分隔，如 <code>my_module.py</code>。<br><br>
 <strong>Python 中的注释类型：</strong><br>
 • <strong>单行注释：</strong><code># 这是单行注释</code><br>
-• <strong>多行注释：</strong>多个 <code>#</code> 行，或使用三引号 <code>\"\"\"...\"\"\"</code>（但三引号本质是字符串）。<br>
+• <strong>多行注释：</strong>多个 <code>#</code> 行，或使用三引号 <code>"""..."""</code>（但三引号本质是字符串）。<br>
 • <strong>docstring：</strong>函数/类/模块第一行的三引号注释，用于生成文档，可通过 <code>__doc__</code> 访问。<br>
 • <strong>行内注释：</strong>代码末尾的简短注释，至少空两格。<br><br>
 <strong>一行导入多个库：</strong><br>
