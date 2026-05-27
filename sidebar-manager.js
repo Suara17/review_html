@@ -169,6 +169,7 @@
     try {
       localStorage.setItem(STORAGE_PREFIX + location.pathname, JSON.stringify(this._data));
     } catch (e) {}
+    if (window.__gistSyncDebounced) window.__gistSyncDebounced();
   };
 
   /* ── public: save ── */

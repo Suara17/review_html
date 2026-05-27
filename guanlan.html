@@ -614,6 +614,7 @@ body.modal-open {
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
 <script src="./tts-player.js"></script>
 <script src="./sidebar-manager.js"></script>
+<script src="./gist-sync.js"></script>
 <script>
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
@@ -841,6 +842,10 @@ var sidebarMgr = new SidebarManager({
   }
 });
 sidebarMgr.render();
+// Gist 云同步
+if (typeof GistSync !== 'undefined') {
+  GistSync.init({ sidebarHeader: document.querySelector('.sidebar-header') });
+}
 
 function updateSidebarActive() {
   if (typeof sidebarMgr !== 'undefined') sidebarMgr.setActiveIndex(index);
