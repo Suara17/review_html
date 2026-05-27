@@ -28,11 +28,10 @@
       .tts-row {
         display: flex;
         align-items: center;
-        gap: 8px;
       }
       .tts-sidebar-btn {
-        width: 40px;
-        height: 40px;
+        height: 44px;
+        flex: 1;
         border-radius: 10px;
         border: 1px solid rgba(0,255,255,0.25);
         background: rgba(0,255,255,0.08);
@@ -42,7 +41,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
         transition: background 0.2s;
       }
       .tts-sidebar-btn:hover {
@@ -51,17 +49,18 @@
       .tts-btns {
         display: flex;
         align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
+        justify-content: center;
+        gap: 10px;
+        flex: 2;
       }
       .tts-icon {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         border: 1.5px solid rgba(0,255,255,0.3);
         background: rgba(0,255,255,0.08);
         color: #00ffff;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1;
         cursor: pointer;
         display: inline-flex;
@@ -74,9 +73,9 @@
         background: rgba(0,255,255,0.18);
       }
       .tts-icon.tts-play {
-        width: 44px;
-        height: 44px;
-        font-size: 17px;
+        width: 48px;
+        height: 48px;
+        font-size: 18px;
         border-width: 2px;
       }
       .tts-icon.tts-play[data-state="playing"] {
@@ -84,8 +83,8 @@
         box-shadow: 0 0 12px rgba(0,255,255,0.25);
       }
       .tts-next-btn {
-        height: 40px;
-        padding: 0 16px;
+        height: 44px;
+        flex: 1;
         border-radius: 10px;
         border: 1px solid rgba(0,255,255,0.35);
         background: rgba(0,255,255,0.12);
@@ -94,7 +93,6 @@
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
-        flex-shrink: 0;
         transition: background 0.2s;
       }
       .tts-next-btn:hover {
@@ -122,34 +120,9 @@
         padding-bottom: 90px !important;
       }
       @media (min-width: 641px) {
-        .tts-player {
-          left: auto;
-          right: 24px;
-          bottom: 24px;
-          border-radius: 16px;
-          border: 1px solid rgba(0,255,255,0.15);
-          box-shadow: 0 4px 30px rgba(0,0,0,0.5);
-          max-width: 400px;
-        }
         .tts-sidebar-btn { display: none; }
-        /* Restore original sidebar-toggle on desktop */
-        .sidebar-toggle { display: none !important; }
-      }
-      @media (max-width: 640px) {
-        .tts-icon {
-          width: 34px;
-          height: 34px;
-          font-size: 12px;
-        }
-        .tts-icon.tts-play {
-          width: 42px;
-          height: 42px;
-          font-size: 16px;
-        }
-        .tts-next-btn {
-          padding: 0 12px;
-          font-size: 0.82em;
-        }
+        .tts-btns { flex: 3; }
+        .tts-next-btn { flex: 1; }
       }
     `;
     document.head.appendChild(style);
