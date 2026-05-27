@@ -218,68 +218,82 @@
       }
     }
 
-    async function playBlockLoop(targetIndex) {
+    function playBlockLoop(targetIndex) {
       stopAudio(false);
       currentMode = 'block-loop';
       const localSession = sessionId;
       navigateToIndex(targetIndex);
       if (typeof ensureExpanded === 'function') ensureExpanded();
       setStatus(`正在生成第 ${targetIndex + 1} 块音频...`, 'loading');
-      try {
-        const audioUrl = await fetchAudioUrl(targetIndex, 'block-loop');
-        if (localSession !== sessionId) return;
-        const audio = new Audio(audioUrl);
-        currentAudio = audio;
-        audio.loop = true;
-        audio.onerror = () => {
-          if (audio !== currentAudio) return;
-          setStatus('音频播放失败', 'error');
-        };
-        setStatus(`正在循环朗读第 ${targetIndex + 1} 块`, 'playing');
-        await audio.play();
-      } catch (error) {
-        if (localSession !== sessionId) return;
-        console.error(error);
-        setStatus(`朗读失败：${error.message}`, 'error');
-      }
+      const audio = new Audio();
+      currentAudio = audio;
+      audio.loop = true;
+      audio.onerror = () => {
+        if (audio !== currentAudio) return;
+        setStatus('音频播放失败', 'error');
+      };
+      // Start silent play in user gesture to unlock autoplay
+      audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=';
+      const playPromise = audio.play();
+      fetchAudioUrl(targetIndex, 'block-loop')
+        .then((audioUrl) => {
+          if (localSession !== sessionId) return;
+          audio.src = audioUrl;
+          setStatus(`正在循环朗读第 ${targetIndex + 1} 块`, 'playing');
+          return audio.play();
+        })
+        .catch((error) => {
+          if (localSession !== sessionId) return;
+          // If initial silent play was rejected, try once more after fetch
+          if (playPromise) {
+            playPromise.catch(() => {});
+          }
+          console.error(error);
+          setStatus(`朗读失败：${error.message}`, 'error');
+        });
     }
 
-    async function playPageFrom(targetIndex) {
+    function playPageFrom(targetIndex) {
       stopAudio(false);
       currentMode = 'page';
       const localSession = sessionId;
 
-      async function playSequential(cursor) {
+      // Unlock autoplay with a silent play in the user gesture context
+      const unlockAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=');
+      unlockAudio.play().catch(() => {});
+
+      function playSequential(cursor) {
         navigateToIndex(cursor);
         if (typeof ensureExpanded === 'function') ensureExpanded();
         setStatus(`正在生成第 ${cursor + 1} 块音频...`, 'loading');
-        try {
-          const audioUrl = await fetchAudioUrl(cursor, 'page');
-          if (localSession !== sessionId) return;
-          const audio = new Audio(audioUrl);
-          currentAudio = audio;
-          audio.loop = false;
-          audio.onended = () => {
+        fetchAudioUrl(cursor, 'page')
+          .then((audioUrl) => {
             if (localSession !== sessionId) return;
-            if (cursor >= knowledgePoints.length - 1) {
-              currentAudio = null;
-              currentMode = 'idle';
-              setStatus('整页朗读完成', 'idle');
-              return;
-            }
-            playSequential(cursor + 1);
-          };
-          audio.onerror = () => {
+            const audio = new Audio(audioUrl);
+            currentAudio = audio;
+            audio.loop = false;
+            audio.onended = () => {
+              if (localSession !== sessionId) return;
+              if (cursor >= knowledgePoints.length - 1) {
+                currentAudio = null;
+                currentMode = 'idle';
+                setStatus('整页朗读完成', 'idle');
+                return;
+              }
+              playSequential(cursor + 1);
+            };
+            audio.onerror = () => {
+              if (localSession !== sessionId) return;
+              setStatus('音频播放失败', 'error');
+            };
+            setStatus(`正在顺播第 ${cursor + 1}/${knowledgePoints.length} 块`, 'playing');
+            return audio.play();
+          })
+          .catch((error) => {
             if (localSession !== sessionId) return;
-            setStatus('音频播放失败', 'error');
-          };
-          setStatus(`正在顺播第 ${cursor + 1}/${knowledgePoints.length} 块`, 'playing');
-          await audio.play();
-        } catch (error) {
-          if (localSession !== sessionId) return;
-          console.error(error);
-          setStatus(`朗读失败：${error.message}`, 'error');
-        }
+            console.error(error);
+            setStatus(`朗读失败：${error.message}`, 'error');
+          });
       }
 
       playSequential(targetIndex);
