@@ -8,15 +8,45 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
+      /* Hide original sidebar-toggle and next-btn — tts-player replaces them */
+      .sidebar-toggle { display: none !important; }
+      .next-btn { display: none !important; }
+
       .tts-player {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 25;
+        background: rgba(0,8,16,0.92);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-top: 1px solid rgba(0,255,255,0.15);
+        padding: 6px 12px 10px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      }
+      .tts-row {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin: 16px 0 12px;
-        padding: 10px 16px;
-        border-radius: 14px;
-        border: 1px solid rgba(0,255,255,0.15);
-        background: rgba(0,255,255,0.04);
+        gap: 8px;
+      }
+      .tts-sidebar-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        border: 1px solid rgba(0,255,255,0.25);
+        background: rgba(0,255,255,0.08);
+        color: #00ffff;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.2s;
+      }
+      .tts-sidebar-btn:hover {
+        background: rgba(0,255,255,0.18);
       }
       .tts-btns {
         display: flex;
@@ -31,7 +61,7 @@
         border: 1.5px solid rgba(0,255,255,0.3);
         background: rgba(0,255,255,0.08);
         color: #00ffff;
-        font-size: 14px;
+        font-size: 13px;
         line-height: 1;
         cursor: pointer;
         display: inline-flex;
@@ -42,29 +72,41 @@
       }
       .tts-icon:hover {
         background: rgba(0,255,255,0.18);
-        box-shadow: 0 0 10px rgba(0,255,255,0.15);
       }
       .tts-icon.tts-play {
-        width: 42px;
-        height: 42px;
-        font-size: 16px;
+        width: 44px;
+        height: 44px;
+        font-size: 17px;
         border-width: 2px;
       }
       .tts-icon.tts-play[data-state="playing"] {
         background: rgba(0,255,255,0.2);
-        box-shadow: 0 0 12px rgba(0,255,255,0.2);
+        box-shadow: 0 0 12px rgba(0,255,255,0.25);
       }
-      .tts-info {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
+      .tts-next-btn {
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 10px;
+        border: 1px solid rgba(0,255,255,0.35);
+        background: rgba(0,255,255,0.12);
+        color: #00ffff;
+        font-size: 0.88em;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background 0.2s;
+      }
+      .tts-next-btn:hover {
+        background: rgba(0,255,255,0.22);
+      }
+      .tts-status-bar {
+        text-align: center;
+        padding: 4px 0 0;
       }
       .tts-status {
-        color: rgba(255,255,255,0.7);
-        font-size: 0.82em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        color: rgba(255,255,255,0.5);
+        font-size: 0.75em;
       }
       .tts-status[data-state="error"] {
         color: #ff9f9f;
@@ -75,20 +117,38 @@
       .tts-status[data-state="playing"] {
         color: #00ffcc;
       }
-      @media (max-width: 640px) {
+      /* Adjust card bottom padding so content isn't hidden behind the bar */
+      .card {
+        padding-bottom: 90px !important;
+      }
+      @media (min-width: 641px) {
         .tts-player {
-          gap: 10px;
-          padding: 8px 12px;
+          left: auto;
+          right: 24px;
+          bottom: 24px;
+          border-radius: 16px;
+          border: 1px solid rgba(0,255,255,0.15);
+          box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+          max-width: 400px;
         }
+        .tts-sidebar-btn { display: none; }
+        /* Restore original sidebar-toggle on desktop */
+        .sidebar-toggle { display: none !important; }
+      }
+      @media (max-width: 640px) {
         .tts-icon {
           width: 34px;
           height: 34px;
-          font-size: 13px;
+          font-size: 12px;
         }
         .tts-icon.tts-play {
-          width: 40px;
-          height: 40px;
-          font-size: 15px;
+          width: 42px;
+          height: 42px;
+          font-size: 16px;
+        }
+        .tts-next-btn {
+          padding: 0 12px;
+          font-size: 0.82em;
         }
       }
     `;
@@ -177,22 +237,25 @@
     }
 
     const anchor = document.getElementById(insertBefore);
-    if (!anchor || anchor.dataset.ttsMounted === 'true') return;
+    if (!anchor || document.querySelector('.tts-player')) return;
 
     const controls = document.createElement('div');
     controls.className = 'tts-player';
     controls.innerHTML = `
-      <div class="tts-btns">
-        <button type="button" class="tts-icon" data-action="prev" title="上一块">⏮</button>
-        <button type="button" class="tts-icon tts-play" data-action="play" title="播放/暂停">▶</button>
-        <button type="button" class="tts-icon" data-action="next" title="下一块">⏭</button>
+      <div class="tts-row">
+        <button type="button" class="tts-sidebar-btn" data-action="sidebar" title="目录">☰</button>
+        <div class="tts-btns">
+          <button type="button" class="tts-icon" data-action="prev" title="上一块">⏮</button>
+          <button type="button" class="tts-icon tts-play" data-action="play" title="播放/暂停">▶</button>
+          <button type="button" class="tts-icon" data-action="next-block" title="下一块">⏭</button>
+        </div>
+        <button type="button" class="tts-next-btn" data-action="next-card">下一个 →</button>
       </div>
-      <div class="tts-info">
+      <div class="tts-status-bar">
         <span class="tts-status" data-state="idle">就绪</span>
       </div>
     `;
-    anchor.parentNode.insertBefore(controls, anchor);
-    anchor.dataset.ttsMounted = 'true';
+    document.body.appendChild(controls);
 
     const statusEl = controls.querySelector('.tts-status');
     const playBtn = controls.querySelector('[data-action="play"]');
@@ -301,8 +364,13 @@
       const action = button.dataset.action;
       const currentIndex = getIndex();
 
+      if (action === 'sidebar') {
+        // Open the sidebar drawer
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        if (sidebarToggle) sidebarToggle.click();
+        return;
+      }
       if (action === 'play') {
-        // Toggle: if currently playing, pause; otherwise play current block
         if (currentMode !== 'idle' && currentAudio && !currentAudio.paused) {
           currentAudio.pause();
           setStatus('已暂停', 'idle');
@@ -322,10 +390,16 @@
         playBlockLoop(prevIndex);
         return;
       }
-      if (action === 'next') {
+      if (action === 'next-block') {
         const nextIndex = (currentIndex + 1) % knowledgePoints.length;
         navigateToIndex(nextIndex);
         playBlockLoop(nextIndex);
+        return;
+      }
+      if (action === 'next-card') {
+        stopAudio(true);
+        const nextIndex = (currentIndex + 1) % knowledgePoints.length;
+        navigateToIndex(nextIndex);
         return;
       }
     });
