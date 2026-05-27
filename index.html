@@ -178,16 +178,139 @@ body {
     padding: 16px;
   }
 }
+/* Login overlay */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.login-overlay.hidden {
+  display: none;
+}
+.login-box {
+  background: rgba(0,8,16,0.95);
+  border: 1px solid rgba(0,255,255,0.25);
+  border-radius: 20px;
+  padding: 36px 32px;
+  width: 90%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+}
+.login-box h2 {
+  font-size: 1.4em;
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0,255,255,0.3);
+  margin-bottom: 8px;
+}
+.login-box p {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.9em;
+  margin-bottom: 28px;
+}
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.login-btn {
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,255,255,0.35);
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.login-btn-admin {
+  background: rgba(0,255,255,0.15);
+  color: #00ffff;
+}
+.login-btn-admin:hover {
+  background: rgba(0,255,255,0.25);
+  box-shadow: 0 0 20px rgba(0,255,255,0.15);
+}
+.login-btn-guest {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.8);
+  border-color: rgba(255,255,255,0.2);
+}
+.login-btn-guest:hover {
+  background: rgba(255,255,255,0.12);
+}
+.login-password-wrap {
+  display: none;
+  margin-top: 14px;
+}
+.login-password-wrap.show {
+  display: block;
+}
+.login-password-wrap input {
+  width: 100%;
+  height: 44px;
+  background: rgba(0,10,20,0.8);
+  border: 1px solid rgba(0,255,255,0.3);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1em;
+  padding: 0 14px;
+  outline: none;
+  margin-bottom: 10px;
+}
+.login-password-wrap input:focus {
+  border-color: #00ff88;
+}
+.login-password-wrap .login-submit {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: #00ff88;
+  color: #000;
+  font-size: 1em;
+  font-weight: 700;
+  cursor: pointer;
+}
+.login-password-wrap .login-submit:hover {
+  background: #00cc6a;
+}
+.login-error {
+  color: #ff9f9f;
+  font-size: 0.85em;
+  margin-top: 8px;
+  min-height: 1.2em;
+}
 </style>
 </head>
 <body>
 <canvas id="matrix-canvas"></canvas>
 <div class="scanlines"></div>
-<div class="page-shell">
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <h2>面试准备导航中心</h2>
+    <p>选择身份进入</p>
+    <div class="login-buttons">
+      <button class="login-btn login-btn-admin" id="login-admin-btn">管理员</button>
+      <button class="login-btn login-btn-guest" id="login-guest-btn">访客</button>
+    </div>
+    <div class="login-password-wrap" id="login-password-wrap">
+      <input type="password" id="login-password-input" placeholder="输入管理员密码" />
+      <button class="login-submit" id="login-submit-btn">确认</button>
+      <div class="login-error" id="login-error"></div>
+    </div>
+  </div>
+</div>
+<div class="page-shell" id="page-shell" style="display:none;">
   <section class="hero">
     <div class="hero-kicker">INTERVIEW HUB</div>
-    <h1>知识点 / 项目面试导航页</h1>
-    <p>这里统一放面试准备相关页面，直接点击对应卡片进入。后面新增页面时，再补到这里即可。</p>
+    <h1>导航页</h1>
+    <p>欢迎回来！</p>
   </section>
   <main class="card-grid" id="card-grid"></main>
 </div>
@@ -290,26 +413,78 @@ const pages = [
     description: '聚合高频场景题、系统设计题以及秒杀、高性能架构等面试思路。'
   }
 ];
+
 const cardGrid = document.getElementById('card-grid');
 function getLink(page) {
   const isLocalStatic = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' || window.location.protocol === 'file:';
   return isLocalStatic ? page.localPath : page.route;
 }
-pages.forEach((page) => {
-  const card = document.createElement('article');
-  card.className = 'nav-card';
-  card.innerHTML = `
-    <span class="card-tag">${page.category}</span>
-    <h2>${page.title}</h2>
-    <div class="route">${page.route}</div>
-    <p class="description">${page.description}</p>
-    <a class="enter-btn" href="${getLink(page)}">进入页面</a>
-  `;
-  cardGrid.appendChild(card);
+
+function renderCards(role) {
+  cardGrid.innerHTML = '';
+  const visiblePages = role === 'admin'
+    ? pages
+    : pages.filter(function (p) { return p.category !== '项目面试'; });
+  visiblePages.forEach(function (page) {
+    var card = document.createElement('article');
+    card.className = 'nav-card';
+    card.innerHTML =
+      '<span class="card-tag">' + page.category + '</span>' +
+      '<h2>' + page.title + '</h2>' +
+      '<div class="route">' + page.route + '</div>' +
+      '<p class="description">' + page.description + '</p>' +
+      '<a class="enter-btn" href="' + getLink(page) + '">进入页面</a>';
+    cardGrid.appendChild(card);
+  });
+  // Show sync settings only for admin
+  if (role === 'admin' && typeof GistSync !== 'undefined') {
+    GistSync.init({ heroSection: document.querySelector('.hero') });
+  }
+}
+
+function enterApp(role) {
+  sessionStorage.setItem('nav-role', role);
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('page-shell').style.display = '';
+  renderCards(role);
+}
+
+// Login UI
+var overlay = document.getElementById('login-overlay');
+var passwordWrap = document.getElementById('login-password-wrap');
+var passwordInput = document.getElementById('login-password-input');
+var errorEl = document.getElementById('login-error');
+
+document.getElementById('login-admin-btn').addEventListener('click', function () {
+  passwordWrap.classList.add('show');
+  passwordInput.focus();
+  errorEl.textContent = '';
 });
-// 云同步设置
-if (typeof GistSync !== 'undefined') {
-  GistSync.init({ heroSection: document.querySelector('.hero') });
+
+document.getElementById('login-submit-btn').addEventListener('click', function () {
+  if (passwordInput.value === 'zrui') {
+    enterApp('admin');
+  } else {
+    errorEl.textContent = '密码错误';
+    passwordInput.value = '';
+    passwordInput.focus();
+  }
+});
+
+passwordInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') {
+    document.getElementById('login-submit-btn').click();
+  }
+});
+
+document.getElementById('login-guest-btn').addEventListener('click', function () {
+  enterApp('guest');
+});
+
+// Auto-login if already logged in this session
+var savedRole = sessionStorage.getItem('nav-role');
+if (savedRole === 'admin' || savedRole === 'guest') {
+  enterApp(savedRole);
 }
 </script>
 </body>
