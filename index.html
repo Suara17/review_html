@@ -219,6 +219,17 @@ body {
   flex-direction: column;
   gap: 14px;
 }
+.login-option {
+  text-align: left;
+}
+.login-desc {
+  display: block;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.78em;
+  line-height: 1.5;
+  margin-top: 6px;
+  padding-left: 2px;
+}
 .login-btn {
   height: 48px;
   border-radius: 12px;
@@ -296,8 +307,14 @@ body {
     <h2>面试准备导航中心</h2>
     <p>选择身份进入</p>
     <div class="login-buttons">
-      <button class="login-btn login-btn-admin" id="login-admin-btn">管理员</button>
-      <button class="login-btn login-btn-guest" id="login-guest-btn">访客</button>
+      <div class="login-option">
+        <button class="login-btn login-btn-admin" id="login-admin-btn">管理员</button>
+        <span class="login-desc">查看全部内容，管理数据同步与项目面试讲稿</span>
+      </div>
+      <div class="login-option">
+        <button class="login-btn login-btn-guest" id="login-guest-btn">访客</button>
+        <span class="login-desc">计算机基础面试题速刷，支持语音朗读、定时翻页隐藏，便于记忆复习</span>
+      </div>
     </div>
     <div class="login-password-wrap" id="login-password-wrap">
       <input type="password" id="login-password-input" placeholder="输入管理员密码" />
