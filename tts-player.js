@@ -8,53 +8,87 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      .tts-controls {
+      .tts-player {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin: 16px 0 12px;
         align-items: center;
+        gap: 12px;
+        margin: 16px 0 12px;
+        padding: 10px 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(0,255,255,0.15);
+        background: rgba(0,255,255,0.04);
       }
-      .tts-btn {
-        min-height: 40px;
-        padding: 0 14px;
-        border-radius: 10px;
-        border: 1px solid rgba(0,255,255,0.28);
-        background: rgba(0,255,255,0.1);
+      .tts-btns {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .tts-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(0,255,255,0.3);
+        background: rgba(0,255,255,0.08);
         color: #00ffff;
-        font-weight: 600;
+        font-size: 14px;
+        line-height: 1;
         cursor: pointer;
-        transition: all 0.25s;
-      }
-      .tts-btn:hover {
-        background: rgba(0,255,255,0.18);
-        box-shadow: 0 0 16px rgba(0,255,255,0.14);
-      }
-      .tts-status {
-        min-height: 40px;
         display: inline-flex;
         align-items: center;
-        padding: 0 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.1);
-        background: rgba(255,255,255,0.04);
-        color: rgba(255,255,255,0.82);
-        font-size: 0.92em;
+        justify-content: center;
+        transition: all 0.2s;
+        padding: 0;
+      }
+      .tts-icon:hover {
+        background: rgba(0,255,255,0.18);
+        box-shadow: 0 0 10px rgba(0,255,255,0.15);
+      }
+      .tts-icon.tts-play {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+        border-width: 2px;
+      }
+      .tts-icon.tts-play[data-state="playing"] {
+        background: rgba(0,255,255,0.2);
+        box-shadow: 0 0 12px rgba(0,255,255,0.2);
+      }
+      .tts-info {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .tts-status {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.82em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .tts-status[data-state="error"] {
         color: #ff9f9f;
-        border-color: rgba(255,120,120,0.28);
       }
       .tts-status[data-state="loading"] {
         color: #8ce7ff;
       }
+      .tts-status[data-state="playing"] {
+        color: #00ffcc;
+      }
       @media (max-width: 640px) {
-        .tts-controls {
-          gap: 8px;
+        .tts-player {
+          gap: 10px;
+          padding: 8px 12px;
         }
-        .tts-btn, .tts-status {
-          width: 100%;
-          justify-content: center;
+        .tts-icon {
+          width: 34px;
+          height: 34px;
+          font-size: 13px;
+        }
+        .tts-icon.tts-play {
+          width: 40px;
+          height: 40px;
+          font-size: 15px;
         }
       }
     `;
@@ -146,18 +180,22 @@
     if (!anchor || anchor.dataset.ttsMounted === 'true') return;
 
     const controls = document.createElement('div');
-    controls.className = 'tts-controls';
+    controls.className = 'tts-player';
     controls.innerHTML = `
-      <button type="button" class="tts-btn" data-action="block-loop">循环当前块</button>
-      <button type="button" class="tts-btn" data-action="page">整页顺播</button>
-      <button type="button" class="tts-btn" data-action="next">下一块朗读</button>
-      <button type="button" class="tts-btn" data-action="stop">停止朗读</button>
-      <span class="tts-status" data-state="idle">朗读待命</span>
+      <div class="tts-btns">
+        <button type="button" class="tts-icon" data-action="prev" title="上一块">⏮</button>
+        <button type="button" class="tts-icon tts-play" data-action="play" title="播放/暂停">▶</button>
+        <button type="button" class="tts-icon" data-action="next" title="下一块">⏭</button>
+      </div>
+      <div class="tts-info">
+        <span class="tts-status" data-state="idle">就绪</span>
+      </div>
     `;
     anchor.parentNode.insertBefore(controls, anchor);
     anchor.dataset.ttsMounted = 'true';
 
     const statusEl = controls.querySelector('.tts-status');
+    const playBtn = controls.querySelector('[data-action="play"]');
     const audioCache = new Map();
     let currentAudio = null;
     let sessionId = 0;
@@ -166,6 +204,10 @@
     function setStatus(text, state) {
       statusEl.textContent = text;
       statusEl.dataset.state = state;
+      if (playBtn) {
+        playBtn.dataset.state = state === 'playing' ? 'playing' : 'idle';
+        playBtn.textContent = state === 'playing' ? '⏸' : '▶';
+      }
     }
 
     function getSpeechText(targetIndex) {
@@ -253,76 +295,38 @@
         });
     }
 
-    function playPageFrom(targetIndex) {
-      stopAudio(false);
-      currentMode = 'page';
-      const localSession = sessionId;
-
-      // Unlock autoplay with a silent play in the user gesture context
-      const unlockAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=');
-      unlockAudio.play().catch(() => {});
-
-      function playSequential(cursor) {
-        navigateToIndex(cursor);
-        if (typeof ensureExpanded === 'function') ensureExpanded();
-        setStatus(`正在生成第 ${cursor + 1} 块音频...`, 'loading');
-        fetchAudioUrl(cursor, 'page')
-          .then((audioUrl) => {
-            if (localSession !== sessionId) return;
-            const audio = new Audio(audioUrl);
-            currentAudio = audio;
-            audio.loop = false;
-            audio.onended = () => {
-              if (localSession !== sessionId) return;
-              if (cursor >= knowledgePoints.length - 1) {
-                currentAudio = null;
-                currentMode = 'idle';
-                setStatus('整页朗读完成', 'idle');
-                return;
-              }
-              playSequential(cursor + 1);
-            };
-            audio.onerror = () => {
-              if (localSession !== sessionId) return;
-              setStatus('音频播放失败', 'error');
-            };
-            setStatus(`正在顺播第 ${cursor + 1}/${knowledgePoints.length} 块`, 'playing');
-            return audio.play();
-          })
-          .catch((error) => {
-            if (localSession !== sessionId) return;
-            console.error(error);
-            setStatus(`朗读失败：${error.message}`, 'error');
-          });
-      }
-
-      playSequential(targetIndex);
-    }
-
     controls.addEventListener('click', (event) => {
       const button = event.target.closest('[data-action]');
       if (!button) return;
       const action = button.dataset.action;
       const currentIndex = getIndex();
-      if (action === 'block-loop') {
-        playBlockLoop(currentIndex);
+
+      if (action === 'play') {
+        // Toggle: if currently playing, pause; otherwise play current block
+        if (currentMode !== 'idle' && currentAudio && !currentAudio.paused) {
+          currentAudio.pause();
+          setStatus('已暂停', 'idle');
+          currentMode = 'paused';
+        } else if (currentMode === 'paused' && currentAudio) {
+          currentAudio.play().catch(() => {});
+          setStatus(`正在循环朗读第 ${currentIndex + 1} 块`, 'playing');
+          currentMode = 'block-loop';
+        } else {
+          playBlockLoop(currentIndex);
+        }
         return;
       }
-      if (action === 'page') {
-        playPageFrom(currentIndex);
+      if (action === 'prev') {
+        const prevIndex = (currentIndex - 1 + knowledgePoints.length) % knowledgePoints.length;
+        navigateToIndex(prevIndex);
+        playBlockLoop(prevIndex);
         return;
       }
       if (action === 'next') {
         const nextIndex = (currentIndex + 1) % knowledgePoints.length;
-        if (currentMode === 'page') {
-          playPageFrom(nextIndex);
-        } else {
-          playBlockLoop(nextIndex);
-        }
+        navigateToIndex(nextIndex);
+        playBlockLoop(nextIndex);
         return;
-      }
-      if (action === 'stop') {
-        stopAudio(true);
       }
     });
 
