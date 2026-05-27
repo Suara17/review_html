@@ -661,6 +661,7 @@ body.modal-open {
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
 
 <script src="./tts-player.js"></script>
+<script src="./sidebar-manager.js"></script>
 <script>
 // ===== 数字雨背景动画 =====
 const canvas = document.getElementById('matrix-canvas');
@@ -701,7 +702,7 @@ window.addEventListener('resize', () => {
 });
 
 // ===== 知识点展示逻辑 =====
-const knowledgePoints = [
+let knowledgePoints = [
 {title:"1. Python中的==和is有什么区别？", content:`<strong>本质差异：</strong>== 是"值相等"运算符，用于比较两个对象所代表的数据或内容是否相同。is 是"身份相同"运算符，用于判断两个变量是否指向内存中的同一个对象。<br><br>
 <strong>通俗比喻：</strong>比较两本书，== 关心的是两本书的文字内容是否一模一样；is 关心的是它们是否是同一个物理实体（即同一本书）。<br><br>
 <strong>示例：</strong>创建两个内容完全相同的列表a = [1, 2]和b = [1, 2]。a == b会返回True，因为内容相同。但a is b会返回False，因为它们是内存中两个不同的列表对象。`},
@@ -1397,31 +1398,6 @@ let phase = 'hidden'; // hidden(仅标题)→shown(展开内容)→下一知识�
 let isEditModalOpen = false;
 const storageKey = `knowledge-point-overrides:${location.pathname}`;
 
-hydrateKnowledgePointContent();
-
-function hydrateKnowledgePointContent() {
-  try {
-    const saved = localStorage.getItem(storageKey);
-    if (!saved) return;
-    const overrides = JSON.parse(saved);
-    if (!Array.isArray(overrides)) return;
-    overrides.forEach((content, i) => {
-      if (typeof content === 'string' && knowledgePoints[i]) {
-        knowledgePoints[i].content = content;
-      }
-    });
-  } catch (error) {
-    console.warn('Failed to load saved knowledge point edits.', error);
-  }
-}
-
-function persistKnowledgePointContent() {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(knowledgePoints.map((kp) => kp.content)));
-  } catch (error) {
-    console.warn('Failed to save knowledge point edits.', error);
-  }
-}
 
 function getDetailContentEl() {
   return document.getElementById('detail-content');
@@ -1452,7 +1428,7 @@ function closeEditModal(saveChanges = false) {
     if (detailEl) {
       detailEl.innerHTML = updatedContent;
     }
-    persistKnowledgePointContent();
+    if (typeof sidebarMgr !== 'undefined') sidebarMgr.save();
   }
 
   if (editModalEditor) {
@@ -1539,24 +1515,20 @@ sidebarClose.addEventListener('click', closeSidebar);
 sidebarOverlay.addEventListener('click', closeSidebar);
 
 // 初始化侧边栏
-knowledgePoints.forEach((kp, i) => {
-  const li = document.createElement('li');
-  li.textContent = kp.title;
-  li.dataset.index = i;
-  li.onclick = () => {
+var sidebarMgr = new SidebarManager({
+  sidebarUl: sidebar,
+  knowledgePoints: knowledgePoints,
+  onNavigate: function (targetIndex) {
     closeEditModal(true);
-    index = i;
+    index = targetIndex;
     showKnowledge();
     closeSidebar();
-  };
-  sidebar.appendChild(li);
+  }
 });
+sidebarMgr.render();
 
 function updateSidebarActive() {
-  const items = sidebar.querySelectorAll('li');
-  items.forEach((li, i) => {
-    li.classList.toggle('active', i === index);
-  });
+  if (typeof sidebarMgr !== 'undefined') sidebarMgr.setActiveIndex(index);
 }
 
 function toggleContent(show) {
@@ -1567,6 +1539,12 @@ function toggleContent(show) {
 }
 
 function showKnowledge() {
+  if (!knowledgePoints.length) {
+    titleEl.textContent = '暂无知识点';
+    container.innerHTML = '';
+    return;
+  }
+  if (index >= knowledgePoints.length) index = knowledgePoints.length - 1;
   const kp = knowledgePoints[index];
   phase = 'hidden';
 
@@ -1603,7 +1581,8 @@ function showKnowledge() {
 }
 
 function goToNext() {
-  stopEditing(true);
+  closeEditModal(true);
+  if (!knowledgePoints.length) return;
   index = (index + 1) % knowledgePoints.length;
   showKnowledge();
 }

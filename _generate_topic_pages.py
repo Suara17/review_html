@@ -3,7 +3,7 @@ import re
 import json
 import html
 
-root = Path(r"E:/面试/review_html")
+root = Path(__file__).resolve().parent
 md_path = root / "MinerU_markdown_代码随想录知识星球精华（最强八股文）第五版（计算机基础篇）_2058408209875202048.md"
 template_path = root / "python.html"
 
@@ -431,7 +431,7 @@ extra_css = """
 }
 """.strip()
 
-pattern = re.compile(r'const knowledgePoints = \[[\s\S]*?\n\];', re.S)
+pattern = re.compile(r'let knowledgePoints = \[[\s\S]*?\n\];', re.S)
 
 for config in sections.values():
     entries = []
@@ -448,7 +448,7 @@ for config in sections.values():
     page = page.replace("<h3>Python 高频知识点精讲</h3>", f"<h3>{config['sidebar_title']}</h3>")
     page = page.replace("pageId: 'python-notes'", f"pageId: '{config['page_id']}'")
     serialized = json.dumps(entries, ensure_ascii=False, separators=(",", ":"))
-    page = pattern.sub(lambda _: 'const knowledgePoints = ' + serialized + ';', page, count=1)
+    page = pattern.sub(lambda _: 'let knowledgePoints = ' + serialized + ';', page, count=1)
     if extra_css not in page:
         page = page.replace("</style>", f"\n{extra_css}\n</style>", 1)
     config["output"].write_text(page, encoding="utf-8")

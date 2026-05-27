@@ -613,6 +613,7 @@ body.modal-open {
 </div>
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
 <script src="./tts-player.js"></script>
+<script src="./sidebar-manager.js"></script>
 <script>
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
@@ -646,7 +647,7 @@ window.addEventListener('resize', () => {
   const newCols = Math.floor(canvas.width / fontSize);
   for (let i = 0; i < newCols; i++) drops[i] = Math.floor(Math.random() * -canvas.height / fontSize);
 });
-const knowledgePoints = [
+let knowledgePoints = [
   {
     title: '1. 面试官：你先讲讲这个项目的背景，你为什么要做天工·弈控？',
     content: `<strong>我：</strong>天工·弈控最初是我们为 <strong>挑战杯</strong> 准备的展示型系统，同时也兼顾了 <strong>互联网+</strong> 比赛里的商业化表达。它不是为了做一个静态原型，而是希望评委打开系统后，能直观看到这个项目解决了什么问题、核心能力是什么、后续为什么具备商业延展空间。<br><br><strong>我当时理解的业务痛点主要有四个：</strong><ul><li>制造现场的数据分散在不同环节，管理者很难快速看到全局状态。</li><li>异常处理经验更多依赖老师傅个人经验，知识沉淀和复用成本很高。</li><li>从发现异常到判断原因、选择方案，这条链路比较长，现场处理效率不稳定。</li><li>很多系统只能展示数据，不能把“分析”和“经验复用”真正串起来。</li></ul><strong>所以这个项目真正想讲清楚的不是某个单独功能，而是一条闭环：</strong><br>从 <strong>发现问题 → 分析原因 → 推荐方案 → 沉淀经验</strong>，把离散制造业里最难标准化的一段流程做成可视化、可演示、可继续扩展的系统。`
@@ -712,31 +713,6 @@ let phase = 'hidden'; // hidden(仅标题)→shown(展开内容)→下一知识�
 let isEditModalOpen = false;
 const storageKey = `knowledge-point-overrides:${location.pathname}`;
 
-hydrateKnowledgePointContent();
-
-function hydrateKnowledgePointContent() {
-  try {
-    const saved = localStorage.getItem(storageKey);
-    if (!saved) return;
-    const overrides = JSON.parse(saved);
-    if (!Array.isArray(overrides)) return;
-    overrides.forEach((content, i) => {
-      if (typeof content === 'string' && knowledgePoints[i]) {
-        knowledgePoints[i].content = content;
-      }
-    });
-  } catch (error) {
-    console.warn('Failed to load saved knowledge point edits.', error);
-  }
-}
-
-function persistKnowledgePointContent() {
-  try {
-    localStorage.setItem(storageKey, JSON.stringify(knowledgePoints.map((kp) => kp.content)));
-  } catch (error) {
-    console.warn('Failed to save knowledge point edits.', error);
-  }
-}
 
 function getDetailContentEl() {
   return document.getElementById('detail-content');
@@ -767,7 +743,7 @@ function closeEditModal(saveChanges = false) {
     if (detailEl) {
       detailEl.innerHTML = updatedContent;
     }
-    persistKnowledgePointContent();
+    if (typeof sidebarMgr !== 'undefined') sidebarMgr.save();
   }
 
   if (editModalEditor) {
@@ -854,24 +830,20 @@ sidebarClose.addEventListener('click', closeSidebar);
 sidebarOverlay.addEventListener('click', closeSidebar);
 
 // 初始化侧边栏
-knowledgePoints.forEach((kp, i) => {
-  const li = document.createElement('li');
-  li.textContent = kp.title;
-  li.dataset.index = i;
-  li.onclick = () => {
+var sidebarMgr = new SidebarManager({
+  sidebarUl: sidebar,
+  knowledgePoints: knowledgePoints,
+  onNavigate: function (targetIndex) {
     closeEditModal(true);
-    index = i;
+    index = targetIndex;
     showKnowledge();
     closeSidebar();
-  };
-  sidebar.appendChild(li);
+  }
 });
+sidebarMgr.render();
 
 function updateSidebarActive() {
-  const items = sidebar.querySelectorAll('li');
-  items.forEach((li, i) => {
-    li.classList.toggle('active', i === index);
-  });
+  if (typeof sidebarMgr !== 'undefined') sidebarMgr.setActiveIndex(index);
 }
 
 function toggleContent(show) {
@@ -882,6 +854,12 @@ function toggleContent(show) {
 }
 
 function showKnowledge() {
+  if (!knowledgePoints.length) {
+    titleEl.textContent = '暂无知识点';
+    container.innerHTML = '';
+    return;
+  }
+  if (index >= knowledgePoints.length) index = knowledgePoints.length - 1;
   const kp = knowledgePoints[index];
   phase = 'hidden';
 
@@ -919,6 +897,7 @@ function showKnowledge() {
 
 function goToNext() {
   closeEditModal(true);
+  if (!knowledgePoints.length) return;
   index = (index + 1) % knowledgePoints.length;
   showKnowledge();
 }
