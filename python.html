@@ -810,7 +810,7 @@ a[4].append('c')  # 修改内层<br><br>
 • 关系：可迭代对象 ≠ 迭代器。iter() 将可迭代对象转为迭代器；迭代器本身也是可迭代的（其 __iter__() 返回自身）。`},
 {title:"9. 可变对象作为默认参数的陷阱与修复", content:`<strong>陷阱原因：</strong>函数的默认参数值在函数定义时就被创建并绑定，之后每次调用函数时，如果不显式提供该参数，使用的都是同一个默认对象。如果这个默认对象是可变对象（如列表、字典），多次调用会修改同一个对象，导致意料之外的"记忆"效果。<br><br>
 <strong>修复方法：</strong>将默认值设为不可变对象None，在函数体内部进行判断。如果参数为None，则创建一个新的空列表（或字典等），这样就确保了每次调用都使用一个独立的新对象。`},
-{title:"10. if __name__ == "__main__"的作用", content:`<strong>作用：</strong>判断当前模块是作为主程序运行，还是被导入到其他模块中。<br><br>
+{title:"10. if __name__ == \"__main__\"的作用", content:`<strong>作用：</strong>判断当前模块是作为主程序运行，还是被导入到其他模块中。<br><br>
 <strong>执行时机：</strong>当直接运行本脚本时，__name__的值为"__main__"，if块下的代码（通常是测试代码或程序入口）会执行。当本脚本被import到其他脚本时，__name__的值为模块名，if块下的代码不会执行。<br><br>
 <strong>用途：</strong>将模块的可复用代码（函数、类定义）与执行代码分离，使得模块既能独立运行测试，又能被安全地导入而不触发不必要的执行。`},
 {title:"11. __slots__的作用", content:`<strong>定义：</strong>__slots__是一个类级别的特殊变量，通过在类内定义一个元组或列表来声明该类实例只允许拥有的属性名称。例如 class A: __slots__ = ('name', 'age') 表示A的实例只能有name和age属性。<br><br>
@@ -1527,10 +1527,7 @@ var sidebarMgr = new SidebarManager({
   }
 });
 sidebarMgr.render();
-// Gist 云同步
-if (typeof GistSync !== 'undefined') {
-  GistSync.init({ sidebarHeader: document.querySelector('.sidebar-header') });
-}
+
 
 function updateSidebarActive() {
   if (typeof sidebarMgr !== 'undefined') sidebarMgr.setActiveIndex(index);

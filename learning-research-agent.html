@@ -846,10 +846,7 @@ var sidebarMgr = new SidebarManager({
   }
 });
 sidebarMgr.render();
-// Gist 云同步
-if (typeof GistSync !== 'undefined') {
-  GistSync.init({ sidebarHeader: document.querySelector('.sidebar-header') });
-}
+
 
 function updateSidebarActive() {
   if (typeof sidebarMgr !== 'undefined') sidebarMgr.setActiveIndex(index);

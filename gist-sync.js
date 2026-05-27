@@ -162,7 +162,15 @@
       '.gs-clear{background:#444;color:#ddd;}',
       '.gs-clear:hover{background:#555;}',
       '.gs-close{background:none;color:#888;border:none;cursor:pointer;font-size:20px;}',
-      '.gs-status{font-size:13px;color:#aaa;margin-top:4px;}'
+      '.gs-status{font-size:13px;color:#aaa;margin-top:4px;}',
+      '.gs-hero-btn{',
+      '  display:inline-flex;align-items:center;gap:6px;',
+      '  margin-top:12px;padding:8px 16px;',
+      '  background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);',
+      '  border-radius:8px;color:#00ff88;cursor:pointer;',
+      '  font-size:14px;transition:background 0.2s;',
+      '}',
+      '.gs-hero-btn:hover{background:rgba(0,255,136,0.2);}'
     ].join('\n');
     document.head.appendChild(s);
   }
@@ -237,8 +245,8 @@
     _token = localStorage.getItem(TOKEN_KEY) || '';
     _gistId = localStorage.getItem(GIST_ID_KEY) || '';
 
-    // Add gear button to sidebar header
     if (sidebarHeader) {
+      // Content page: add gear icon to sidebar header
       var btn = document.createElement('button');
       btn.className = 'gs-settings-btn';
       btn.textContent = '\u2699';
@@ -247,13 +255,21 @@
         e.stopPropagation();
         showSettingsDialog();
       });
-      // Insert before the close button
       var closeBtn = sidebarHeader.querySelector('.sidebar-close');
       if (closeBtn) {
         sidebarHeader.insertBefore(btn, closeBtn);
       } else {
         sidebarHeader.appendChild(btn);
       }
+    } else if (opts.heroSection) {
+      // Homepage: add button in hero section
+      var heroBtn = document.createElement('button');
+      heroBtn.className = 'gs-hero-btn';
+      heroBtn.innerHTML = '\u2699 云同步设置';
+      heroBtn.addEventListener('click', function () {
+        showSettingsDialog();
+      });
+      opts.heroSection.appendChild(heroBtn);
     }
 
     // If token exists, fetch from Gist to populate missing localStorage keys
