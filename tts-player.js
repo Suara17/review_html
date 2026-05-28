@@ -2,6 +2,7 @@
   const STYLE_ID = 'tts-player-style';
   const DEFAULT_VOICE = 'zh-CN-XiaoxiaoNeural';
   const DEFAULT_RATE = '+0%';
+  const TTS_RENDER_CACHE = new WeakMap();
 
   function injectStyle() {
     if (document.getElementById(STYLE_ID)) return;
@@ -115,6 +116,20 @@
       .tts-status[data-state="playing"] {
         color: #00ffcc;
       }
+      .tts-segment {
+        border-radius: 6px;
+        padding: 0.05em 0.12em;
+        transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+      }
+      .tts-segment.is-active {
+        background: rgba(0, 255, 255, 0.18);
+        color: #dfffff;
+        box-shadow: 0 0 0 1px rgba(0,255,255,0.12), 0 0 12px rgba(0,255,255,0.18);
+      }
+      #knowledge-title.tts-title-active {
+        color: #cfffff;
+        text-shadow: 0 0 14px rgba(0,255,255,0.8), 0 0 28px rgba(0,255,255,0.35);
+      }
       /* Adjust card bottom padding so content isn't hidden behind the bar */
       .card {
         padding-bottom: 90px !important;
@@ -173,22 +188,133 @@
       .trim();
   }
 
-  function htmlToSpeechText(title, html) {
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = (html || '').replace(/<br\s*\/?>/gi, '\n');
-    wrapper.querySelectorAll('li').forEach((li) => {
-      li.insertAdjacentText('afterbegin', '• ');
-      li.insertAdjacentText('beforeend', '\n');
-    });
-    const contentText = normalizeSpeechText(wrapper.textContent
-      .replace(/ /g, ' ')
-      .replace(/[\t ]+\n/g, '\n')
-      .replace(/\n[\t ]+/g, '\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .replace(/[ ]{2,}/g, ' ')
-      .trim());
-    return normalizeSpeechText([title, contentText].filter(Boolean).join('。\n'));
+  function splitTextToChunks(text) {
+    const source = String(text || '').replace(/\r/g, '');
+    const chunks = [];
+    let buffer = '';
+
+    function pushBuffer() {
+      if (!buffer) return;
+      chunks.push(buffer);
+      buffer = '';
+    }
+
+    for (let i = 0; i < source.length; i += 1) {
+      const ch = source[i];
+      buffer += ch;
+      const next = source[i + 1] || '';
+      const compactLength = buffer.replace(/\s+/g, '').length;
+      const hitHardStop = /[。！？!?；;：:]/.test(ch);
+      const hitLineBreak = ch === '\n' && next !== '\n';
+      const hitBlankLine = ch === '\n' && next === '\n';
+      const hitSoftStop = compactLength >= 28 && /[，,、）)】]/.test(ch);
+      const hitLongRun = compactLength >= 42;
+      if (hitHardStop || hitBlankLine || hitLineBreak || hitSoftStop || hitLongRun) {
+        pushBuffer();
+      }
+    }
+
+    pushBuffer();
+    return chunks;
   }
+
+  function buildSegmentSpan(fragment, rawText, segments) {
+    const match = String(rawText || '').match(/^(\s*)([\s\S]*?)(\s*)$/);
+    const leading = match ? match[1] : '';
+    const core = match ? match[2] : rawText;
+    const trailing = match ? match[3] : '';
+
+    if (leading) fragment.appendChild(document.createTextNode(leading));
+    if (core && core.trim()) {
+      const span = document.createElement('span');
+      const segmentIndex = segments.length;
+      span.className = 'tts-segment';
+      span.dataset.segmentIndex = String(segmentIndex);
+      span.textContent = core;
+      fragment.appendChild(span);
+      const spokenText = normalizeSpeechText(core.replace(/\s+/g, ' ').trim()) || core.trim();
+      segments.push({
+        index: segmentIndex,
+        visibleText: core.trim(),
+        spokenText
+      });
+    } else if (core) {
+      fragment.appendChild(document.createTextNode(core));
+    }
+    if (trailing) fragment.appendChild(document.createTextNode(trailing));
+  }
+
+  function buildRenderedKnowledge(kp) {
+    const title = kp && kp.title ? String(kp.title) : '';
+    const html = kp && kp.content ? String(kp.content) : '';
+    const cacheKey = `${title}\n@@\n${html}`;
+    const cached = TTS_RENDER_CACHE.get(kp);
+    if (cached && cached.cacheKey === cacheKey) return cached;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html.replace(/<br\s*\/?>/gi, '\n');
+
+    const walker = document.createTreeWalker(wrapper, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node || !node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('pre, code, script, style')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+    const bodySegments = [];
+    textNodes.forEach((textNode) => {
+      const fragment = document.createDocumentFragment();
+      splitTextToChunks(textNode.nodeValue).forEach((chunk) => {
+        buildSegmentSpan(fragment, chunk, bodySegments);
+      });
+      textNode.parentNode.replaceChild(fragment, textNode);
+    });
+
+    const titleSpokenText = normalizeSpeechText(title);
+    const segments = [];
+    if (titleSpokenText) {
+      segments.push({
+        kind: 'title',
+        visibleText: title,
+        spokenText: titleSpokenText,
+        bodyIndex: -1
+      });
+    }
+    bodySegments.forEach((segment) => {
+      if (!segment.spokenText) return;
+      segments.push({
+        kind: 'body',
+        visibleText: segment.visibleText,
+        spokenText: segment.spokenText,
+        bodyIndex: segment.index
+      });
+    });
+
+    const result = {
+      cacheKey,
+      html: wrapper.innerHTML,
+      bodySegments,
+      segments,
+      speechText: segments.map((segment) => segment.spokenText).filter(Boolean).join('。\n')
+    };
+    TTS_RENDER_CACHE.set(kp, result);
+    return result;
+  }
+
+  function htmlToSpeechText(title, html) {
+    return buildRenderedKnowledge({ title, content: html }).speechText;
+  }
+
+  window.renderTtsKnowledgeContent = function renderTtsKnowledgeContent(kp) {
+    const rendered = buildRenderedKnowledge(kp || {});
+    return `<div id="detail-content" style="display:none;">${rendered.html}</div>`;
+  };
 
   window.setupTtsPlayer = function setupTtsPlayer(options) {
     injectStyle();
@@ -236,6 +362,11 @@
     let currentAudio = null;
     let sessionId = 0;
     let currentMode = 'idle';
+    let progressFrame = 0;
+    let activeGlobalSegment = -1;
+    let previousCurrentTime = 0;
+    let currentRendered = null;
+    let currentTimeline = [];
 
     function setStatus(text, state) {
       statusEl.textContent = text;
@@ -246,18 +377,186 @@
       }
     }
 
+    function getCurrentDetailEl() {
+      return document.getElementById('detail-content');
+    }
+
+    function getCardEl() {
+      return document.querySelector('.card');
+    }
+
+    function getTitleEl() {
+      return document.getElementById('knowledge-title');
+    }
+
     function getSpeechText(targetIndex) {
       const point = knowledgePoints[targetIndex];
       if (!point) return '';
-      return htmlToSpeechText(point.title, point.content);
+      return buildRenderedKnowledge(point).speechText || htmlToSpeechText(point.title, point.content);
+    }
+
+    function refreshCurrentRendered(targetIndex) {
+      currentRendered = buildRenderedKnowledge(knowledgePoints[targetIndex] || {});
+      return currentRendered;
+    }
+
+    function clearHighlight() {
+      const detailEl = getCurrentDetailEl();
+      if (detailEl) {
+        detailEl.querySelectorAll('.tts-segment.is-active').forEach((el) => el.classList.remove('is-active'));
+      }
+      const titleEl = getTitleEl();
+      if (titleEl) titleEl.classList.remove('tts-title-active');
+      activeGlobalSegment = -1;
+    }
+
+    function scrollSegmentIntoView(el) {
+      if (!el) return;
+      const cardEl = getCardEl();
+      if (!cardEl) return;
+      const cardRect = cardEl.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const upperBound = cardRect.top + cardRect.height * 0.22;
+      const lowerBound = cardRect.bottom - cardRect.height * 0.22;
+      if (elRect.top >= upperBound && elRect.bottom <= lowerBound) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+
+    function setActiveSegment(globalIndex) {
+      if (globalIndex === activeGlobalSegment) return;
+      clearHighlight();
+      activeGlobalSegment = globalIndex;
+      if (globalIndex < 0 || !currentRendered || !currentRendered.segments[globalIndex]) return;
+      const segment = currentRendered.segments[globalIndex];
+      if (segment.kind === 'title') {
+        const titleEl = getTitleEl();
+        if (titleEl) titleEl.classList.add('tts-title-active');
+        return;
+      }
+      const detailEl = getCurrentDetailEl();
+      if (!detailEl) return;
+      const target = detailEl.querySelector(`.tts-segment[data-segment-index="${segment.bodyIndex}"]`);
+      if (!target) return;
+      target.classList.add('is-active');
+      scrollSegmentIntoView(target);
+    }
+
+    function estimateTimeline(duration) {
+      if (!currentRendered || !currentRendered.segments.length || !Number.isFinite(duration) || duration <= 0) {
+        currentTimeline = [];
+        return [];
+      }
+      const weights = currentRendered.segments.map((segment) => {
+        const compact = (segment.spokenText || '').replace(/\s+/g, '');
+        const base = Math.max(compact.length, 2);
+        const punctuationBonus = (segment.spokenText.match(/[。！？!?；;：:,，、]/g) || []).length * 0.8;
+        return base + punctuationBonus;
+      });
+      const totalWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1;
+      let cursor = 0;
+      currentTimeline = weights.map((weight, index) => {
+        const start = cursor;
+        cursor += (duration * weight) / totalWeight;
+        return {
+          index,
+          start,
+          end: index === weights.length - 1 ? duration : cursor
+        };
+      });
+      return currentTimeline;
+    }
+
+    function getActiveSegmentByTime(currentTime, duration) {
+      const timeline = currentTimeline.length ? currentTimeline : estimateTimeline(duration);
+      if (!timeline.length) return currentRendered && currentRendered.segments.length ? 0 : -1;
+      for (let i = 0; i < timeline.length; i += 1) {
+        const item = timeline[i];
+        if (currentTime >= item.start && currentTime < item.end) return item.index;
+      }
+      return timeline[timeline.length - 1].index;
+    }
+
+    function stopProgressTracking() {
+      if (progressFrame) cancelAnimationFrame(progressFrame);
+      progressFrame = 0;
+      previousCurrentTime = 0;
+    }
+
+    function syncProgress(localSession) {
+      if (localSession !== sessionId || !currentAudio) return;
+      const duration = currentAudio.duration;
+      const time = currentAudio.currentTime || 0;
+      if (time + 0.2 < previousCurrentTime) {
+        setActiveSegment(0);
+      } else {
+        setActiveSegment(getActiveSegmentByTime(time, duration));
+      }
+      previousCurrentTime = time;
+      if (!currentAudio.paused) {
+        progressFrame = requestAnimationFrame(() => syncProgress(localSession));
+      }
+    }
+
+    function startProgressTracking(localSession) {
+      stopProgressTracking();
+      previousCurrentTime = currentAudio ? currentAudio.currentTime || 0 : 0;
+      if (currentAudio && !currentAudio.paused) {
+        progressFrame = requestAnimationFrame(() => syncProgress(localSession));
+      }
+    }
+
+    function decodeBase64Audio(audioBase64, audioMime) {
+      const binary = atob(audioBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new Blob([bytes], { type: audioMime || 'audio/mpeg' });
+    }
+
+    function normalizeBackendTimeline(timeline) {
+      if (!Array.isArray(timeline) || !currentRendered || !currentRendered.segments.length) return [];
+      const normalized = timeline
+        .map((item) => {
+          const index = Number(item && item.index);
+          const start = Number(item && item.start);
+          const end = Number(item && item.end);
+          if (!Number.isInteger(index) || index < 0 || index >= currentRendered.segments.length) return null;
+          if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+          return {
+            index,
+            start: Math.max(0, start),
+            end: Math.max(Math.max(0, start), end)
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.index - b.index);
+
+      if (!normalized.length) return [];
+      const seen = new Set();
+      for (let i = 0; i < normalized.length; i += 1) {
+        if (seen.has(normalized[i].index)) return [];
+        seen.add(normalized[i].index);
+      }
+      if (normalized.length !== currentRendered.segments.length) return [];
+      for (let i = 0; i < normalized.length; i += 1) {
+        if (normalized[i].index !== i) return [];
+      }
+      return normalized;
     }
 
     async function fetchAudioUrl(targetIndex, mode) {
+      const point = knowledgePoints[targetIndex];
       const text = getSpeechText(targetIndex);
       if (!text) {
         throw new Error('当前块没有可朗读文本');
       }
-      const cacheKey = JSON.stringify({ pageId, targetIndex, text, voice, rate });
+      const rendered = currentRendered || refreshCurrentRendered(targetIndex);
+      const segments = rendered.segments.map((segment, index) => ({
+        index,
+        text: segment.spokenText
+      }));
+      const cacheKey = JSON.stringify({ pageId, targetIndex, title: point && point.title, content: point && point.content, text, voice, rate, segments });
       if (audioCache.has(cacheKey)) {
         return audioCache.get(cacheKey);
       }
@@ -270,27 +569,38 @@
           mode,
           voice,
           rate,
-          text
+          text,
+          segments
         })
       });
       if (!response.ok) {
         const message = await response.text();
         throw new Error(message || '音频生成失败');
       }
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      audioCache.set(cacheKey, objectUrl);
-      return objectUrl;
+      const payload = await response.json();
+      if (!payload || typeof payload.audioBase64 !== 'string' || !payload.audioBase64) {
+        throw new Error('音频响应格式无效');
+      }
+      const blob = decodeBase64Audio(payload.audioBase64, payload.audioMime);
+      const audioUrl = URL.createObjectURL(blob);
+      const result = {
+        audioUrl,
+        timeline: normalizeBackendTimeline(payload.segments)
+      };
+      audioCache.set(cacheKey, result);
+      return result;
     }
 
     function stopAudio(updateStatus) {
       sessionId += 1;
       currentMode = 'idle';
+      stopProgressTracking();
       if (currentAudio) {
         currentAudio.pause();
         currentAudio.src = '';
         currentAudio = null;
       }
+      clearHighlight();
       if (updateStatus) {
         setStatus('朗读已停止', 'idle');
       }
@@ -302,31 +612,49 @@
       const localSession = sessionId;
       navigateToIndex(targetIndex);
       if (typeof ensureExpanded === 'function') ensureExpanded();
+      refreshCurrentRendered(targetIndex);
+      currentTimeline = [];
+      setActiveSegment(0);
       setStatus(`正在生成第 ${targetIndex + 1} 块音频...`, 'loading');
       const audio = new Audio();
       currentAudio = audio;
       audio.loop = true;
+      audio.onloadedmetadata = () => {
+        if (audio !== currentAudio || localSession !== sessionId) return;
+        if (!currentTimeline.length) {
+          estimateTimeline(audio.duration);
+        }
+      };
+      audio.onplay = () => {
+        if (audio !== currentAudio || localSession !== sessionId) return;
+        startProgressTracking(localSession);
+      };
+      audio.onpause = () => {
+        if (audio !== currentAudio) return;
+        stopProgressTracking();
+      };
       audio.onerror = () => {
         if (audio !== currentAudio) return;
+        stopProgressTracking();
         setStatus('音频播放失败', 'error');
       };
-      // Start silent play in user gesture to unlock autoplay
       audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=';
       const playPromise = audio.play();
       fetchAudioUrl(targetIndex, 'block-loop')
-        .then((audioUrl) => {
+        .then(({ audioUrl, timeline }) => {
           if (localSession !== sessionId) return;
+          currentTimeline = timeline && timeline.length ? timeline : [];
           audio.src = audioUrl;
           setStatus(`正在循环朗读第 ${targetIndex + 1} 块`, 'playing');
           return audio.play();
         })
         .catch((error) => {
           if (localSession !== sessionId) return;
-          // If initial silent play was rejected, try once more after fetch
           if (playPromise) {
             playPromise.catch(() => {});
           }
           console.error(error);
+          stopProgressTracking();
           setStatus(`朗读失败：${error.message}`, 'error');
         });
     }
@@ -338,7 +666,6 @@
       const currentIndex = getIndex();
 
       if (action === 'sidebar') {
-        // Open the sidebar drawer
         const sidebarToggle = document.getElementById('sidebar-toggle');
         if (sidebarToggle) sidebarToggle.click();
         return;
@@ -352,6 +679,7 @@
           currentAudio.play().catch(() => {});
           setStatus(`正在循环朗读第 ${currentIndex + 1} 块`, 'playing');
           currentMode = 'block-loop';
+          startProgressTracking(sessionId);
         } else {
           playBlockLoop(currentIndex);
         }
@@ -359,13 +687,11 @@
       }
       if (action === 'prev') {
         const prevIndex = (currentIndex - 1 + knowledgePoints.length) % knowledgePoints.length;
-        navigateToIndex(prevIndex);
         playBlockLoop(prevIndex);
         return;
       }
       if (action === 'next-block') {
         const nextIndex = (currentIndex + 1) % knowledgePoints.length;
-        navigateToIndex(nextIndex);
         playBlockLoop(nextIndex);
         return;
       }
@@ -382,10 +708,13 @@
     });
 
     window.stopTts = function () { stopAudio(true); };
+    window.isTtsPlaying = function () { return currentMode === 'block-loop' && !!currentAudio && !currentAudio.paused; };
 
     window.addEventListener('beforeunload', () => {
       stopAudio(false);
-      audioCache.forEach((url) => URL.revokeObjectURL(url));
+      audioCache.forEach((item) => {
+        if (item && item.audioUrl) URL.revokeObjectURL(item.audioUrl);
+      });
     });
   };
 })();

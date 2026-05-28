@@ -930,7 +930,9 @@ function showKnowledge() {
   titleEl.style.cursor = 'pointer';
 
   // 更新内容区
-  container.innerHTML = `<div id="detail-content" style="display:none;">${kp.content}</div>`;
+  container.innerHTML = window.renderTtsKnowledgeContent
+    ? window.renderTtsKnowledgeContent(kp)
+    : `<div id="detail-content" style="display:none;">${kp.content}</div>`;
   if (clickHint) clickHint.style.display = 'block';
   // 点击卡片任意空白区域都切换
   if (window._cardClickHandler) {
@@ -992,7 +994,13 @@ setInterval(() => {
     countdownEl.textContent = timeLeft;
     progressBar.style.width = `${((30 - timeLeft) / 30) * 100}%`;
   } else {
-    if (phase === 'hidden') {
+    if (window.isTtsPlaying && window.isTtsPlaying()) {
+      toggleContent(true);
+      phase = 'shown';
+      timeLeft = 30;
+      countdownEl.textContent = timeLeft;
+      progressBar.style.width = '0%';
+    } else if (phase === 'hidden') {
       // 30秒结束 → 自动展开内容
       toggleContent(true);
       phase = 'shown';
