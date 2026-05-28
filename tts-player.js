@@ -223,7 +223,24 @@
     }
 
     pushBuffer();
-    return chunks;
+
+    // 合并只有标点/空白的 chunk 到前一个 chunk，避免标点独占一行导致高亮不同步
+    const merged = [];
+    for (let j = 0; j < chunks.length; j += 1) {
+      const stripped = chunks[j].replace(/[\s\n]/g, '');
+      if (/^[，,。.、；;：:！!？?）)】\]」》>~\-—…]+$/.test(stripped) && merged.length > 0) {
+        merged[merged.length - 1] += chunks[j].replace(/\n/g, ' ');
+      } else {
+        merged.push(chunks[j]);
+      }
+    }
+
+    // 清理 chunk 内部多余换行
+    for (let k = 0; k < merged.length; k += 1) {
+      merged[k] = merged[k].replace(/\n/g, ' ').replace(/\s{2,}/g, ' ');
+    }
+
+    return merged;
   }
 
   function buildSegmentSpan(fragment, rawText, segments) {
@@ -616,6 +633,9 @@
       const localSession = sessionId;
       navigateToIndex(targetIndex);
       if (typeof ensureExpanded === 'function') ensureExpanded();
+      // 内容展开后立即滚动到卡片顶部，防止浏览器自动滚到底部
+      const cardEl = getCardEl();
+      if (cardEl) cardEl.scrollIntoView({ behavior: 'instant', block: 'start' });
       refreshCurrentRendered(targetIndex);
       currentTimeline = [];
       setActiveSegment(0);
