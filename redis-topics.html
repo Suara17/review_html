@@ -958,11 +958,13 @@ function showKnowledge() {
 }
 
 function goToNext() {
+  if (window.stopTts) window.stopTts();
   closeEditModal(true);
   if (!knowledgePoints.length) return;
   index = (index + 1) % knowledgePoints.length;
   showKnowledge();
 }
+window.goToNextKnowledge = goToNext;
 
 nextBtn.addEventListener('click', goToNext);
 

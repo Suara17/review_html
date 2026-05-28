@@ -370,6 +370,10 @@
         return;
       }
       if (action === 'next-card') {
+        if (typeof window.goToNextKnowledge === 'function') {
+          window.goToNextKnowledge();
+          return;
+        }
         stopAudio(true);
         const nextIndex = (currentIndex + 1) % knowledgePoints.length;
         navigateToIndex(nextIndex);
