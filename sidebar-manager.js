@@ -95,6 +95,7 @@
     injectStyle();
     this._loadAndHydrate();
     this._bindEvents();
+    window.__sidebarManagerCurrent = this;
   }
 
   var proto = SidebarManager.prototype;
@@ -188,7 +189,26 @@
   };
 
   /* ── public: get/set active index ── */
+  proto.getStorageKey = function () {
+    return STORAGE_PREFIX + location.pathname;
+  };
+
   proto.getActiveIndex = function () { return this._activeIndex; };
+
+  proto.reloadFromStorage = function () {
+    var previousIndex = this._activeIndex;
+    this._loadAndHydrate();
+    if (this._data && this._data.order && this._data.order.length) {
+      if (previousIndex >= this._data.order.length) previousIndex = this._data.order.length - 1;
+      if (previousIndex < 0) previousIndex = 0;
+      this._activeIndex = previousIndex;
+    } else {
+      this._activeIndex = 0;
+    }
+    this.render();
+    this.setActiveIndex(this._activeIndex);
+    this._onNavigate(this._activeIndex);
+  };
 
   proto.setActiveIndex = function (i) {
     this._activeIndex = i;
@@ -564,6 +584,9 @@
 
   /* ── public: destroy ── */
   proto.destroy = function () {
+    if (window.__sidebarManagerCurrent === this) {
+      window.__sidebarManagerCurrent = null;
+    }
     if (this._bound._vis) document.removeEventListener('visibilitychange', this._bound._vis);
     if (this._bound._unload) window.removeEventListener('beforeunload', this._bound._unload);
   };
