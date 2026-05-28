@@ -894,6 +894,7 @@ var sidebarMgr = new SidebarManager({
   sidebarUl: sidebar,
   knowledgePoints: knowledgePoints,
   onNavigate: function (targetIndex) {
+    if (window.stopTts) window.stopTts();
     closeEditModal(true);
     index = targetIndex;
     showKnowledge();

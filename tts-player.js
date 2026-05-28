@@ -377,6 +377,8 @@
       }
     });
 
+    window.stopTts = function () { stopAudio(true); };
+
     window.addEventListener('beforeunload', () => {
       stopAudio(false);
       audioCache.forEach((url) => URL.revokeObjectURL(url));
