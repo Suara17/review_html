@@ -117,9 +117,17 @@
         color: #00ffcc;
       }
       .tts-segment {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
         border-radius: 6px;
-        padding: 0.05em 0.12em;
+        padding: 0.18em 0.35em;
+        margin: 0 0 0.38em;
+        line-height: 1.8;
         transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+      }
+      .tts-segment:last-child {
+        margin-bottom: 0;
       }
       .tts-segment.is-active {
         background: rgba(0, 255, 255, 0.18);
@@ -220,17 +228,14 @@
 
   function buildSegmentSpan(fragment, rawText, segments) {
     const match = String(rawText || '').match(/^(\s*)([\s\S]*?)(\s*)$/);
-    const leading = match ? match[1] : '';
     const core = match ? match[2] : rawText;
-    const trailing = match ? match[3] : '';
 
-    if (leading) fragment.appendChild(document.createTextNode(leading));
     if (core && core.trim()) {
       const span = document.createElement('span');
       const segmentIndex = segments.length;
       span.className = 'tts-segment';
       span.dataset.segmentIndex = String(segmentIndex);
-      span.textContent = core;
+      span.textContent = core.trim();
       fragment.appendChild(span);
       const spokenText = normalizeSpeechText(core.replace(/\s+/g, ' ').trim()) || core.trim();
       segments.push({
@@ -241,7 +246,6 @@
     } else if (core) {
       fragment.appendChild(document.createTextNode(core));
     }
-    if (trailing) fragment.appendChild(document.createTextNode(trailing));
   }
 
   function buildRenderedKnowledge(kp) {
