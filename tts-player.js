@@ -107,17 +107,32 @@
           0 14px 28px rgba(0,0,0,0.34);
       }
       .tts-icon.tts-play[data-state="playing"] {
+        border-color: rgba(118, 246, 255, 0.82);
+        color: #f4ffff;
         background:
-          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.22), transparent 34%),
-          linear-gradient(145deg, rgba(0,255,255,0.34), rgba(0,196,255,0.24) 40%, rgba(0,32,44,0.98) 100%);
-        border-color: rgba(133, 251, 255, 0.88);
-        color: #ffffff;
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.26), transparent 36%),
+          linear-gradient(145deg, rgba(96,255,255,0.22), rgba(0,194,255,0.20) 38%, rgba(3,42,58,0.98) 68%, rgba(1,18,28,0.99) 100%);
         box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.15),
+          inset 0 1px 0 rgba(255,255,255,0.16),
+          inset 0 0 20px rgba(0,255,255,0.08),
+          0 0 0 1px rgba(0,255,255,0.14),
+          0 0 22px rgba(0,255,255,0.24),
+          0 0 38px rgba(82,240,255,0.10),
+          0 12px 28px rgba(0,0,0,0.32);
+      }
+      .tts-icon.tts-play[data-state="playing"]:hover {
+        border-color: rgba(150, 250, 255, 0.94);
+        color: #ffffff;
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.30), transparent 38%),
+          linear-gradient(145deg, rgba(120,255,255,0.26), rgba(0,214,255,0.24) 38%, rgba(4,48,66,0.99) 68%, rgba(1,20,31,1) 100%);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.18),
+          inset 0 0 24px rgba(0,255,255,0.10),
           0 0 0 1px rgba(0,255,255,0.16),
           0 0 28px rgba(0,255,255,0.30),
-          0 0 42px rgba(0,255,255,0.12),
-          0 12px 28px rgba(0,0,0,0.32);
+          0 0 44px rgba(82,240,255,0.13),
+          0 14px 30px rgba(0,0,0,0.34);
       }
       .tts-next-btn {
         height: 44px;
