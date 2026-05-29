@@ -49,111 +49,91 @@
       }
       .tts-btns {
         display: flex;
-        gap: 8px;
-        flex: 2;
         align-items: center;
+        justify-content: center;
+        gap: 10px;
+        flex: 2;
       }
       .tts-icon {
-        position: relative;
-        height: 44px;
-        min-width: 44px;
-        flex: 1;
-        padding: 0 12px;
-        border-radius: 14px;
-        border: 1px solid rgba(0,255,255,0.22);
-        background:
-          linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
-          rgba(10, 22, 34, 0.78);
-        color: #b9ffff;
-        font-size: 0.92em;
-        font-weight: 600;
-        letter-spacing: 0.02em;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(125, 249, 255, 0.26);
+        background: linear-gradient(180deg, rgba(8,28,38,0.92), rgba(3,16,24,0.96));
+        color: #9ffcff;
+        font-size: 14px;
+        line-height: 1;
         cursor: pointer;
-        overflow: hidden;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.08),
-          0 8px 18px rgba(0,0,0,0.22);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
-      }
-      .tts-icon::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at 50% 100%, rgba(0,255,255,0.10), transparent 42%);
-        opacity: 0.8;
-        pointer-events: none;
-      }
-      .tts-icon::after {
-        position: relative;
-        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+        padding: 0;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 16px rgba(0,0,0,0.22);
       }
       .tts-icon:hover {
-        transform: translateY(-1px);
+        background: linear-gradient(180deg, rgba(10,36,48,0.96), rgba(4,20,30,0.98));
         border-color: rgba(0,255,255,0.42);
-        background:
-          linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03)),
-          rgba(12, 30, 44, 0.92);
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.10),
-          0 10px 22px rgba(0,0,0,0.26),
-          0 0 14px rgba(0,255,255,0.10);
-        color: #e8ffff;
-      }
-      .tts-icon:active {
-        transform: translateY(0);
-      }
-      .tts-icon[data-action="prev"]::after {
-        content: '‹';
-        font-size: 1.3em;
-        line-height: 1;
-      }
-      .tts-icon[data-action="next-block"]::after {
-        content: '›';
-        font-size: 1.3em;
-        line-height: 1;
+        color: #d9ffff;
+        transform: translateY(-1px);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(0,255,255,0.08), 0 10px 22px rgba(0,0,0,0.26);
       }
       .tts-icon.tts-play {
-        flex: 1.2;
-        border-color: rgba(0,255,255,0.34);
+        width: 54px;
+        height: 54px;
+        font-size: 20px;
+        border-width: 1.8px;
+        border-color: rgba(72, 245, 255, 0.55);
+        color: #ecffff;
         background:
-          linear-gradient(180deg, rgba(0,255,255,0.09), rgba(0,255,255,0.03)),
-          rgba(7, 24, 36, 0.90);
-        color: #dfffff;
-      }
-      .tts-icon.tts-play::after {
-        content: '≈';
-        font-size: 1.28em;
-        line-height: 1;
-        letter-spacing: 0.18em;
-        transform: translateY(-1px);
-      }
-      .tts-icon.tts-play[data-state="playing"],
-      .tts-icon.tts-play.is-playing {
-        border-color: rgba(0,255,255,0.46);
-        background:
-          linear-gradient(180deg, rgba(0,255,255,0.14), rgba(0,255,255,0.04)),
-          rgba(5, 26, 40, 0.96);
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.20), transparent 34%),
+          linear-gradient(145deg, rgba(0,255,255,0.24), rgba(0,138,179,0.18) 42%, rgba(0,24,34,0.96) 100%);
         box-shadow:
           inset 0 1px 0 rgba(255,255,255,0.10),
-          0 10px 24px rgba(0,0,0,0.28),
-          0 0 18px rgba(0,255,255,0.16);
+          0 0 0 1px rgba(0,255,255,0.08),
+          0 0 18px rgba(0,255,255,0.16),
+          0 10px 26px rgba(0,0,0,0.30);
+      }
+      .tts-icon.tts-play:hover {
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.24), transparent 36%),
+          linear-gradient(145deg, rgba(0,255,255,0.30), rgba(0,168,214,0.22) 42%, rgba(0,28,40,0.98) 100%);
+        border-color: rgba(110, 250, 255, 0.78);
         color: #ffffff;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.14),
+          0 0 0 1px rgba(0,255,255,0.12),
+          0 0 24px rgba(0,255,255,0.22),
+          0 14px 28px rgba(0,0,0,0.34);
       }
-      .tts-icon.tts-play[data-state="playing"]::after,
-      .tts-icon.tts-play.is-playing::after {
-        content: '≈';
-        font-size: 1.3em;
-        letter-spacing: 0.22em;
-        text-shadow: 0 0 8px rgba(0,255,255,0.35);
+      .tts-icon.tts-play[data-state="playing"] {
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.22), transparent 34%),
+          linear-gradient(145deg, rgba(0,255,255,0.34), rgba(0,196,255,0.24) 40%, rgba(0,32,44,0.98) 100%);
+        border-color: rgba(133, 251, 255, 0.88);
+        color: #ffffff;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.15),
+          0 0 0 1px rgba(0,255,255,0.16),
+          0 0 28px rgba(0,255,255,0.30),
+          0 0 42px rgba(0,255,255,0.12),
+          0 12px 28px rgba(0,0,0,0.32);
       }
-        position: absolute;
-        inset: 10px 11px 10px 11px;
-        border-top: 1px solid rgba(220,255,255,0.38);
-        border-bottom: 1px solid rgba(220,255,255,0.18);
-        border-radius: 999px;
-        opacity: 0.9;
+      .tts-next-btn {
+        height: 44px;
+        flex: 1;
+        border-radius: 10px;
+        border: 1px solid rgba(0,255,255,0.35);
+        background: rgba(0,255,255,0.12);
+        color: #00ffff;
+        font-size: 0.88em;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.2s;
+      }
+      .tts-next-btn:hover {
+        background: rgba(0,255,255,0.22);
       }
       .tts-status-bar {
         text-align: center;
@@ -435,9 +415,9 @@
       <div class="tts-row">
         <button type="button" class="tts-sidebar-btn" data-action="sidebar" title="目录">☰</button>
         <div class="tts-btns">
-          <button type="button" class="tts-icon" data-action="prev" title="上一块"></button>
-          <button type="button" class="tts-icon tts-play" data-action="play" title="播放/暂停"></button>
-          <button type="button" class="tts-icon" data-action="next-block" title="下一块"></button>
+          <button type="button" class="tts-icon" data-action="prev" title="上一块">⏮</button>
+          <button type="button" class="tts-icon tts-play" data-action="play" title="播放/暂停">▶</button>
+          <button type="button" class="tts-icon" data-action="next-block" title="下一块">⏭</button>
         </div>
         <button type="button" class="tts-next-btn" data-action="next-card">下一个 →</button>
       </div>
@@ -464,8 +444,7 @@
       statusEl.dataset.state = state;
       if (playBtn) {
         playBtn.dataset.state = state === 'playing' ? 'playing' : 'idle';
-        playBtn.classList.toggle('is-playing', state === 'playing');
-        playBtn.textContent = state === 'playing' ? '≈' : '▶';
+        playBtn.textContent = state === 'playing' ? '⏸' : '▶';
       }
     }
 
