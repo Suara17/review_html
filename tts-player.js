@@ -150,51 +150,121 @@
           0 0 18px rgba(0,255,255,0.18),
           0 10px 22px rgba(0,0,0,0.30) !important;
       }
-      .tts-icon.tts-play span,
-      .tts-icon.tts-play i,
-      .tts-icon.tts-play em {
-        display: none;
+      .tts-btns {
+        display: flex;
+        gap: 8px;
+        flex: 2;
+        align-items: center;
       }
-      .tts-icon.tts-play[data-state="playing"]::after,
-      .tts-icon.tts-play.is-playing::after {
-        content: '◉';
+      .tts-icon {
+        position: relative;
+        height: 44px;
+        min-width: 44px;
+        flex: 1;
+        padding: 0 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(0,255,255,0.28);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+          radial-gradient(circle at 50% 35%, rgba(0,255,255,0.12), transparent 55%),
+          rgba(10, 22, 34, 0.78);
+        color: #b9ffff;
+        font-size: 0.92em;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        overflow: hidden;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.08),
+          0 8px 22px rgba(0,0,0,0.26),
+          0 0 0 1px rgba(0,255,255,0.06);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+      }
+      .tts-icon::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, transparent, rgba(0,255,255,0.10), transparent),
+          radial-gradient(circle at 50% 100%, rgba(0,255,255,0.18), transparent 36%);
+        opacity: 0.8;
+        pointer-events: none;
+      }
+      .tts-icon::after {
         position: relative;
         z-index: 1;
-        font-size: 18px;
-        letter-spacing: -1px;
-        transform: translateY(-1px);
       }
-      .tts-icon.tts-play[data-state="playing"]::before,
-      .tts-icon.tts-play.is-playing::before {
+      .tts-icon:hover {
+        transform: translateY(-1px);
+        border-color: rgba(0,255,255,0.52);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)),
+          radial-gradient(circle at 50% 35%, rgba(0,255,255,0.18), transparent 58%),
+          rgba(12, 30, 44, 0.92);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.12),
+          0 10px 24px rgba(0,0,0,0.30),
+          0 0 18px rgba(0,255,255,0.16);
+        color: #e8ffff;
+      }
+      .tts-icon:active {
+        transform: translateY(0);
+      }
+      .tts-icon[data-action="prev"]::after {
+        content: '≪';
+        font-size: 1.05em;
+        letter-spacing: -0.08em;
+      }
+      .tts-icon[data-action="next-block"]::after {
+        content: '≫';
+        font-size: 1.05em;
+        letter-spacing: -0.08em;
+      }
+      .tts-icon.tts-play {
+        border-color: rgba(0,255,255,0.40);
+        background:
+          linear-gradient(180deg, rgba(0,255,255,0.10), rgba(0,255,255,0.04)),
+          radial-gradient(circle at 50% 25%, rgba(0,255,255,0.20), transparent 58%),
+          rgba(7, 24, 36, 0.90);
+        color: #dfffff;
+      }
+      .tts-icon.tts-play::after {
         content: '≈';
-        position: absolute;
-        right: 11px;
-        bottom: 9px;
-        z-index: 0;
-        font-size: 12px;
-        opacity: 0.95;
-        color: rgba(220,255,255,0.88);
-        transform: rotate(8deg);
+        font-size: 1.25em;
+        letter-spacing: 0.18em;
+        transform: translateY(-1px);
       }
       .tts-icon.tts-play[data-state="playing"],
       .tts-icon.tts-play.is-playing {
-        position: relative;
+        border-color: rgba(0,255,255,0.58);
+        background:
+          linear-gradient(180deg, rgba(0,255,255,0.16), rgba(0,255,255,0.05)),
+          radial-gradient(circle at 50% 28%, rgba(0,255,255,0.28), transparent 62%),
+          rgba(5, 26, 40, 0.96);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.12),
+          0 10px 26px rgba(0,0,0,0.32),
+          0 0 24px rgba(0,255,255,0.24);
+        color: #ffffff;
       }
-      .tts-next-btn {
-        height: 44px;
-        flex: 1;
-        border-radius: 10px;
-        border: 1px solid rgba(0,255,255,0.35);
-        background: rgba(0,255,255,0.12);
-        color: #00ffff;
-        font-size: 0.88em;
-        font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: background 0.2s;
+      .tts-icon.tts-play[data-state="playing"]::after,
+      .tts-icon.tts-play.is-playing::after {
+        content: '≈';
+        font-size: 1.28em;
+        letter-spacing: 0.22em;
+        text-shadow: 0 0 10px rgba(0,255,255,0.55);
       }
-      .tts-next-btn:hover {
-        background: rgba(0,255,255,0.22);
+      .tts-icon.tts-play[data-state="playing"]::before,
+      .tts-icon.tts-play.is-playing::before {
+        content: '';
+        position: absolute;
+        inset: 10px 11px 10px 11px;
+        border-top: 1px solid rgba(220,255,255,0.38);
+        border-bottom: 1px solid rgba(220,255,255,0.18);
+        border-radius: 999px;
+        opacity: 0.9;
       }
       .tts-status-bar {
         text-align: center;
@@ -506,7 +576,7 @@
       if (playBtn) {
         playBtn.dataset.state = state === 'playing' ? 'playing' : 'idle';
         playBtn.classList.toggle('is-playing', state === 'playing');
-        playBtn.textContent = state === 'playing' ? '⏸' : '▶';
+        playBtn.textContent = state === 'playing' ? '≈' : '▶';
       }
     }
 
