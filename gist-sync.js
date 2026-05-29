@@ -483,15 +483,34 @@
 
   window.__gistSyncDebounced = debouncedSync;
 
+  function checkAndShowTokenConfig() {
+    if (!_token) {
+      console.log('No token found, showing config panel');
+      if (typeof showConfigPanel === 'function') {
+        showConfigPanel();
+      } else {
+        // Fallback: trigger via custom event or retry
+        setTimeout(function() {
+          if (typeof showConfigPanel === 'function') showConfigPanel();
+        }, 500);
+      }
+    }
+  }
+
   window.GistSync = {
     init: init,
     sync: sync,
-    fetchAll: fetchAll
+    fetchAll: fetchAll,
+    checkToken: checkAndShowTokenConfig
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', autoInitContentPage, { once: true });
+    document.addEventListener('DOMContentLoaded', function() {
+      autoInitContentPage();
+      checkAndShowTokenConfig();
+    }, { once: true });
   } else {
     autoInitContentPage();
+    checkAndShowTokenConfig();
   }
 })();
