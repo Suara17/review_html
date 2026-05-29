@@ -58,30 +58,66 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        border: 1.5px solid rgba(0,255,255,0.3);
-        background: rgba(0,255,255,0.08);
-        color: #00ffff;
+        border: 1.5px solid rgba(125, 249, 255, 0.26);
+        background: linear-gradient(180deg, rgba(8,28,38,0.92), rgba(3,16,24,0.96));
+        color: #9ffcff;
         font-size: 14px;
         line-height: 1;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s;
+        transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
         padding: 0;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 16px rgba(0,0,0,0.22);
       }
       .tts-icon:hover {
-        background: rgba(0,255,255,0.18);
+        background: linear-gradient(180deg, rgba(10,36,48,0.96), rgba(4,20,30,0.98));
+        border-color: rgba(0,255,255,0.42);
+        color: #d9ffff;
+        transform: translateY(-1px);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(0,255,255,0.08), 0 10px 22px rgba(0,0,0,0.26);
       }
       .tts-icon.tts-play {
-        width: 48px;
-        height: 48px;
-        font-size: 18px;
-        border-width: 2px;
+        width: 54px;
+        height: 54px;
+        font-size: 20px;
+        border-width: 1.8px;
+        border-color: rgba(72, 245, 255, 0.55);
+        color: #ecffff;
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.20), transparent 34%),
+          linear-gradient(145deg, rgba(0,255,255,0.24), rgba(0,138,179,0.18) 42%, rgba(0,24,34,0.96) 100%);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.10),
+          0 0 0 1px rgba(0,255,255,0.08),
+          0 0 18px rgba(0,255,255,0.16),
+          0 10px 26px rgba(0,0,0,0.30);
+      }
+      .tts-icon.tts-play:hover {
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.24), transparent 36%),
+          linear-gradient(145deg, rgba(0,255,255,0.30), rgba(0,168,214,0.22) 42%, rgba(0,28,40,0.98) 100%);
+        border-color: rgba(110, 250, 255, 0.78);
+        color: #ffffff;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.14),
+          0 0 0 1px rgba(0,255,255,0.12),
+          0 0 24px rgba(0,255,255,0.22),
+          0 14px 28px rgba(0,0,0,0.34);
       }
       .tts-icon.tts-play[data-state="playing"] {
-        background: rgba(0,255,255,0.2);
-        box-shadow: 0 0 12px rgba(0,255,255,0.25);
+        background:
+          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.22), transparent 34%),
+          linear-gradient(145deg, rgba(0,255,255,0.34), rgba(0,196,255,0.24) 40%, rgba(0,32,44,0.98) 100%);
+        border-color: rgba(133, 251, 255, 0.88);
+        color: #ffffff;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.15),
+          0 0 0 1px rgba(0,255,255,0.16),
+          0 0 28px rgba(0,255,255,0.30),
+          0 0 42px rgba(0,255,255,0.12),
+          0 12px 28px rgba(0,0,0,0.32);
       }
       .tts-next-btn {
         height: 44px;
@@ -196,6 +232,16 @@
       .trim();
   }
 
+  function stripKnowledgeAsteriskNoise(text) {
+    return String(text || '')
+      .replace(/^\s*\*+\s*$/gm, '')
+      .replace(/\*(?=[\u3400-\u9FFF])/gu, '')
+      .replace(/(?<=[\u3400-\u9FFF])\*/gu, '')
+      .replace(/\*+(?=\s*[，。；：！？、）】》”’])/gu, '')
+      .replace(/(?<=[（【《“‘\s])\*+/gu, '')
+      .replace(/\s{2,}/g, ' ');
+  }
+
   function splitTextToChunks(text) {
     const source = String(text || '').replace(/\r/g, '');
     const chunks = [];
@@ -266,7 +312,7 @@
   }
 
   function buildRenderedKnowledge(kp) {
-    const title = kp && kp.title ? String(kp.title) : '';
+    const title = stripKnowledgeAsteriskNoise(kp && kp.title ? String(kp.title) : '');
     const html = kp && kp.content ? String(kp.content) : '';
     const cacheKey = `${title}\n@@\n${html}`;
     const cached = TTS_RENDER_CACHE.get(kp);
@@ -287,6 +333,10 @@
 
     const textNodes = [];
     while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+    textNodes.forEach((textNode) => {
+      textNode.nodeValue = stripKnowledgeAsteriskNoise(textNode.nodeValue);
+    });
 
     const bodySegments = [];
     textNodes.forEach((textNode) => {
