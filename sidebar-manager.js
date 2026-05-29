@@ -20,14 +20,14 @@
       '.sm-add-btn:hover,.sm-add-btn:active{background:rgba(0,255,255,0.12);border-color:rgba(0,255,255,0.5);box-shadow:0 0 16px rgba(0,255,255,0.12)}',
 
       /* ── list item ── */
-      '#sidebar-list .sidebar-manager-item{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 6px!important;margin:4px 0!important;min-height:48px;border-radius:10px;transition:background .25s,border-color .25s,box-shadow .25s;cursor:pointer;border:1px solid transparent;position:relative;overflow:visible!important}',
+      '#sidebar-list .sidebar-manager-item{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 6px!important;margin:4px 0!important;min-height:48px;border-radius:10px;transition:background .25s,border-color .25s,box-shadow .25s;cursor:pointer;border:1px solid transparent;position:relative;overflow:visible!important;touch-action:none}',
       '#sidebar-list .sidebar-manager-item:hover{background:rgba(0,255,255,0.12)!important;border-color:rgba(0,255,255,0.25)!important;box-shadow:0 0 16px rgba(0,255,255,0.08)}',
       '#sidebar-list .sidebar-manager-item.active{background:rgba(0,255,255,0.1)!important;border-color:rgba(0,255,255,0.4)!important}',
       '#sidebar-list .sidebar-manager-item::before{display:none!important}',
       '#sidebar-list .sidebar-manager-item.dragging{opacity:.7;z-index:999;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)!important;transition:none!important}',
 
       /* ── drag handle ── */
-      '.sm-drag-handle{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;color:rgba(0,255,255,0.4);font-size:1.1em;cursor:grab;transition:color .2s,background .2s;user-select:none;-webkit-user-select:none}',
+      '.sm-drag-handle{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;color:rgba(0,255,255,0.4);font-size:1.1em;cursor:grab;transition:color .2s,background .2s;user-select:none;-webkit-user-select:none;touch-action:none}',
       '.sm-drag-handle:hover{color:#00ffff;background:rgba(0,255,255,0.1)}',
       '.sm-drag-handle:active{cursor:grabbing}',
 
@@ -421,6 +421,7 @@
   /* ── drag and drop ── */
   proto._onDragStart = function (e, li) {
     e.preventDefault();
+    e.stopPropagation();
     var displayIndex = parseInt(li.dataset.smIndex, 10);
     if (isNaN(displayIndex)) return;
 
@@ -436,20 +437,26 @@
       startY: e.clientY,
       offsetY: e.clientY - rect.top,
       liHeight: rect.height,
-      moved: false
+      moved: false,
+      pointerId: e.pointerId
     };
+
+    if (e.target && typeof e.target.setPointerCapture === 'function' && e.pointerId != null) {
+      try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
+    }
 
     var self = this;
     this._bound._move = function (ev) { self._onDragMove(ev); };
     this._bound._end = function (ev) { self._onDragEnd(ev); };
-    document.addEventListener('pointermove', this._bound._move);
-    document.addEventListener('pointerup', this._bound._end);
-    document.addEventListener('pointercancel', this._bound._end);
+    document.addEventListener('pointermove', this._bound._move, { passive: false });
+    document.addEventListener('pointerup', this._bound._end, { passive: false });
+    document.addEventListener('pointercancel', this._bound._end, { passive: false });
   };
 
   proto._onDragMove = function (e) {
     var d = this._drag;
     if (!d) return;
+    if (d.pointerId != null && e.pointerId != null && d.pointerId !== e.pointerId) return;
     e.preventDefault();
 
     var dy = e.clientY - d.startY;
@@ -490,11 +497,14 @@
   proto._onDragEnd = function (e) {
     var d = this._drag;
     if (!d) return;
+    if (d.pointerId != null && e && e.pointerId != null && d.pointerId !== e.pointerId) return;
 
     // cleanup global listeners
     document.removeEventListener('pointermove', this._bound._move);
     document.removeEventListener('pointerup', this._bound._end);
     document.removeEventListener('pointercancel', this._bound._end);
+    this._bound._move = null;
+    this._bound._end = null;
     document.body.style.userSelect = '';
     document.body.style.webkitUserSelect = '';
 
