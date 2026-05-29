@@ -20,7 +20,7 @@
       '.sm-add-btn:hover,.sm-add-btn:active{background:rgba(0,255,255,0.12);border-color:rgba(0,255,255,0.5);box-shadow:0 0 16px rgba(0,255,255,0.12)}',
 
       /* ── list item ── */
-      '#sidebar-list .sidebar-manager-item{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 6px!important;margin:4px 0!important;min-height:48px;border-radius:10px;transition:background .25s,border-color .25s,box-shadow .25s;cursor:pointer;border:1px solid transparent;position:relative;overflow:visible!important;touch-action:none}',
+      '#sidebar-list .sidebar-manager-item{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 6px!important;margin:4px 0!important;min-height:48px;border-radius:10px;transition:background .25s,border-color .25s,box-shadow .25s;cursor:pointer;border:1px solid transparent;position:relative;overflow:visible!important;touch-action:pan-y}',
       '#sidebar-list .sidebar-manager-item:hover{background:rgba(0,255,255,0.12)!important;border-color:rgba(0,255,255,0.25)!important;box-shadow:0 0 16px rgba(0,255,255,0.08)}',
       '#sidebar-list .sidebar-manager-item.active{background:rgba(0,255,255,0.1)!important;border-color:rgba(0,255,255,0.4)!important}',
       '#sidebar-list .sidebar-manager-item::before{display:none!important}',
@@ -66,7 +66,7 @@
       '.sm-empty{text-align:center;padding:24px 16px;color:rgba(255,255,255,0.35);font-size:.92em}',
 
       /* ── mobile: always show actions, bigger targets ── */
-      '@media(hover:none){.sm-actions{opacity:1!important}#sidebar-list .sidebar-manager-item{min-height:52px;padding:10px 8px 10px 6px!important}}',
+      '@media(hover:none){.sm-actions{opacity:1!important}#sidebar-list .sidebar-manager-item{min-height:52px;padding:10px 8px 10px 6px!important;touch-action:pan-y}}',,
 
       /* ── mobile sidebar overrides ── */
       '@media(max-width:768px){',
