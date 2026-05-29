@@ -37,6 +37,97 @@
     return data;
   }
 
+  var DEFAULT_TOPIC_FILES = [
+    'computer-network.html',
+    'design-patterns-topics.html',
+    'git-topics.html',
+    'guanlan.html',
+    'learning-research-agent.html',
+    'mysql-topics.html',
+    'operating-system.html',
+    'python.html',
+    'redis-topics.html',
+    'system-design-topics.html'
+  ];
+
+  function escapeRegExp(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function getPagePathForFile(fileName) {
+    var path = location.pathname || '/';
+    var idx = path.lastIndexOf('/');
+    var base = idx >= 0 ? path.slice(0, idx + 1) : '/';
+    return base + fileName;
+  }
+
+  function buildSidebarValueFromKnowledgePoints(points) {
+    var items = Array.isArray(points) ? points.map(function (item) {
+      return {
+        title: item && item.title != null ? String(item.title).replace(/^\s*\d+\s*[.．、]\s*/, '') : '',
+        content: item && item.content != null ? String(item.content) : ''
+      };
+    }) : [];
+    var order = [];
+    for (var i = 0; i < items.length; i++) order.push(i);
+    return normalizeSidebarValue({ items: items, order: order });
+  }
+
+  function parseKnowledgePointsFromHtml(html) {
+    if (!html) return null;
+    var match = html.match(/(?:var|let|const)\s+knowledgePoints\s*=\s*(\[[\s\S]*?\]);/);
+    if (!match || !match[1]) return null;
+    try {
+      var parsed = JSON.parse(match[1]);
+      if (!Array.isArray(parsed)) return null;
+      return buildSidebarValueFromKnowledgePoints(parsed);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function collectDefaultPageData() {
+    return Promise.all(DEFAULT_TOPIC_FILES.map(function (fileName) {
+      var pagePath = getPagePathForFile(fileName);
+      return fetch(fileName, { cache: 'no-store' })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Failed to fetch ' + fileName);
+          return resp.text();
+        })
+        .then(function (html) {
+          var value = parseKnowledgePointsFromHtml(html);
+          if (!value || !value.items.length) return null;
+          return {
+            key: DATA_PREFIX + pagePath,
+            value: value
+          };
+        })
+        .catch(function () {
+          return null;
+        });
+    })).then(function (entries) {
+      var data = {};
+      entries.forEach(function (entry) {
+        if (entry && entry.key) data[entry.key] = entry.value;
+      });
+      return data;
+    });
+  }
+
+  function collectAllDataForBackup() {
+    return collectDefaultPageData().then(function (defaultData) {
+      var localData = collectAllData();
+      var merged = {};
+      Object.keys(defaultData || {}).forEach(function (key) {
+        merged[key] = defaultData[key];
+      });
+      Object.keys(localData || {}).forEach(function (key) {
+        merged[key] = localData[key];
+      });
+      return merged;
+    });
+  }
+
   function readLocalValue(key) {
     var raw = null;
     try { raw = localStorage.getItem(key); } catch (e) { raw = null; }
@@ -206,28 +297,32 @@
   }
 
   function buildBackupPayload() {
-    return {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      source: 'review_html_local_backup',
-      data: collectAllData()
-    };
+    return collectAllDataForBackup().then(function (allData) {
+      return {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        source: 'review_html_local_backup',
+        mode: 'full',
+        data: allData
+      };
+    });
   }
 
   function downloadBackupFile() {
-    var payload = buildBackupPayload();
-    var json = JSON.stringify(payload, null, 2);
-    var blob = new Blob([json], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    var stamp = payload.exportedAt.replace(/[:.]/g, '-');
-    link.href = url;
-    link.download = 'review-html-backup-' + stamp + '.json';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 500);
-    return Object.keys(payload.data).length;
+    return buildBackupPayload().then(function (payload) {
+      var json = JSON.stringify(payload, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      var stamp = payload.exportedAt.replace(/[:.]/g, '-');
+      link.href = url;
+      link.download = 'review-html-backup-' + stamp + '.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 500);
+      return Object.keys(payload.data).length;
+    });
   }
 
   function readFileAsText(file) {
@@ -465,7 +560,7 @@
       '</div>' +
       '<div class="gs-section">' +
         '<h5>本地备份</h5>' +
-        '<div class="gs-hint">导出当前浏览器保存的全部知识点数据为 JSON 文件，或从本地 JSON 备份恢复。</div>' +
+        '<div class="gs-hint">导出全部专题页默认知识点，并优先带上当前浏览器里的本地修改；也可从本地 JSON 备份恢复。</div>' +
         '<div class="gs-actions gs-actions-compact">' +
           '<button class="gs-btn gs-save" id="gs-export-btn">导出备份</button>' +
           '<button class="gs-btn gs-clear" id="gs-import-merge-btn">导入并合并</button>' +
@@ -554,12 +649,14 @@
     });
 
     exportBtn.addEventListener('click', function () {
-      try {
-        var count = downloadBackupFile();
-        setStatus('已导出备份：' + count + ' 个页面数据');
-      } catch (err) {
-        setStatus('导出失败: ' + err.message);
-      }
+      setStatus('正在生成全量备份（默认知识点 + 本地修改）...');
+      downloadBackupFile()
+        .then(function (count) {
+          setStatus('已导出全量备份：' + count + ' 个页面数据');
+        })
+        .catch(function (err) {
+          setStatus('导出失败: ' + err.message);
+        });
     });
 
     importMergeBtn.addEventListener('click', function () {
