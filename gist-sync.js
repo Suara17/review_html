@@ -400,13 +400,17 @@
       '}',
       '.gs-dialog h4{margin:0 0 16px;color:#00ff88;font-size:16px;}',
       '.gs-dialog label{display:block;font-size:13px;color:#aaa;margin-bottom:6px;}',
-      '.gs-dialog input[type=password],.gs-dialog input[type=file]{',
+      '.gs-dialog input[type=password]{',
       '  width:100%;padding:10px;background:#0f0f23;color:#fff;',
       '  border:1px solid rgba(0,255,136,0.3);border-radius:6px;',
       '  font-size:14px;box-sizing:border-box;margin-bottom:12px;',
       '}',
-      '.gs-dialog input[type=file]{padding:8px;}',
       '.gs-dialog input:focus{outline:none;border-color:#00ff88;}',
+      '.gs-file-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;}',
+      '.gs-file-input{display:none;}',
+      '.gs-file-trigger{background:rgba(255,255,255,0.08);color:#d7e6ff;border:1px solid rgba(122,162,255,0.28);}',
+      '.gs-file-trigger:hover{background:rgba(255,255,255,0.14);}',
+      '.gs-file-name{font-size:12px;color:#93a4c3;min-height:18px;flex:1 1 160px;}',
       '.gs-hint{font-size:12px;color:#888;margin-bottom:14px;line-height:1.5;}',
       '.gs-hint a{color:#00ff88;}',
       '.gs-actions{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}',
@@ -467,7 +471,11 @@
           '<button class="gs-btn gs-clear" id="gs-import-merge-btn">导入并合并</button>' +
           '<button class="gs-btn gs-clear" id="gs-import-replace-btn">导入并覆盖</button>' +
         '</div>' +
-        '<input type="file" id="gs-import-file" accept="application/json,.json" />' +
+        '<div class="gs-file-row">' +
+          '<input class="gs-file-input" type="file" id="gs-import-file" accept="application/json,.json" />' +
+          '<button class="gs-btn gs-file-trigger" id="gs-import-pick-btn">选择备份文件</button>' +
+          '<div class="gs-file-name" id="gs-file-name">未选择文件</div>' +
+        '</div>' +
       '</div>' +
       '<div class="gs-status" id="gs-status">' + (_token ? '已配置云同步；可随时本地备份' : '未配置云同步；可直接使用本地备份') + '</div>';
 
@@ -482,6 +490,8 @@
     var importMergeBtn = dialog.querySelector('#gs-import-merge-btn');
     var importReplaceBtn = dialog.querySelector('#gs-import-replace-btn');
     var importFileInput = dialog.querySelector('#gs-import-file');
+    var importPickBtn = dialog.querySelector('#gs-import-pick-btn');
+    var fileNameEl = dialog.querySelector('#gs-file-name');
     _statusEl = dialog.querySelector('#gs-status');
 
     if (_token) {
@@ -496,6 +506,15 @@
       }
       return file;
     }
+
+    importPickBtn.addEventListener('click', function () {
+      importFileInput.click();
+    });
+
+    importFileInput.addEventListener('change', function () {
+      var file = importFileInput.files && importFileInput.files[0];
+      fileNameEl.textContent = file ? file.name : '未选择文件';
+    });
 
     function handleImport(mode) {
       var file = requireImportFile();
@@ -630,10 +649,7 @@
   window.__gistSyncDebounced = debouncedSync;
 
   function checkAndShowTokenConfig() {
-    if (!_token) {
-      console.log('No token found, showing config panel');
-      showSettingsDialog();
-    }
+    return !!_token;
   }
 
   window.GistSync = {
@@ -648,10 +664,8 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       autoInitContentPage();
-      checkAndShowTokenConfig();
     }, { once: true });
   } else {
     autoInitContentPage();
-    checkAndShowTokenConfig();
   }
 })();
