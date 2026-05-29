@@ -134,6 +134,34 @@
           0 0 44px rgba(82,240,255,0.13),
           0 14px 30px rgba(0,0,0,0.34);
       }
+      .tts-icon.tts-play[data-state="playing"],
+      .tts-icon.tts-play[data-state="playing"]:hover,
+      .tts-icon.tts-play.is-playing,
+      .tts-icon.tts-play.is-playing:hover {
+        background:
+          radial-gradient(circle at 28% 26%, rgba(255,255,255,0.18), transparent 34%),
+          linear-gradient(145deg, rgba(7,52,70,0.98), rgba(0,115,150,0.92) 42%, rgba(0,168,190,0.82) 68%, rgba(0,30,42,0.99) 100%) !important;
+        border-color: rgba(122, 245, 255, 0.88) !important;
+        color: #ecffff !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.14),
+          inset 0 0 18px rgba(0,255,255,0.08),
+          0 0 0 1px rgba(0,255,255,0.12),
+          0 0 18px rgba(0,255,255,0.18),
+          0 10px 22px rgba(0,0,0,0.30) !important;
+      }
+      .tts-icon.tts-play[data-state="playing"]::before,
+      .tts-icon.tts-play.is-playing::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(180deg, rgba(255,255,255,0.10), transparent 35%);
+        pointer-events: none;
+      }
+      .tts-icon.tts-play[data-state="playing"] {
+        position: relative;
+      }
       .tts-next-btn {
         height: 44px;
         flex: 1;
@@ -459,6 +487,7 @@
       statusEl.dataset.state = state;
       if (playBtn) {
         playBtn.dataset.state = state === 'playing' ? 'playing' : 'idle';
+        playBtn.classList.toggle('is-playing', state === 'playing');
         playBtn.textContent = state === 'playing' ? '⏸' : '▶';
       }
     }
