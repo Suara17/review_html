@@ -150,16 +150,34 @@
           0 0 18px rgba(0,255,255,0.18),
           0 10px 22px rgba(0,0,0,0.30) !important;
       }
+      .tts-icon.tts-play span,
+      .tts-icon.tts-play i,
+      .tts-icon.tts-play em {
+        display: none;
+      }
+      .tts-icon.tts-play[data-state="playing"]::after,
+      .tts-icon.tts-play.is-playing::after {
+        content: '◉';
+        position: relative;
+        z-index: 1;
+        font-size: 18px;
+        letter-spacing: -1px;
+        transform: translateY(-1px);
+      }
       .tts-icon.tts-play[data-state="playing"]::before,
       .tts-icon.tts-play.is-playing::before {
-        content: '';
+        content: '≈';
         position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        background: linear-gradient(180deg, rgba(255,255,255,0.10), transparent 35%);
-        pointer-events: none;
+        right: 11px;
+        bottom: 9px;
+        z-index: 0;
+        font-size: 12px;
+        opacity: 0.95;
+        color: rgba(220,255,255,0.88);
+        transform: rotate(8deg);
       }
-      .tts-icon.tts-play[data-state="playing"] {
+      .tts-icon.tts-play[data-state="playing"],
+      .tts-icon.tts-play.is-playing {
         position: relative;
       }
       .tts-next-btn {
