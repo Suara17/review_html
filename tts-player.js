@@ -49,109 +49,6 @@
       }
       .tts-btns {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        flex: 2;
-      }
-      .tts-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 1.5px solid rgba(125, 249, 255, 0.26);
-        background: linear-gradient(180deg, rgba(8,28,38,0.92), rgba(3,16,24,0.96));
-        color: #9ffcff;
-        font-size: 14px;
-        line-height: 1;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
-        padding: 0;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 16px rgba(0,0,0,0.22);
-      }
-      .tts-icon:hover {
-        background: linear-gradient(180deg, rgba(10,36,48,0.96), rgba(4,20,30,0.98));
-        border-color: rgba(0,255,255,0.42);
-        color: #d9ffff;
-        transform: translateY(-1px);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(0,255,255,0.08), 0 10px 22px rgba(0,0,0,0.26);
-      }
-      .tts-icon.tts-play {
-        width: 54px;
-        height: 54px;
-        font-size: 20px;
-        border-width: 1.8px;
-        border-color: rgba(72, 245, 255, 0.55);
-        color: #ecffff;
-        background:
-          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.20), transparent 34%),
-          linear-gradient(145deg, rgba(0,255,255,0.24), rgba(0,138,179,0.18) 42%, rgba(0,24,34,0.96) 100%);
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.10),
-          0 0 0 1px rgba(0,255,255,0.08),
-          0 0 18px rgba(0,255,255,0.16),
-          0 10px 26px rgba(0,0,0,0.30);
-      }
-      .tts-icon.tts-play:hover {
-        background:
-          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.24), transparent 36%),
-          linear-gradient(145deg, rgba(0,255,255,0.30), rgba(0,168,214,0.22) 42%, rgba(0,28,40,0.98) 100%);
-        border-color: rgba(110, 250, 255, 0.78);
-        color: #ffffff;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.14),
-          0 0 0 1px rgba(0,255,255,0.12),
-          0 0 24px rgba(0,255,255,0.22),
-          0 14px 28px rgba(0,0,0,0.34);
-      }
-      .tts-icon.tts-play[data-state="playing"] {
-        border-color: rgba(118, 246, 255, 0.82);
-        color: #f4ffff;
-        background:
-          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.26), transparent 36%),
-          linear-gradient(145deg, rgba(96,255,255,0.22), rgba(0,194,255,0.20) 38%, rgba(3,42,58,0.98) 68%, rgba(1,18,28,0.99) 100%);
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.16),
-          inset 0 0 20px rgba(0,255,255,0.08),
-          0 0 0 1px rgba(0,255,255,0.14),
-          0 0 22px rgba(0,255,255,0.24),
-          0 0 38px rgba(82,240,255,0.10),
-          0 12px 28px rgba(0,0,0,0.32);
-      }
-      .tts-icon.tts-play[data-state="playing"]:hover {
-        border-color: rgba(150, 250, 255, 0.94);
-        color: #ffffff;
-        background:
-          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.30), transparent 38%),
-          linear-gradient(145deg, rgba(120,255,255,0.26), rgba(0,214,255,0.24) 38%, rgba(4,48,66,0.99) 68%, rgba(1,20,31,1) 100%);
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.18),
-          inset 0 0 24px rgba(0,255,255,0.10),
-          0 0 0 1px rgba(0,255,255,0.16),
-          0 0 28px rgba(0,255,255,0.30),
-          0 0 44px rgba(82,240,255,0.13),
-          0 14px 30px rgba(0,0,0,0.34);
-      }
-      .tts-icon.tts-play[data-state="playing"],
-      .tts-icon.tts-play[data-state="playing"]:hover,
-      .tts-icon.tts-play.is-playing,
-      .tts-icon.tts-play.is-playing:hover {
-        background:
-          radial-gradient(circle at 28% 26%, rgba(255,255,255,0.18), transparent 34%),
-          linear-gradient(145deg, rgba(7,52,70,0.98), rgba(0,115,150,0.92) 42%, rgba(0,168,190,0.82) 68%, rgba(0,30,42,0.99) 100%) !important;
-        border-color: rgba(122, 245, 255, 0.88) !important;
-        color: #ecffff !important;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.14),
-          inset 0 0 18px rgba(0,255,255,0.08),
-          0 0 0 1px rgba(0,255,255,0.12),
-          0 0 18px rgba(0,255,255,0.18),
-          0 10px 22px rgba(0,0,0,0.30) !important;
-      }
-      .tts-btns {
-        display: flex;
         gap: 8px;
         flex: 2;
         align-items: center;
@@ -163,21 +60,19 @@
         flex: 1;
         padding: 0 12px;
         border-radius: 14px;
-        border: 1px solid rgba(0,255,255,0.28);
+        border: 1px solid rgba(0,255,255,0.22);
         background:
           linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
-          radial-gradient(circle at 50% 35%, rgba(0,255,255,0.12), transparent 55%),
           rgba(10, 22, 34, 0.78);
         color: #b9ffff;
         font-size: 0.92em;
-        font-weight: 700;
+        font-weight: 600;
         letter-spacing: 0.02em;
         cursor: pointer;
         overflow: hidden;
         box-shadow:
           inset 0 1px 0 rgba(255,255,255,0.08),
-          0 8px 22px rgba(0,0,0,0.26),
-          0 0 0 1px rgba(0,255,255,0.06);
+          0 8px 18px rgba(0,0,0,0.22);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
@@ -186,9 +81,7 @@
         content: '';
         position: absolute;
         inset: 0;
-        background:
-          linear-gradient(90deg, transparent, rgba(0,255,255,0.10), transparent),
-          radial-gradient(circle at 50% 100%, rgba(0,255,255,0.18), transparent 36%);
+        background: radial-gradient(circle at 50% 100%, rgba(0,255,255,0.10), transparent 42%);
         opacity: 0.8;
         pointer-events: none;
       }
@@ -198,67 +91,63 @@
       }
       .tts-icon:hover {
         transform: translateY(-1px);
-        border-color: rgba(0,255,255,0.52);
+        border-color: rgba(0,255,255,0.42);
         background:
-          linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)),
-          radial-gradient(circle at 50% 35%, rgba(0,255,255,0.18), transparent 58%),
+          linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03)),
           rgba(12, 30, 44, 0.92);
         box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.12),
-          0 10px 24px rgba(0,0,0,0.30),
-          0 0 18px rgba(0,255,255,0.16);
+          inset 0 1px 0 rgba(255,255,255,0.10),
+          0 10px 22px rgba(0,0,0,0.26),
+          0 0 14px rgba(0,255,255,0.10);
         color: #e8ffff;
       }
       .tts-icon:active {
         transform: translateY(0);
       }
       .tts-icon[data-action="prev"]::after {
-        content: '≪';
-        font-size: 1.05em;
-        letter-spacing: -0.08em;
+        content: '‹';
+        font-size: 1.3em;
+        line-height: 1;
       }
       .tts-icon[data-action="next-block"]::after {
-        content: '≫';
-        font-size: 1.05em;
-        letter-spacing: -0.08em;
+        content: '›';
+        font-size: 1.3em;
+        line-height: 1;
       }
       .tts-icon.tts-play {
-        border-color: rgba(0,255,255,0.40);
+        flex: 1.2;
+        border-color: rgba(0,255,255,0.34);
         background:
-          linear-gradient(180deg, rgba(0,255,255,0.10), rgba(0,255,255,0.04)),
-          radial-gradient(circle at 50% 25%, rgba(0,255,255,0.20), transparent 58%),
+          linear-gradient(180deg, rgba(0,255,255,0.09), rgba(0,255,255,0.03)),
           rgba(7, 24, 36, 0.90);
         color: #dfffff;
       }
       .tts-icon.tts-play::after {
         content: '≈';
-        font-size: 1.25em;
+        font-size: 1.28em;
+        line-height: 1;
         letter-spacing: 0.18em;
         transform: translateY(-1px);
       }
       .tts-icon.tts-play[data-state="playing"],
       .tts-icon.tts-play.is-playing {
-        border-color: rgba(0,255,255,0.58);
+        border-color: rgba(0,255,255,0.46);
         background:
-          linear-gradient(180deg, rgba(0,255,255,0.16), rgba(0,255,255,0.05)),
-          radial-gradient(circle at 50% 28%, rgba(0,255,255,0.28), transparent 62%),
+          linear-gradient(180deg, rgba(0,255,255,0.14), rgba(0,255,255,0.04)),
           rgba(5, 26, 40, 0.96);
         box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.12),
-          0 10px 26px rgba(0,0,0,0.32),
-          0 0 24px rgba(0,255,255,0.24);
+          inset 0 1px 0 rgba(255,255,255,0.10),
+          0 10px 24px rgba(0,0,0,0.28),
+          0 0 18px rgba(0,255,255,0.16);
         color: #ffffff;
       }
       .tts-icon.tts-play[data-state="playing"]::after,
       .tts-icon.tts-play.is-playing::after {
         content: '≈';
-        font-size: 1.28em;
+        font-size: 1.3em;
         letter-spacing: 0.22em;
-        text-shadow: 0 0 10px rgba(0,255,255,0.55);
+        text-shadow: 0 0 8px rgba(0,255,255,0.35);
       }
-      .tts-icon.tts-play[data-state="playing"]::before,
-      .tts-icon.tts-play.is-playing::before {
-        content: '';
         position: absolute;
         inset: 10px 11px 10px 11px;
         border-top: 1px solid rgba(220,255,255,0.38);
@@ -546,9 +435,9 @@
       <div class="tts-row">
         <button type="button" class="tts-sidebar-btn" data-action="sidebar" title="目录">☰</button>
         <div class="tts-btns">
-          <button type="button" class="tts-icon" data-action="prev" title="上一块">⏮</button>
-          <button type="button" class="tts-icon tts-play" data-action="play" title="播放/暂停">▶</button>
-          <button type="button" class="tts-icon" data-action="next-block" title="下一块">⏭</button>
+          <button type="button" class="tts-icon" data-action="prev" title="上一块"></button>
+          <button type="button" class="tts-icon tts-play" data-action="play" title="播放/暂停"></button>
+          <button type="button" class="tts-icon" data-action="next-block" title="下一块"></button>
         </div>
         <button type="button" class="tts-next-btn" data-action="next-card">下一个 →</button>
       </div>
