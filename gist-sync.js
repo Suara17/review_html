@@ -170,6 +170,75 @@
     }
   }
 
+  function normalizeBackupData(raw) {
+    var source = raw && typeof raw === 'object' ? raw : {};
+    var data = source.data && typeof source.data === 'object' ? source.data : source;
+    var normalized = {};
+    Object.keys(data).forEach(function (key) {
+      if (key.indexOf(DATA_PREFIX) !== 0) return;
+      normalized[key] = normalizeSidebarValue(data[key]);
+    });
+    return normalized;
+  }
+
+  function applyImportedData(importedData, mode) {
+    var normalized = normalizeBackupData(importedData);
+    var keys = Object.keys(normalized);
+    if (!keys.length) {
+      throw new Error('备份文件中没有可导入的知识点数据');
+    }
+
+    if (mode === 'replace') {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var existingKey = localStorage.key(i);
+        if (existingKey && existingKey.indexOf(DATA_PREFIX) === 0) {
+          try { localStorage.removeItem(existingKey); } catch (e) {}
+        }
+      }
+    }
+
+    keys.forEach(function (key) {
+      try { localStorage.setItem(key, JSON.stringify(normalized[key])); } catch (e) {}
+      refreshCurrentPageIfNeeded(key);
+    });
+
+    return keys.length;
+  }
+
+  function buildBackupPayload() {
+    return {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      source: 'review_html_local_backup',
+      data: collectAllData()
+    };
+  }
+
+  function downloadBackupFile() {
+    var payload = buildBackupPayload();
+    var json = JSON.stringify(payload, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    var stamp = payload.exportedAt.replace(/[:.]/g, '-');
+    link.href = url;
+    link.download = 'review-html-backup-' + stamp + '.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 500);
+    return Object.keys(payload.data).length;
+  }
+
+  function readFileAsText(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || '')); };
+      reader.onerror = function () { reject(new Error('读取文件失败')); };
+      reader.readAsText(file, 'utf-8');
+    });
+  }
+
   function fetchAll() {
     if (!_token) return Promise.resolve();
     return fetchRemoteData().then(function (remoteAll) {
@@ -331,11 +400,12 @@
       '}',
       '.gs-dialog h4{margin:0 0 16px;color:#00ff88;font-size:16px;}',
       '.gs-dialog label{display:block;font-size:13px;color:#aaa;margin-bottom:6px;}',
-      '.gs-dialog input[type=password]{',
+      '.gs-dialog input[type=password],.gs-dialog input[type=file]{',
       '  width:100%;padding:10px;background:#0f0f23;color:#fff;',
       '  border:1px solid rgba(0,255,136,0.3);border-radius:6px;',
       '  font-size:14px;box-sizing:border-box;margin-bottom:12px;',
       '}',
+      '.gs-dialog input[type=file]{padding:8px;}',
       '.gs-dialog input:focus{outline:none;border-color:#00ff88;}',
       '.gs-hint{font-size:12px;color:#888;margin-bottom:14px;line-height:1.5;}',
       '.gs-hint a{color:#00ff88;}',
@@ -352,6 +422,9 @@
       '.gs-later:hover{background:rgba(255,255,255,0.14);}',
       '.gs-close{background:none;color:#888;border:none;cursor:pointer;font-size:20px;}',
       '.gs-status{font-size:13px;color:#aaa;margin-top:4px;}',
+      '.gs-section{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);}',
+      '.gs-section h5{margin:0 0 10px;font-size:14px;color:#d8fbe8;}',
+      '.gs-actions-compact .gs-btn{flex:1 1 140px;}',
       '.gs-hero-btn{',
       '  display:inline-flex;align-items:center;gap:6px;',
       '  margin-top:12px;padding:8px 16px;',
@@ -375,29 +448,73 @@
     dialog.className = 'gs-dialog';
 
     dialog.innerHTML =
-      '<h4>GitHub Gist 云同步</h4>' +
+      '<h4>数据同步与本地备份</h4>' +
       '<label>Personal Access Token</label>' +
       '<input type="password" id="gs-token-input" placeholder="ghp_xxxxxxxxxxxx" />' +
       '<div class="gs-hint">' +
-        '需要 <a href="https://github.com/settings/tokens" target="_blank">gist</a> 权限。' +
-        '数据保存在你的私有 Gist 中，仅浏览器与 github.com 通信。' +
+        '可选：配置后可使用 <a href="https://github.com/settings/tokens" target="_blank">GitHub Gist</a> 云同步；不配置也可以只用本地导入导出。' +
       '</div>' +
       '<div class="gs-actions">' +
         '<button class="gs-btn gs-save" id="gs-save-btn">保存并同步</button>' +
+        '<button class="gs-btn gs-clear" id="gs-clear-token-btn">清除 Token</button>' +
         '<button class="gs-btn gs-close" id="gs-close-btn">&times;</button>' +
       '</div>' +
-      '<div class="gs-status" id="gs-status">' + (_token ? '已配置' : '未配置') + '</div>';
+      '<div class="gs-section">' +
+        '<h5>本地备份</h5>' +
+        '<div class="gs-hint">导出当前浏览器保存的全部知识点数据为 JSON 文件，或从本地 JSON 备份恢复。</div>' +
+        '<div class="gs-actions gs-actions-compact">' +
+          '<button class="gs-btn gs-save" id="gs-export-btn">导出备份</button>' +
+          '<button class="gs-btn gs-clear" id="gs-import-merge-btn">导入并合并</button>' +
+          '<button class="gs-btn gs-clear" id="gs-import-replace-btn">导入并覆盖</button>' +
+        '</div>' +
+        '<input type="file" id="gs-import-file" accept="application/json,.json" />' +
+      '</div>' +
+      '<div class="gs-status" id="gs-status">' + (_token ? '已配置云同步；可随时本地备份' : '未配置云同步；可直接使用本地备份') + '</div>';
 
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
 
     var tokenInput = dialog.querySelector('#gs-token-input');
     var saveBtn = dialog.querySelector('#gs-save-btn');
+    var clearTokenBtn = dialog.querySelector('#gs-clear-token-btn');
     var closeBtn = dialog.querySelector('#gs-close-btn');
+    var exportBtn = dialog.querySelector('#gs-export-btn');
+    var importMergeBtn = dialog.querySelector('#gs-import-merge-btn');
+    var importReplaceBtn = dialog.querySelector('#gs-import-replace-btn');
+    var importFileInput = dialog.querySelector('#gs-import-file');
     _statusEl = dialog.querySelector('#gs-status');
 
     if (_token) {
       tokenInput.value = _token;
+    }
+
+    function requireImportFile() {
+      var file = importFileInput.files && importFileInput.files[0];
+      if (!file) {
+        setStatus('请先选择一个备份 JSON 文件');
+        return null;
+      }
+      return file;
+    }
+
+    function handleImport(mode) {
+      var file = requireImportFile();
+      if (!file) return;
+      setStatus(mode === 'replace' ? '正在覆盖导入...' : '正在合并导入...');
+      readFileAsText(file)
+        .then(function (text) {
+          var parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (e) {
+            throw new Error('备份文件不是有效的 JSON');
+          }
+          var count = applyImportedData(parsed, mode);
+          setStatus((mode === 'replace' ? '覆盖导入完成：' : '合并导入完成：') + count + ' 个页面数据');
+        })
+        .catch(function (err) {
+          setStatus('导入失败: ' + err.message);
+        });
     }
 
     overlay.addEventListener('click', function (e) {
@@ -408,9 +525,38 @@
       closeOverlay(overlay);
     });
 
+    clearTokenBtn.addEventListener('click', function () {
+      _token = '';
+      _gistId = '';
+      tokenInput.value = '';
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+      try { localStorage.removeItem(GIST_ID_KEY); } catch (e) {}
+      setStatus('已清除云同步 Token，本地备份功能仍可使用');
+    });
+
+    exportBtn.addEventListener('click', function () {
+      try {
+        var count = downloadBackupFile();
+        setStatus('已导出备份：' + count + ' 个页面数据');
+      } catch (err) {
+        setStatus('导出失败: ' + err.message);
+      }
+    });
+
+    importMergeBtn.addEventListener('click', function () {
+      handleImport('merge');
+    });
+
+    importReplaceBtn.addEventListener('click', function () {
+      handleImport('replace');
+    });
+
     saveBtn.addEventListener('click', function () {
       var val = tokenInput.value.trim();
-      if (!val) return;
+      if (!val) {
+        setStatus('未填写 Token；你仍可使用本地导入导出');
+        return;
+      }
       _token = val;
       _gistId = localStorage.getItem(GIST_ID_KEY) || '';
       try { localStorage.setItem(TOKEN_KEY, _token); } catch (e) {}
@@ -486,14 +632,7 @@
   function checkAndShowTokenConfig() {
     if (!_token) {
       console.log('No token found, showing config panel');
-      if (typeof showConfigPanel === 'function') {
-        showConfigPanel();
-      } else {
-        // Fallback: trigger via custom event or retry
-        setTimeout(function() {
-          if (typeof showConfigPanel === 'function') showConfigPanel();
-        }, 500);
-      }
+      showSettingsDialog();
     }
   }
 
@@ -501,7 +640,9 @@
     init: init,
     sync: sync,
     fetchAll: fetchAll,
-    checkToken: checkAndShowTokenConfig
+    checkToken: checkAndShowTokenConfig,
+    exportLocalBackup: downloadBackupFile,
+    importLocalBackup: applyImportedData
   };
 
   if (document.readyState === 'loading') {
