@@ -587,7 +587,7 @@
 
   proto._isSidebarOpen = function () {
     var sidebar = document.getElementById('sidebar');
-    return !!(sidebar && sidebar.classList.contains('active'));
+    return !!(sidebar && sidebar.classList.contains('open'));
   };
 
   proto._openSidebar = function () {
@@ -597,8 +597,8 @@
     }
     var sidebar = document.getElementById('sidebar');
     var overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.add('active');
-    if (overlay) overlay.classList.add('active');
+    if (sidebar) sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('show');
   };
 
   proto._closeSidebar = function () {
@@ -608,8 +608,8 @@
     }
     var sidebar = document.getElementById('sidebar');
     var overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.remove('active');
-    if (overlay) overlay.classList.remove('active');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('show');
   };
 
   proto._bindSwipeGestures = function () {
@@ -640,9 +640,9 @@
       var absDx = Math.abs(dx);
       var absDy = Math.abs(dy);
       var isOpen = self._isSidebarOpen();
-      var nearRightEdge = startX >= (window.innerWidth - 48);
+      var nearRightEdge = startX >= (window.innerWidth - 60);
 
-      if (absDx < 48 || absDx <= absDy * 1.2) return;
+      if (absDx < 30 || absDx <= absDy * 1.5) return;
 
       if (nearRightEdge) {
         if (!isOpen && dx > 0) {
