@@ -640,18 +640,25 @@
       var absDx = Math.abs(dx);
       var absDy = Math.abs(dy);
       var isOpen = self._isSidebarOpen();
-      var startedInsideSidebar = startX <= 320;
-      var nearLeftEdge = startX <= 48;
+      var nearRightEdge = startX >= (window.innerWidth - 48);
 
       if (absDx < 48 || absDx <= absDy * 1.2) return;
 
-      if (!isOpen && dx > 0 && nearLeftEdge) {
-        self._openSidebar();
-        tracking = false;
-        return;
+      if (nearRightEdge) {
+        if (!isOpen && dx > 0) {
+          self._openSidebar();
+          tracking = false;
+          return;
+        }
+
+        if (isOpen && dx < 0) {
+          self._closeSidebar();
+          tracking = false;
+          return;
+        }
       }
 
-      if (isOpen && dx < 0 && startedInsideSidebar) {
+      if (isOpen && dx < 0 && startX <= 320) {
         self._closeSidebar();
         tracking = false;
       }
