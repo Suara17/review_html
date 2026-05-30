@@ -580,6 +580,93 @@
     this._drag = null;
   };
 
+  /* ── swipe gesture helpers ── */
+  proto._isMobileViewport = function () {
+    return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+  };
+
+  proto._isSidebarOpen = function () {
+    var sidebar = document.getElementById('sidebar');
+    return !!(sidebar && sidebar.classList.contains('active'));
+  };
+
+  proto._openSidebar = function () {
+    if (typeof window.openSidebar === 'function') {
+      window.openSidebar();
+      return;
+    }
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.add('active');
+    if (overlay) overlay.classList.add('active');
+  };
+
+  proto._closeSidebar = function () {
+    if (typeof window.closeSidebar === 'function') {
+      window.closeSidebar();
+      return;
+    }
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+  };
+
+  proto._bindSwipeGestures = function () {
+    var self = this;
+    var startX = 0;
+    var startY = 0;
+    var tracking = false;
+    var sidebar = document.getElementById('sidebar');
+
+    this._bound._touchStart = function (e) {
+      if (!self._isMobileViewport()) return;
+      if (!e.touches || e.touches.length !== 1) return;
+      if (e.target && e.target.closest('.sm-drag-handle, .sm-edit-input, .sm-actions')) return;
+
+      var touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      tracking = true;
+    };
+
+    this._bound._touchMove = function (e) {
+      if (!tracking || !self._isMobileViewport()) return;
+      if (!e.touches || e.touches.length !== 1) return;
+
+      var touch = e.touches[0];
+      var dx = touch.clientX - startX;
+      var dy = touch.clientY - startY;
+      var absDx = Math.abs(dx);
+      var absDy = Math.abs(dy);
+      var isOpen = self._isSidebarOpen();
+      var startedInsideSidebar = startX <= 320;
+      var nearLeftEdge = startX <= 48;
+
+      if (absDx < 48 || absDx <= absDy * 1.2) return;
+
+      if (!isOpen && dx > 0 && nearLeftEdge) {
+        self._openSidebar();
+        tracking = false;
+        return;
+      }
+
+      if (isOpen && dx < 0 && startedInsideSidebar) {
+        self._closeSidebar();
+        tracking = false;
+      }
+    };
+
+    this._bound._touchEnd = function () {
+      tracking = false;
+    };
+
+    document.addEventListener('touchstart', this._bound._touchStart, { passive: true });
+    document.addEventListener('touchmove', this._bound._touchMove, { passive: true });
+    document.addEventListener('touchend', this._bound._touchEnd, { passive: true });
+    document.addEventListener('touchcancel', this._bound._touchEnd, { passive: true });
+  };
+
   /* ── event binding ── */
   proto._bindEvents = function () {
     var self = this;
@@ -590,6 +677,7 @@
     this._bound._unload = function () { self.save(); };
     document.addEventListener('visibilitychange', this._bound._vis);
     window.addEventListener('beforeunload', this._bound._unload);
+    this._bindSwipeGestures();
   };
 
   /* ── public: destroy ── */
@@ -599,6 +687,12 @@
     }
     if (this._bound._vis) document.removeEventListener('visibilitychange', this._bound._vis);
     if (this._bound._unload) window.removeEventListener('beforeunload', this._bound._unload);
+    if (this._bound._touchStart) document.removeEventListener('touchstart', this._bound._touchStart);
+    if (this._bound._touchMove) document.removeEventListener('touchmove', this._bound._touchMove);
+    if (this._bound._touchEnd) {
+      document.removeEventListener('touchend', this._bound._touchEnd);
+      document.removeEventListener('touchcancel', this._bound._touchEnd);
+    }
   };
 
   /* ── export ── */
