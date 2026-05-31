@@ -640,25 +640,29 @@
       var absDx = Math.abs(dx);
       var absDy = Math.abs(dy);
       var isOpen = self._isSidebarOpen();
-      var nearRightEdge = startX >= (window.innerWidth - 60);
+      var windowW = window.innerWidth;
+      var nearRightEdge = startX >= (windowW - 60);
+      var sidebarRightEdge = windowW - 300; // sidebar is 300px wide on the right
 
       if (absDx < 30 || absDx <= absDy * 1.5) return;
 
+      // Right-side drawer: swipe LEFT (dx < 0) from right edge to open
       if (nearRightEdge) {
-        if (!isOpen && dx > 0) {
+        if (!isOpen && dx < 0) {
           self._openSidebar();
           tracking = false;
           return;
         }
 
-        if (isOpen && dx < 0) {
+        if (isOpen && dx > 0) {
           self._closeSidebar();
           tracking = false;
           return;
         }
       }
 
-      if (isOpen && dx < 0 && startX <= 320) {
+      // When sidebar is open, swiping RIGHT anywhere inside the sidebar closes it
+      if (isOpen && dx > 0 && startX >= sidebarRightEdge) {
         self._closeSidebar();
         tracking = false;
       }
