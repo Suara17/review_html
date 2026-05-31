@@ -641,6 +641,7 @@
       var absDy = Math.abs(dy);
       var isOpen = self._isSidebarOpen();
       var windowW = window.innerWidth;
+      var nearLeftEdge = startX <= 48;
       var nearRightEdge = startX >= (windowW - 60);
       var sidebarRightEdge = windowW - 300; // sidebar is 300px wide on the right
 
@@ -661,8 +662,28 @@
         }
       }
 
-      // When sidebar is open, swiping RIGHT anywhere inside the sidebar closes it
+      // Left-side drawer: swipe RIGHT (dx > 0) from left edge to open
+      if (nearLeftEdge) {
+        if (!isOpen && dx > 0) {
+          self._openSidebar();
+          tracking = false;
+          return;
+        }
+
+        if (isOpen && dx < 0) {
+          self._closeSidebar();
+          tracking = false;
+          return;
+        }
+      }
+
+      // When sidebar is open, swipe toward its edge to close it
       if (isOpen && dx > 0 && startX >= sidebarRightEdge) {
+        // Right-side: swipe RIGHT inside sidebar closes it
+        self._closeSidebar();
+        tracking = false;
+      } else if (isOpen && dx < 0 && startX <= 320) {
+        // Left-side: swipe LEFT inside sidebar closes it
         self._closeSidebar();
         tracking = false;
       }
