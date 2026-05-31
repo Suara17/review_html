@@ -530,18 +530,19 @@ body.modal-open {
   .sidebar {
     position: fixed;
     top: 0;
-    left: -320px;
+    right: -320px;
+    left: auto;
     width: 300px;
     height: 100vh;
     z-index: 30;
-    border-left: none;
-    border-right: 2px solid rgba(0,255,255,0.3);
+    border-right: none;
+    border-left: 2px solid rgba(0,255,255,0.3);
     padding: 16px;
-    transition: left 0.3s ease;
+    transition: right 0.3s ease;
     background: rgba(0,8,16,0.92);
   }
   .sidebar.open {
-    left: 0;
+    right: 0;
   }
   .sidebar-close {
     display: block;
@@ -557,6 +558,16 @@ body.modal-open {
   .sidebar-overlay.show {
     display: block;
     opacity: 1;
+  }
+
+  /* 右侧滑出的侧边栏：从右侧边缘向左滑打开 */
+  .sidebar-swipe-area {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 100vh;
+    z-index: 5;
   }
   
 #click-hint {
@@ -954,4 +965,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
