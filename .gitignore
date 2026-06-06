@@ -1,4 +1,7 @@
-.vercel
+.venv/
+__pycache__/
+.vercel/
 .playwright-mcp/
 .serena/
-__pycache__/
+.atomcode/
+.spec-workflow/
