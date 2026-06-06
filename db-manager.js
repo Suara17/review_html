@@ -90,6 +90,18 @@
       _scheduleSave();
     },
 
+    /** 用数组全量替换当前页所有卡片（侧边栏增删改后同步用） */
+    syncFromArray: function (arr) {
+      if (!db) return;
+      db.run('DELETE FROM cards');
+      var stmt = db.prepare('INSERT INTO cards (title, content, sort_order) VALUES (?, ?, ?)');
+      for (var i = 0; i < arr.length; i++) {
+        stmt.run([arr[i].title || '', arr[i].content || '', i]);
+      }
+      stmt.free();
+      _scheduleSave();
+    },
+
     /** 导出 .db 二进制数据（用于下载备份） */
     exportDb: function () {
       return db ? db.export() : null;

@@ -171,6 +171,15 @@
       localStorage.setItem(STORAGE_PREFIX + location.pathname, JSON.stringify(this._data));
     } catch (e) {}
     if (window.__gistSyncDebounced) window.__gistSyncDebounced();
+    // 同步到 SQLite 数据库
+    if (typeof DbManager !== 'undefined') {
+      try {
+        var kp = this._knowledgePointsRef;
+        if (kp && kp.length > 0 && window.__PAGE_SLUG__) {
+          DbManager.syncFromArray(kp);
+        }
+      } catch (e) { /* ignore */ }
+    }
   };
 
   /* ── public: save ── */
