@@ -1,6 +1,6 @@
 # review_html 项目状态文档
 
-> 最后更新：2026-06-06 17:36  
+> 最后更新：2026-06-06 18:02  
 > GitHub 仓库：https://github.com/Suara17/review_html  
 > Vercel 部署地址：https://review-html-five.vercel.app/
 
@@ -10,137 +10,174 @@
 
 | 项目 | 值 |
 |------|-----|
-| 基线 commit | `bf13917` — refactor: 统一所有页面侧边栏为右侧滑入手势 |
+| 基线状态 | 已完成“卡片内容数据化 + 模板化生成 + 首页自动生成”重构 |
 | 分支 | main |
 | 本地路径 | `/workspace/小万工作间/项目库/review_html` |
-| 本地目录状态 | 当前目录无 `.git`，是工作副本，不是 git clone |
+| 本地目录状态 | 当前目录仍是工作副本，本地无 `.git`；如需提交需临时 clone 仓库再同步文件 |
 
 ---
 
-## 本轮修复记录（2026-06-06 17:36）
+## 本轮完成事项（2026-06-06 18:02）
 
-### 用户反馈
-用户反馈多个页面存在两个明显问题：
-1. **没有播放按钮**
-2. **右侧滑动侧边栏失效**
+### 1）完成卡片系统数据驱动改造
+原先每个 HTML 页面都直接内嵌一大段 `knowledgePoints` 数组，维护成本高，新增卡片组和新增卡片都容易出错。本轮已改造成：
 
-### 实际排查结果
+- `topics-data/*.json`：存放每个卡片组的内容数据
+- `topics-data/registry.json`：集中登记卡片组元信息
+- `templates/topic-page.template.html`：统一页面模板
+- `scripts/build_pages.py`：读取 JSON 数据并生成各 HTML 页面与首页
+- `scripts/validate_topics.py`：校验 registry 和各卡片数据文件结构
+- `scripts/add_group.py`：新增卡片组脚本
+- `scripts/add_card.py`：新增卡片脚本
 
-#### 1) `sidebar-manager.js` 存在语法错误
-发现文件中有一处明显错误：
+### 2）已完成历史页面数据迁移
+已把以下 10 个页面中的 `knowledgePoints` 提取为独立 JSON 数据文件，并重新构建页面：
 
-```js
-'@media(hover:none){...}',,
+1. `computer-network`
+2. `operating-system`
+3. `mysql-topics`
+4. `redis-topics`
+5. `design-patterns-topics`
+6. `system-design-topics`
+7. `python`
+8. `git-topics`
+9. `guanlan`
+10. `learning-research-agent`
+
+对应数据目录：
+
+```text
+topics-data/
+├── registry.json
+├── computer-network.json
+├── operating-system.json
+├── mysql-topics.json
+├── redis-topics.json
+├── design-patterns-topics.json
+├── system-design-topics.json
+├── python.json
+├── git-topics.json
+├── guanlan.json
+└── learning-research-agent.json
 ```
 
-双逗号会导致浏览器解析 `sidebar-manager.js` 失败，从而使侧边栏增强逻辑整体失效。
+### 3）首页改为自动生成
+`index.html` 已不再依赖手工维护卡片入口，而是由构建脚本自动根据 `registry.json` 和各组卡片数量生成。
 
-#### 2) 多个页面只有滑动区域 CSS，没有实际 DOM 和触摸逻辑
-虽然页面样式里定义了 `.sidebar-swipe-area`，但大多数 HTML 页面里：
-- 没有插入 `sidebar-swipe-area` 节点
-- 没有绑定 `touchstart / touchmove / touchend` 打开侧栏逻辑
+### 4）保留原页面交互能力
+此次重构目标是“把内容维护方式改成数据驱动”，不是推翻现有页面交互。因此保留了原有页面的大部分前端能力，包括：
 
-这意味着“从右边缘向左滑打开侧边栏”在很多页面中实际上并不会生效。
-
-#### 3) `tts-player.js` 会隐藏旧按钮
-`tts-player.js` 会主动隐藏：
-- `.sidebar-toggle`
-- `.next-btn`
-
-页面随后依赖它动态插入新的底部播放器控件（含 `▶` 播放按钮、`☰` 目录按钮等）。
-因此只要初始化链路被脚本错误或结构缺失打断，用户就会直观感受到“播放按钮没了”。
+- TTS 播放器接入逻辑
+- 侧边栏结构与打开方式
+- 卡片切换与编辑相关逻辑
+- 页面原视觉风格
 
 ---
 
-## 已完成修复
-
-### 修复 1：修正 `sidebar-manager.js` 语法错误
-已删除错误的多余逗号，并用 Node 做过语法校验，结果通过：
-- ✅ `sidebar-manager.js syntax ok`
-
-### 修复 2：为所有相关页面补上右侧滑动触发区
-已补充：
-
-```html
-<div class="sidebar-swipe-area" id="sidebar-swipe-area" aria-hidden="true"></div>
-```
-
-### 修复 3：为所有相关页面补上右侧滑动打开侧栏逻辑
-已统一补充：
-- `touchstart`
-- `touchmove`
-- `touchend`
-- 向左滑动阈值判断
-- 触发 `openSidebar()`
-
----
-
-## 本次已修复页面
-
-以下页面已确认同时具备：
-- `swipeArea=true`
-- `touch=true`
-- `nextBtn=true`
-
-1. `computer-network.html`
-2. `design-patterns-topics.html`
-3. `git-topics.html`
-4. `guanlan.html`
-5. `learning-research-agent.html`
-6. `mysql-topics.html`
-7. `operating-system.html`
-8. `python.html`
-9. `redis-topics.html`
-10. `system-design-topics.html`
-
----
-
-## 当前文件结构
+## 当前目录结构（重构后）
 
 ```text
 review_html/
 ├── index.html
-├── python.html
 ├── computer-network.html
 ├── operating-system.html
+├── mysql-topics.html
+├── redis-topics.html
 ├── design-patterns-topics.html
+├── system-design-topics.html
+├── python.html
 ├── git-topics.html
 ├── guanlan.html
 ├── learning-research-agent.html
-├── mysql-topics.html
-├── redis-topics.html
-├── system-design-topics.html
+├── PROJECT_STATUS.md
+├── CARD_SYSTEM_GUIDE.md
+├── scripts/
+│   ├── build_pages.py
+│   ├── validate_topics.py
+│   ├── add_group.py
+│   └── add_card.py
+├── templates/
+│   └── topic-page.template.html
+├── topics-data/
+│   ├── registry.json
+│   └── *.json
 ├── sidebar-manager.js
 ├── tts-player.js
 ├── gist-sync.js
 ├── api/
 │   └── tts.py
+├── tests/
 ├── _generate_topic_pages.py
 ├── requirements.txt
-├── vercel.json
-├── tests/
-└── PROJECT_STATUS.md
+└── vercel.json
 ```
+
+---
+
+## 使用方式
+
+### 新增卡片组
+```bash
+python scripts/add_group.py --slug new-group --title "新卡片组"
+python scripts/build_pages.py
+```
+
+### 为已有卡片组新增卡片
+```bash
+python scripts/add_card.py --slug python --title "新问题标题"
+python scripts/build_pages.py
+```
+
+### 修改数据后重新生成页面
+```bash
+python scripts/validate_topics.py
+python scripts/build_pages.py
+```
+
+---
+
+## 兼容性说明
+
+### 1. 现有 HTML 仍是最终产物
+部署与访问方式没有变化，Vercel 仍然直接托管静态 HTML / JS 文件。
+
+### 2. JSON 不是前端运行时接口
+当前 JSON 主要用于“构建阶段”生成 HTML，不依赖浏览器运行时去额外拉取数据，因此兼容现有静态部署方式。
+
+### 3. 旧生成器脚本仍保留
+`_generate_topic_pages.py` 目前未删除，保留作历史参考；后续若确认完全不再使用，可再决定是否清理。
+
+---
+
+## 本轮校验结果
+
+已执行并通过：
+
+- `python scripts/validate_topics.py`
+- `python scripts/build_pages.py`
+
+构建结果：
+- 成功生成 10 个卡片组页面
+- 成功生成新的 `index.html`
 
 ---
 
 ## 当前仍需注意的问题
 
-### 1. 本地目录不是 Git 仓库
-当前 `/workspace/小万工作间/项目库/review_html` 目录下没有 `.git`，因此不能直接在这个目录里执行 `git commit` / `git push`。
+### 1. 当前工作目录不是 git clone
+虽然文件内容已更新，但 `/workspace/小万工作间/项目库/review_html` 本身不是 Git 仓库目录，因此提交时需要：
 
-### 2. TTS 播放按钮问题大概率已被间接修复，但仍建议实机复测
-虽然已修复脚本错误和滑动逻辑缺失问题，但是否 100% 恢复到用户设备可见，仍建议在实际手机浏览器中确认：
-- 是否能看到 `▶` 播放按钮
-- 是否能从右边缘左滑打开侧栏
-- 是否存在缓存导致旧页面继续显示
+- 临时 clone GitHub 仓库
+- 将当前工作副本同步过去
+- 再执行 commit / push
+
+### 2. 建议后续补一个 README 入口
+当前已有 `PROJECT_STATUS.md` 与 `CARD_SYSTEM_GUIDE.md`，后续可再增加更简洁的根目录 `README.md`，方便新维护者快速理解。
 
 ---
 
 ## 下一步建议
 
-1. 在真实设备上刷新页面验证 UI 是否恢复
-2. 如需推送到 GitHub，需要：
-   - 重新 clone 一份 `review_html` 仓库，或
-   - 把当前目录重新初始化并关联远端（更不推荐）
-3. 验证通过后再触发 Vercel 部署检查
+1. 提交并推送本轮“数据驱动卡片系统”改造
+2. 线上部署后抽查首页和 2~3 个卡片页面是否正常
+3. 如后续继续扩容内容，统一走 `topics-data + scripts/build_pages.py` 工作流
