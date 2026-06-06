@@ -713,6 +713,7 @@ body.modal-open {
 
 <!-- 侧边栏切换按钮（手机端） -->
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+<div class="sidebar-swipe-area" id="sidebar-swipe-area" aria-hidden="true"></div>
 
 <script src="./tts-player.js"></script>
 <script src="./sidebar-manager.js"></script>
@@ -1037,6 +1038,35 @@ function closeSidebar() {
 sidebarToggle.addEventListener('click', openSidebar);
 sidebarClose.addEventListener('click', closeSidebar);
 sidebarOverlay.addEventListener('click', closeSidebar);
+
+const sidebarSwipeArea = document.getElementById('sidebar-swipe-area');
+if (sidebarSwipeArea) {
+  let touchStartX = 0;
+  let touchCurrentX = 0;
+  let trackingSwipe = false;
+  const SWIPE_OPEN_THRESHOLD = 24;
+
+  sidebarSwipeArea.addEventListener('touchstart', (event) => {
+    if (!event.touches || !event.touches.length) return;
+    touchStartX = event.touches[0].clientX;
+    touchCurrentX = touchStartX;
+    trackingSwipe = true;
+  }, { passive: true });
+
+  sidebarSwipeArea.addEventListener('touchmove', (event) => {
+    if (!trackingSwipe || !event.touches || !event.touches.length) return;
+    touchCurrentX = event.touches[0].clientX;
+  }, { passive: true });
+
+  sidebarSwipeArea.addEventListener('touchend', () => {
+    if (!trackingSwipe) return;
+    const deltaX = touchStartX - touchCurrentX;
+    trackingSwipe = false;
+    if (deltaX > SWIPE_OPEN_THRESHOLD) {
+      openSidebar();
+    }
+  });
+}
 
 // 初始化侧边栏
 var sidebarMgr = new SidebarManager({

@@ -66,7 +66,7 @@
       '.sm-empty{text-align:center;padding:24px 16px;color:rgba(255,255,255,0.35);font-size:.92em}',
 
       /* ── mobile: always show actions, bigger targets ── */
-      '@media(hover:none){.sm-actions{opacity:1!important}#sidebar-list .sidebar-manager-item{min-height:52px;padding:10px 8px 10px 6px!important;touch-action:pan-y}}',,
+      '@media(hover:none){.sm-actions{opacity:1!important}#sidebar-list .sidebar-manager-item{min-height:52px;padding:10px 8px 10px 6px!important;touch-action:pan-y}}',
 
       /* ── mobile sidebar overrides ── */
       '@media(max-width:768px){',
