@@ -117,14 +117,9 @@ body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ff
 <div class="scanlines"></div>
 <div class="page-shell">
   <section class="hero">
-    <div class="hero-kicker">NOTE SYSTEM / GENERATED</div>
+    <div class="hero-kicker">NOTE SYSTEM</div>
     <h1>面经笔记卡片组</h1>
-    <p>当前首页由 <code>scripts/build_pages.py</code> 自动生成。以后新增卡片组或新增卡片后，只需要更新 <code>topics-data</code> 下的数据，再重新构建即可。</p>
   </section>
-  <div class="toolbar">
-    <span>新增卡片组：<code>python scripts/add_group.py --slug new-group --title "新卡片组"</code></span>
-    <span>新增卡片：<code>python scripts/add_card.py --slug python --title "新问题"</code></span>
-  </div>
   <section class="card-grid">
 {cards_html}
   </section>
