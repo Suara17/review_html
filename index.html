@@ -37,6 +37,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
   <section class="hero">
     <div class="hero-kicker">NOTE SYSTEM</div>
     <h1>面经笔记卡片组</h1>
+    <p>按知识点分类整理的高频面试题，点击卡片进入对应模块。</p>
   </section>
   <section class="card-grid">
       <article class="nav-card">
@@ -44,7 +45,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
         <h2>计算机网络知识点动态展示 - 精讲版</h2>
         <div class="route">/computer-network.html</div>
         <p class="description">计算机网络核心面试题速刷，覆盖 TCP/IP、HTTP、浏览器请求链路等高频问题。</p>
-        <p class="meta">共 102 张卡片</p>
+        <p class="meta">共 32 张卡片</p>
         <a class="enter-btn" href="./computer-network.html">进入卡片组</a>
       </article>
       <article class="nav-card">
@@ -52,7 +53,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
         <h2>操作系统知识点动态展示 - 精讲版</h2>
         <div class="route">/operating-system.html</div>
         <p class="description">操作系统高频知识点整理，覆盖进程线程、内存管理、调度与 Linux 基础。</p>
-        <p class="meta">共 82 张卡片</p>
+        <p class="meta">共 26 张卡片</p>
         <a class="enter-btn" href="./operating-system.html">进入卡片组</a>
       </article>
       <article class="nav-card">
@@ -60,7 +61,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
         <h2>MySQL知识点动态展示 - 精讲版</h2>
         <div class="route">/mysql-topics.html</div>
         <p class="description">MySQL 面试速刷，包含索引、事务、锁、日志与调优等关键主题。</p>
-        <p class="meta">共 85 张卡片</p>
+        <p class="meta">共 30 张卡片</p>
         <a class="enter-btn" href="./mysql-topics.html">进入卡片组</a>
       </article>
       <article class="nav-card">
@@ -68,7 +69,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
         <h2>Redis知识点动态展示 - 精讲版</h2>
         <div class="route">/redis-topics.html</div>
         <p class="description">Redis 常见面试题与核心机制，涵盖数据结构、持久化、缓存与分布式场景。</p>
-        <p class="meta">共 35 张卡片</p>
+        <p class="meta">共 23 张卡片</p>
         <a class="enter-btn" href="./redis-topics.html">进入卡片组</a>
       </article>
       <article class="nav-card">
@@ -76,7 +77,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
         <h2>设计模式知识点动态展示 - 精讲版</h2>
         <div class="route">/design-patterns-topics.html</div>
         <p class="description">常见设计模式概念与面试表达整理，适合快速记忆与复习。</p>
-        <p class="meta">共 24 张卡片</p>
+        <p class="meta">共 14 张卡片</p>
         <a class="enter-btn" href="./design-patterns-topics.html">进入卡片组</a>
       </article>
       <article class="nav-card">
@@ -92,7 +93,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
         <h2>Python知识点动态展示 - 精讲版</h2>
         <div class="route">/python.html</div>
         <p class="description">Python 高频八股与工程实践问题，涵盖语言特性、并发、元编程与常用库。</p>
-        <p class="meta">共 57 张卡片</p>
+        <p class="meta">共 32 张卡片</p>
         <a class="enter-btn" href="./python.html">进入卡片组</a>
       </article>
       <article class="nav-card">
@@ -100,7 +101,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
         <h2>Git知识点动态展示 - 精讲版</h2>
         <div class="route">/git-topics.html</div>
         <p class="description">Git 常用命令、协作流程与面试问答整理。</p>
-        <p class="meta">共 26 张卡片</p>
+        <p class="meta">共 15 张卡片</p>
         <a class="enter-btn" href="./git-topics.html">进入卡片组</a>
       </article>
       <article class="nav-card">
@@ -127,7 +128,8 @@ const ctx = canvas.getContext('2d');
 let w, h, columns, drops; const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; columns = Math.floor(w / 20); drops = Array(columns).fill(1); }
 function draw() { ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(0,0,w,h); ctx.fillStyle = '#00ffff'; ctx.font = '14px monospace'; for (let i = 0; i < drops.length; i += 1) { const text = chars[Math.floor(Math.random() * chars.length)]; ctx.fillText(text, i * 20, drops[i] * 20); if (drops[i] * 20 > h && Math.random() > 0.975) drops[i] = 0; drops[i] += 1; } }
-resize(); setInterval(draw, 50); window.addEventListener('resize', resize);
+function animate() { draw(); requestAnimationFrame(animate); }
+resize(); window.addEventListener('resize', resize); animate();
 </script>
 </body>
 </html>
