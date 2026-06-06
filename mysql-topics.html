@@ -672,6 +672,8 @@ body.modal-open {
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
 <div class="sidebar-swipe-area" id="sidebar-swipe-area" aria-hidden="true"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+<script src="./db-manager.js"></script>
 <script src="./tts-player.js"></script>
 <script src="./sidebar-manager.js"></script>
 <script src="./gist-sync.js"></script>
@@ -715,7 +717,130 @@ window.addEventListener('resize', () => {
 });
 
 // ===== 知识点展示逻辑 =====
-let knowledgePoints = [{"title":"1. MySQL 索引是什么？","content":"<strong>结论：</strong>索引是帮助 MySQL 快速定位数据的数据结构，本质上是拿空间换时间。<br><br><strong>要点：</strong><br>1. 常见作用是加快查询、排序、分组。<br>2. 代价是会增加写入成本和存储成本。<br>3. 面试里默认讨论 InnoDB 的 B+ 树索引。"},{"title":"2. MySQL 常见索引类型有哪些？","content":"<strong>结论：</strong>高频记住主键索引、唯一索引、普通索引、联合索引。<br><br><strong>要点：</strong><br>1. 主键索引要求唯一且非空。<br>2. 唯一索引保证值唯一，但通常允许空值。<br>3. 联合索引是面试高频，重点考最左匹配。"},{"title":"3. 为什么 InnoDB 选择 B+ 树做索引？","content":"<strong>结论：</strong>B+ 树更适合磁盘数据库的范围查询和顺序访问。<br><br><strong>要点：</strong><br>1. 树高低，磁盘 IO 次数更可控。<br>2. 非叶子节点只存键，能容纳更多分支。<br>3. 叶子节点有序且通常可顺序遍历，范围查询效率高。"},{"title":"4. 主键索引和二级索引有什么区别？","content":"<strong>结论：</strong>InnoDB 的主键索引是聚簇索引，二级索引叶子节点存的是主键值。<br><br><strong>要点：</strong><br>1. 主键索引叶子节点直接存整行数据。<br>2. 二级索引查到主键后，通常还要再回主键索引找整行。<br>3. 这就是常说的“回表”。"},{"title":"5. 什么是回表？什么是覆盖索引？","content":"<strong>结论：</strong>二级索引查到主键后再去主键索引取整行叫回表；查询字段都在索引里叫覆盖索引。<br><br><strong>要点：</strong><br>1. 回表会增加一次索引查找成本。<br>2. 覆盖索引可以避免回表，通常更快。<br>3. 优化时常通过调整查询字段和索引字段来争取覆盖索引。"},{"title":"6. 什么是最左匹配原则？","content":"<strong>结论：</strong>联合索引使用时，要尽量从最左边的列开始连续匹配。<br><br><strong>要点：</strong><br>1. 联合索引例如 (a,b,c)，查询通常先看 a，再看 b，再看 c。<br>2. 跳过最左列，索引往往难以生效。<br>3. 遇到范围查询后，后续列的利用能力通常会下降。"},{"title":"7. 索引什么时候容易失效？","content":"<strong>结论：</strong>对索引列做函数、运算、隐式类型转换，或不满足最左匹配时，索引容易失效。<br><br><strong>要点：</strong><br>1. like 以 % 开头时通常难走索引。<br>2. where 条件写法不当会让优化器放弃索引。<br>3. 低选择性字段即使有索引，也可能不划算。"},{"title":"8. 建索引有什么原则？","content":"<strong>结论：</strong>给高频查询、高选择性、参与排序/分组/连接的字段建索引。<br><br><strong>要点：</strong><br>1. 不要给很少查询或区分度很低的字段乱建索引。<br>2. 联合索引字段顺序要结合最常见查询条件。<br>3. 索引不是越多越好，写入和维护成本会增加。"},{"title":"9. 什么是事务？","content":"<strong>结论：</strong>事务是一组要么都成功、要么都失败的操作集合。<br><br><strong>要点：</strong><br>1. 它用来保证数据一致性。<br>2. 典型场景是转账、扣库存、订单支付。<br>3. 面试里通常会接着问 ACID。"},{"title":"10. 事务的 ACID 是什么？","content":"<strong>结论：</strong>ACID 指原子性、一致性、隔离性、持久性。<br><br><strong>要点：</strong><br>1. 原子性：事务要么全成功，要么全失败。<br>2. 隔离性：并发事务之间尽量互不干扰。<br>3. 持久性：提交后的结果不能丢。"},{"title":"11. 并发事务会带来哪些问题？","content":"<strong>结论：</strong>高频记住脏读、不可重复读、幻读。<br><br><strong>要点：</strong><br>1. 脏读：读到别的事务未提交的数据。<br>2. 不可重复读：同一事务前后两次读同一行结果不同。<br>3. 幻读：同一条件前后两次读，记录条数发生变化。"},{"title":"12. MySQL 的隔离级别有哪些？","content":"<strong>结论：</strong>有读未提交、读已提交、可重复读、串行化。<br><br><strong>要点：</strong><br>1. 隔离越强，并发性能通常越差。<br>2. MySQL InnoDB 默认是可重复读。<br>3. 面试重点是：每种级别能解决哪些并发问题。"},{"title":"13. 什么是 MVCC？","content":"<strong>结论：</strong>MVCC 是多版本并发控制，用多版本快照减少读写冲突。<br><br><strong>要点：</strong><br>1. 核心思想是读历史版本，不一定直接读最新版本。<br>2. 它让普通读和写操作尽量不互相阻塞。<br>3. 面试里常与 undo log、Read View 一起问。"},{"title":"14. 什么是当前读和快照读？","content":"<strong>结论：</strong>当前读读的是最新数据并可能加锁，快照读读的是一致性视图。<br><br><strong>要点：</strong><br>1. 普通 select 通常属于快照读。<br>2. select ... for update 属于当前读。<br>3. 当前读常用于需要保证后续更新正确性的场景。"},{"title":"15. 幻读怎么解决？","content":"<strong>结论：</strong>InnoDB 在可重复读下，主要通过 MVCC 和间隙锁/临键锁来降低幻读问题。<br><br><strong>要点：</strong><br>1. 快照读靠 MVCC。<br>2. 当前读靠加锁控制插入。<br>3. 面试回答时记住“读用快照，改用锁”。"},{"title":"16. MySQL 常见锁有哪些？","content":"<strong>结论：</strong>高频记住全局锁、表锁、行锁，以及共享锁和排他锁。<br><br><strong>要点：</strong><br>1. 锁粒度越大，并发越差，但管理成本越低。<br>2. InnoDB 的优势之一就是支持行锁。<br>3. 面试里还常延伸到间隙锁、临键锁。"},{"title":"17. 共享锁和排他锁有什么区别？","content":"<strong>结论：</strong>共享锁允许多个事务同时读，排他锁会阻止其他事务再加共享或排他锁。<br><br><strong>要点：</strong><br>1. 共享锁常简称 S 锁。<br>2. 排他锁常简称 X 锁。<br>3. 写操作通常需要排他锁。"},{"title":"18. 什么是间隙锁和临键锁？","content":"<strong>结论：</strong>间隙锁锁的是索引区间，临键锁是记录锁 + 间隙锁。<br><br><strong>要点：</strong><br>1. 它们主要用于防止范围内插入新记录。<br>2. 这是解决幻读的重要手段。<br>3. 代价是更容易引发锁等待和死锁。"},{"title":"19. 什么是死锁？怎么处理？","content":"<strong>结论：</strong>多个事务互相等待对方释放资源，就形成死锁。<br><br><strong>要点：</strong><br>1. MySQL 通常会检测死锁并回滚其中一个事务。<br>2. 减少死锁的常见手段是固定加锁顺序、缩小事务范围、尽快提交。<br>3. 面试回答不要只说“重试”，还要说如何预防。"},{"title":"20. redo log 是什么？","content":"<strong>结论：</strong>redo log 是 InnoDB 的重做日志，用来保证已提交事务的数据不丢。<br><br><strong>要点：</strong><br>1. 它属于物理日志。<br>2. 崩溃恢复时会依赖 redo log 重放。<br>3. 它是持久性的重要保障。"},{"title":"21. binlog 是什么？","content":"<strong>结论：</strong>binlog 是 Server 层的归档日志，常用于主从复制和数据恢复。<br><br><strong>要点：</strong><br>1. 它不只服务于 InnoDB。<br>2. redo log 偏恢复，binlog 偏复制和审计。<br>3. 面试里常拿它和 redo log 对比。"},{"title":"22. 为什么要两阶段提交？","content":"<strong>结论：</strong>两阶段提交是为了保证 redo log 和 binlog 的一致性。<br><br><strong>要点：</strong><br>1. 否则可能出现一个写成功、另一个没写成功。<br>2. 这会导致主从不一致或恢复异常。<br>3. 回答关键词：prepare、commit、一致性。"},{"title":"23. WAL 思想是什么？","content":"<strong>结论：</strong>WAL 就是先写日志，再择机刷数据页。<br><br><strong>要点：</strong><br>1. 这样能把大量随机写转化为更可控的顺序写。<br>2. 提升写性能。<br>3. 同时结合 redo log 保证崩溃恢复。"},{"title":"24. 脏页是什么？","content":"<strong>结论：</strong>内存中被修改过、但还没刷回磁盘的数据页叫脏页。<br><br><strong>要点：</strong><br>1. 脏页存在是数据库正常优化手段。<br>2. 刷盘时机不只发生在提交瞬间。<br>3. 脏页过多会带来抖动风险。"},{"title":"25. 为什么 MySQL 会“抖一下”？","content":"<strong>结论：</strong>常见原因是刷脏页、日志压力、IO 突增导致响应时间突然变长。<br><br><strong>要点：</strong><br>1. 脏页太多时，后台刷盘压力会上来。<br>2. 磁盘性能不稳定也会放大问题。<br>3. 优化方向通常是控制写入峰值和刷盘节奏。"},{"title":"26. count(*) 为什么可能慢？","content":"<strong>结论：</strong>因为 InnoDB 通常需要扫描满足条件的数据，而不是像某些引擎直接取总行数。<br><br><strong>要点：</strong><br>1. 带条件的 count 更依赖索引设计。<br>2. count(*)、count(1)、count(主键)在很多场景差异不大，但核心还是执行计划。<br>3. 真正优化要看是否能减少扫描。"},{"title":"27. order by / group by 怎么优化？","content":"<strong>结论：</strong>核心思路是尽量利用索引，减少额外排序和临时表。<br><br><strong>要点：</strong><br>1. 排序字段、分组字段尽量和索引顺序匹配。<br>2. 不命中索引时，容易出现 filesort 或临时表。<br>3. 先看 explain，再决定怎么改 SQL 或索引。"},{"title":"28. explain 主要看什么？","content":"<strong>结论：</strong>explain 主要看是否走索引、扫描行数大不大、有没有额外排序或临时表。<br><br><strong>要点：</strong><br>1. 重点关注 type、key、rows、extra。<br>2. rows 越大，通常代表扫描代价越高。<br>3. extra 里若出现 Using filesort、Using temporary，要重点警惕。"},{"title":"29. 执行一条 select 语句大致发生了什么？","content":"<strong>结论：</strong>大致会经过连接器、解析器、优化器、执行器，再到存储引擎取数。<br><br><strong>要点：</strong><br>1. 连接器负责认证和连接管理。<br>2. 优化器决定执行计划。<br>3. 执行器按计划调用存储引擎接口获取结果。"},{"title":"30. 分库分表什么时候要做？","content":"<strong>结论：</strong>当单表/单库的数据量、并发量或热点压力已经成为瓶颈时，才考虑分库分表。<br><br><strong>要点：</strong><br>1. 它能提升容量和吞吐，但会增加复杂度。<br>2. 会带来分布式事务、跨库查询、分页排序等问题。<br>3. 面试中要强调：不是一上来就分，而是先优化索引、SQL、缓存。"}];
+var knowledgePoints = [];
+window.__PAGE_SLUG__ = 'mysql-topics';
+var PENDING_SEED = [
+  {
+    "title": "1. MySQL 索引是什么？",
+    "content": "<strong>结论：</strong>索引是帮助 MySQL 快速定位数据的数据结构，本质上是拿空间换时间。<br><br><strong>要点：</strong><br>1. 常见作用是加快查询、排序、分组。<br>2. 代价是会增加写入成本和存储成本。<br>3. 面试里默认讨论 InnoDB 的 B+ 树索引。"
+  },
+  {
+    "title": "2. MySQL 常见索引类型有哪些？",
+    "content": "<strong>结论：</strong>高频记住主键索引、唯一索引、普通索引、联合索引。<br><br><strong>要点：</strong><br>1. 主键索引要求唯一且非空。<br>2. 唯一索引保证值唯一，但通常允许空值。<br>3. 联合索引是面试高频，重点考最左匹配。"
+  },
+  {
+    "title": "3. 为什么 InnoDB 选择 B+ 树做索引？",
+    "content": "<strong>结论：</strong>B+ 树更适合磁盘数据库的范围查询和顺序访问。<br><br><strong>要点：</strong><br>1. 树高低，磁盘 IO 次数更可控。<br>2. 非叶子节点只存键，能容纳更多分支。<br>3. 叶子节点有序且通常可顺序遍历，范围查询效率高。"
+  },
+  {
+    "title": "4. 主键索引和二级索引有什么区别？",
+    "content": "<strong>结论：</strong>InnoDB 的主键索引是聚簇索引，二级索引叶子节点存的是主键值。<br><br><strong>要点：</strong><br>1. 主键索引叶子节点直接存整行数据。<br>2. 二级索引查到主键后，通常还要再回主键索引找整行。<br>3. 这就是常说的“回表”。"
+  },
+  {
+    "title": "5. 什么是回表？什么是覆盖索引？",
+    "content": "<strong>结论：</strong>二级索引查到主键后再去主键索引取整行叫回表；查询字段都在索引里叫覆盖索引。<br><br><strong>要点：</strong><br>1. 回表会增加一次索引查找成本。<br>2. 覆盖索引可以避免回表，通常更快。<br>3. 优化时常通过调整查询字段和索引字段来争取覆盖索引。"
+  },
+  {
+    "title": "6. 什么是最左匹配原则？",
+    "content": "<strong>结论：</strong>联合索引使用时，要尽量从最左边的列开始连续匹配。<br><br><strong>要点：</strong><br>1. 联合索引例如 (a,b,c)，查询通常先看 a，再看 b，再看 c。<br>2. 跳过最左列，索引往往难以生效。<br>3. 遇到范围查询后，后续列的利用能力通常会下降。"
+  },
+  {
+    "title": "7. 索引什么时候容易失效？",
+    "content": "<strong>结论：</strong>对索引列做函数、运算、隐式类型转换，或不满足最左匹配时，索引容易失效。<br><br><strong>要点：</strong><br>1. like 以 % 开头时通常难走索引。<br>2. where 条件写法不当会让优化器放弃索引。<br>3. 低选择性字段即使有索引，也可能不划算。"
+  },
+  {
+    "title": "8. 建索引有什么原则？",
+    "content": "<strong>结论：</strong>给高频查询、高选择性、参与排序/分组/连接的字段建索引。<br><br><strong>要点：</strong><br>1. 不要给很少查询或区分度很低的字段乱建索引。<br>2. 联合索引字段顺序要结合最常见查询条件。<br>3. 索引不是越多越好，写入和维护成本会增加。"
+  },
+  {
+    "title": "9. 什么是事务？",
+    "content": "<strong>结论：</strong>事务是一组要么都成功、要么都失败的操作集合。<br><br><strong>要点：</strong><br>1. 它用来保证数据一致性。<br>2. 典型场景是转账、扣库存、订单支付。<br>3. 面试里通常会接着问 ACID。"
+  },
+  {
+    "title": "10. 事务的 ACID 是什么？",
+    "content": "<strong>结论：</strong>ACID 指原子性、一致性、隔离性、持久性。<br><br><strong>要点：</strong><br>1. 原子性：事务要么全成功，要么全失败。<br>2. 隔离性：并发事务之间尽量互不干扰。<br>3. 持久性：提交后的结果不能丢。"
+  },
+  {
+    "title": "11. 并发事务会带来哪些问题？",
+    "content": "<strong>结论：</strong>高频记住脏读、不可重复读、幻读。<br><br><strong>要点：</strong><br>1. 脏读：读到别的事务未提交的数据。<br>2. 不可重复读：同一事务前后两次读同一行结果不同。<br>3. 幻读：同一条件前后两次读，记录条数发生变化。"
+  },
+  {
+    "title": "12. MySQL 的隔离级别有哪些？",
+    "content": "<strong>结论：</strong>有读未提交、读已提交、可重复读、串行化。<br><br><strong>要点：</strong><br>1. 隔离越强，并发性能通常越差。<br>2. MySQL InnoDB 默认是可重复读。<br>3. 面试重点是：每种级别能解决哪些并发问题。"
+  },
+  {
+    "title": "13. 什么是 MVCC？",
+    "content": "<strong>结论：</strong>MVCC 是多版本并发控制，用多版本快照减少读写冲突。<br><br><strong>要点：</strong><br>1. 核心思想是读历史版本，不一定直接读最新版本。<br>2. 它让普通读和写操作尽量不互相阻塞。<br>3. 面试里常与 undo log、Read View 一起问。"
+  },
+  {
+    "title": "14. 什么是当前读和快照读？",
+    "content": "<strong>结论：</strong>当前读读的是最新数据并可能加锁，快照读读的是一致性视图。<br><br><strong>要点：</strong><br>1. 普通 select 通常属于快照读。<br>2. select ... for update 属于当前读。<br>3. 当前读常用于需要保证后续更新正确性的场景。"
+  },
+  {
+    "title": "15. 幻读怎么解决？",
+    "content": "<strong>结论：</strong>InnoDB 在可重复读下，主要通过 MVCC 和间隙锁/临键锁来降低幻读问题。<br><br><strong>要点：</strong><br>1. 快照读靠 MVCC。<br>2. 当前读靠加锁控制插入。<br>3. 面试回答时记住“读用快照，改用锁”。"
+  },
+  {
+    "title": "16. MySQL 常见锁有哪些？",
+    "content": "<strong>结论：</strong>高频记住全局锁、表锁、行锁，以及共享锁和排他锁。<br><br><strong>要点：</strong><br>1. 锁粒度越大，并发越差，但管理成本越低。<br>2. InnoDB 的优势之一就是支持行锁。<br>3. 面试里还常延伸到间隙锁、临键锁。"
+  },
+  {
+    "title": "17. 共享锁和排他锁有什么区别？",
+    "content": "<strong>结论：</strong>共享锁允许多个事务同时读，排他锁会阻止其他事务再加共享或排他锁。<br><br><strong>要点：</strong><br>1. 共享锁常简称 S 锁。<br>2. 排他锁常简称 X 锁。<br>3. 写操作通常需要排他锁。"
+  },
+  {
+    "title": "18. 什么是间隙锁和临键锁？",
+    "content": "<strong>结论：</strong>间隙锁锁的是索引区间，临键锁是记录锁 + 间隙锁。<br><br><strong>要点：</strong><br>1. 它们主要用于防止范围内插入新记录。<br>2. 这是解决幻读的重要手段。<br>3. 代价是更容易引发锁等待和死锁。"
+  },
+  {
+    "title": "19. 什么是死锁？怎么处理？",
+    "content": "<strong>结论：</strong>多个事务互相等待对方释放资源，就形成死锁。<br><br><strong>要点：</strong><br>1. MySQL 通常会检测死锁并回滚其中一个事务。<br>2. 减少死锁的常见手段是固定加锁顺序、缩小事务范围、尽快提交。<br>3. 面试回答不要只说“重试”，还要说如何预防。"
+  },
+  {
+    "title": "20. redo log 是什么？",
+    "content": "<strong>结论：</strong>redo log 是 InnoDB 的重做日志，用来保证已提交事务的数据不丢。<br><br><strong>要点：</strong><br>1. 它属于物理日志。<br>2. 崩溃恢复时会依赖 redo log 重放。<br>3. 它是持久性的重要保障。"
+  },
+  {
+    "title": "21. binlog 是什么？",
+    "content": "<strong>结论：</strong>binlog 是 Server 层的归档日志，常用于主从复制和数据恢复。<br><br><strong>要点：</strong><br>1. 它不只服务于 InnoDB。<br>2. redo log 偏恢复，binlog 偏复制和审计。<br>3. 面试里常拿它和 redo log 对比。"
+  },
+  {
+    "title": "22. 为什么要两阶段提交？",
+    "content": "<strong>结论：</strong>两阶段提交是为了保证 redo log 和 binlog 的一致性。<br><br><strong>要点：</strong><br>1. 否则可能出现一个写成功、另一个没写成功。<br>2. 这会导致主从不一致或恢复异常。<br>3. 回答关键词：prepare、commit、一致性。"
+  },
+  {
+    "title": "23. WAL 思想是什么？",
+    "content": "<strong>结论：</strong>WAL 就是先写日志，再择机刷数据页。<br><br><strong>要点：</strong><br>1. 这样能把大量随机写转化为更可控的顺序写。<br>2. 提升写性能。<br>3. 同时结合 redo log 保证崩溃恢复。"
+  },
+  {
+    "title": "24. 脏页是什么？",
+    "content": "<strong>结论：</strong>内存中被修改过、但还没刷回磁盘的数据页叫脏页。<br><br><strong>要点：</strong><br>1. 脏页存在是数据库正常优化手段。<br>2. 刷盘时机不只发生在提交瞬间。<br>3. 脏页过多会带来抖动风险。"
+  },
+  {
+    "title": "25. 为什么 MySQL 会“抖一下”？",
+    "content": "<strong>结论：</strong>常见原因是刷脏页、日志压力、IO 突增导致响应时间突然变长。<br><br><strong>要点：</strong><br>1. 脏页太多时，后台刷盘压力会上来。<br>2. 磁盘性能不稳定也会放大问题。<br>3. 优化方向通常是控制写入峰值和刷盘节奏。"
+  },
+  {
+    "title": "26. count(*) 为什么可能慢？",
+    "content": "<strong>结论：</strong>因为 InnoDB 通常需要扫描满足条件的数据，而不是像某些引擎直接取总行数。<br><br><strong>要点：</strong><br>1. 带条件的 count 更依赖索引设计。<br>2. count(*)、count(1)、count(主键)在很多场景差异不大，但核心还是执行计划。<br>3. 真正优化要看是否能减少扫描。"
+  },
+  {
+    "title": "27. order by / group by 怎么优化？",
+    "content": "<strong>结论：</strong>核心思路是尽量利用索引，减少额外排序和临时表。<br><br><strong>要点：</strong><br>1. 排序字段、分组字段尽量和索引顺序匹配。<br>2. 不命中索引时，容易出现 filesort 或临时表。<br>3. 先看 explain，再决定怎么改 SQL 或索引。"
+  },
+  {
+    "title": "28. explain 主要看什么？",
+    "content": "<strong>结论：</strong>explain 主要看是否走索引、扫描行数大不大、有没有额外排序或临时表。<br><br><strong>要点：</strong><br>1. 重点关注 type、key、rows、extra。<br>2. rows 越大，通常代表扫描代价越高。<br>3. extra 里若出现 Using filesort、Using temporary，要重点警惕。"
+  },
+  {
+    "title": "29. 执行一条 select 语句大致发生了什么？",
+    "content": "<strong>结论：</strong>大致会经过连接器、解析器、优化器、执行器，再到存储引擎取数。<br><br><strong>要点：</strong><br>1. 连接器负责认证和连接管理。<br>2. 优化器决定执行计划。<br>3. 执行器按计划调用存储引擎接口获取结果。"
+  },
+  {
+    "title": "30. 分库分表什么时候要做？",
+    "content": "<strong>结论：</strong>当单表/单库的数据量、并发量或热点压力已经成为瓶颈时，才考虑分库分表。<br><br><strong>要点：</strong><br>1. 它能提升容量和吞吐，但会增加复杂度。<br>2. 会带来分布式事务、跨库查询、分页排序等问题。<br>3. 面试中要强调：不是一上来就分，而是先优化索引、SQL、缓存。"
+  }
+];
 
 const countdownEl = document.getElementById('countdown');
 const progressBar = document.getElementById('progress-bar');
@@ -772,7 +897,10 @@ function closeEditModal(saveChanges = false) {
     if (detailEl) {
       detailEl.innerHTML = updatedContent;
     }
-    if (typeof sidebarMgr !== 'undefined') sidebarMgr.save();
+    if (typeof DbManager !== 'undefined') {
+      var cardId = knowledgePoints[index].id;
+      if (cardId) DbManager.updateCard(cardId, knowledgePoints[index].title, updatedContent);
+    }
   }
 
   if (editModalEditor) {
@@ -981,8 +1109,22 @@ setupTtsPlayer({
   apiUrl: '/api/tts'
 });
 
-// 初始显示
-showKnowledge();
+// 数据库初始化后再显示
+(async function initDbAndShow() {
+  try {
+    await DbManager.init(PENDING_SEED, window.__PAGE_SLUG__);
+    var cards = DbManager.getCards();
+    knowledgePoints.length = 0;
+    cards.forEach(function(c) { knowledgePoints.push(c); });
+    if (typeof sidebarMgr !== 'undefined') sidebarMgr.render();
+  } catch(e) {
+    // fallback: 直接用种子数据
+    if (!knowledgePoints.length && PENDING_SEED.length) {
+      PENDING_SEED.forEach(function(c) { knowledgePoints.push(c); });
+    }
+  }
+  showKnowledge();
+})();
 
 // 每秒倒计时
 setInterval(() => {

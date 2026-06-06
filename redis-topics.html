@@ -672,6 +672,8 @@ body.modal-open {
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
 <div class="sidebar-swipe-area" id="sidebar-swipe-area" aria-hidden="true"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+<script src="./db-manager.js"></script>
 <script src="./tts-player.js"></script>
 <script src="./sidebar-manager.js"></script>
 <script src="./gist-sync.js"></script>
@@ -715,7 +717,102 @@ window.addEventListener('resize', () => {
 });
 
 // ===== 知识点展示逻辑 =====
-let knowledgePoints = [{"title":"1. Redis 是什么？有什么特点？","content":"<strong>结论：</strong>Redis 是一个基于内存的高性能键值数据库，常用于缓存、计数、排行榜和分布式协调。<br><br><strong>要点：</strong><br>1. 读写快，适合高并发场景。<br>2. 支持多种数据结构，不只是简单字符串。<br>3. 常见问题也集中在内存、持久化和高可用。"},{"title":"2. Redis 为什么快？","content":"<strong>结论：</strong>Redis 快的核心原因是内存操作 + 高效数据结构 + 较少上下文切换。<br><br><strong>要点：</strong><br>1. 数据主要在内存里，避免大量磁盘 IO。<br>2. 命令执行路径短，数据结构做了专门优化。<br>3. 单线程模型避免了很多锁竞争开销。"},{"title":"3. Redis 是单线程吗？","content":"<strong>结论：</strong>Redis 的命令执行核心模型长期以单线程为主，但并不意味着整个系统所有工作都只有一个线程。<br><br><strong>要点：</strong><br>1. 命令执行单线程，简化并发控制。<br>2. 某些版本在网络读写等环节引入了多线程优化。<br>3. 面试重点不是“绝对单线程”，而是它为什么单线程还能快。"},{"title":"4. Redis 常见数据类型有哪些？","content":"<strong>结论：</strong>高频记住 String、List、Hash、Set、ZSet。<br><br><strong>要点：</strong><br>1. String 最通用，可做缓存、计数、分布式锁。<br>2. Hash 常用于存对象字段。<br>3. ZSet 常用于排行榜、带分数排序场景。"},{"title":"5. BitMap、HyperLogLog、GEO、Stream 分别适合什么场景？","content":"<strong>结论：</strong>它们是 Redis 的扩展能力，分别解决位图统计、基数估算、地理位置、消息流处理问题。<br><br><strong>要点：</strong><br>1. BitMap 适合签到、活跃标记。<br>2. HyperLogLog 适合海量去重计数但允许少量误差。<br>3. GEO 适合附近的人，Stream 适合轻量消息队列。"},{"title":"6. Redis 持久化有哪些方式？","content":"<strong>结论：</strong>高频记住 RDB、AOF、混合持久化。<br><br><strong>要点：</strong><br>1. RDB 是快照，恢复快，但可能丢最近一段时间数据。<br>2. AOF 是追加日志，数据更完整，但文件更大。<br>3. 混合持久化兼顾恢复速度和数据完整性。"},{"title":"7. RDB 和 AOF 有什么区别？","content":"<strong>结论：</strong>RDB 偏恢复速度，AOF 偏数据完整性。<br><br><strong>要点：</strong><br>1. RDB 适合做备份和快速恢复。<br>2. AOF 适合降低数据丢失风险。<br>3. 实际生产常常是多种机制组合使用。"},{"title":"8. AOF 的三种写回策略是什么？","content":"<strong>结论：</strong>核心是 always、everysec、no，区别在于性能和数据安全性的平衡。<br><br><strong>要点：</strong><br>1. always 最安全，但性能开销最大。<br>2. everysec 是最常见折中方案。<br>3. no 把刷盘时机更多交给操作系统，风险更高。"},{"title":"9. 什么是 AOF 重写？","content":"<strong>结论：</strong>AOF 重写是把冗余命令压缩成恢复当前数据状态所需的更精简指令集合。<br><br><strong>要点：</strong><br>1. 目的是缩小 AOF 文件体积。<br>2. 它不是简单复制原日志，而是重建更短的恢复命令。<br>3. 本质是以当前结果为准，而不是保留所有历史过程。"},{"title":"10. Redis 过期删除机制怎么理解？","content":"<strong>结论：</strong>Redis 不会在键一到期就立刻全部删除，而是采用惰性删除 + 定期删除。<br><br><strong>要点：</strong><br>1. 惰性删除：访问时发现过期再删。<br>2. 定期删除：周期性抽样清理过期键。<br>3. 这样在 CPU 和内存回收之间做平衡。"},{"title":"11. Redis 为什么还需要内存淘汰机制？","content":"<strong>结论：</strong>因为只靠过期删除不一定能及时释放足够内存。<br><br><strong>要点：</strong><br>1. 有些键没设置过期时间。<br>2. 有些过期键未被访问，可能暂时还留在内存里。<br>3. 当内存达到上限时，就需要淘汰策略参与。"},{"title":"12. 常见内存淘汰策略有哪些？","content":"<strong>结论：</strong>高频记住 noeviction、LRU、LFU、TTL 这几类思路。<br><br><strong>要点：</strong><br>1. noeviction 表示不淘汰，直接报错。<br>2. LRU 偏向淘汰最近最少使用的数据。<br>3. LFU 偏向淘汰访问频率最低的数据。"},{"title":"13. Redis 主从复制怎么理解？","content":"<strong>结论：</strong>主从复制就是主节点负责写，从节点同步主节点数据，常用于读扩展和高可用基础。<br><br><strong>要点：</strong><br>1. 初次同步通常是全量复制。<br>2. 后续大多走增量复制。<br>3. 它是哨兵和高可用切换的前提。"},{"title":"14. 全量复制和增量复制有什么区别？","content":"<strong>结论：</strong>全量复制传的是完整数据快照，增量复制传的是复制积压区中的新增命令。<br><br><strong>要点：</strong><br>1. 全量复制开销更大。<br>2. 网络短暂抖动后，若积压数据还在，通常可走增量复制。<br>3. 增量复制能显著降低恢复同步成本。"},{"title":"15. 哨兵模式的作用是什么？","content":"<strong>结论：</strong>哨兵模式用于监控 Redis 主从集群并在主节点故障时自动完成故障转移。<br><br><strong>要点：</strong><br>1. 它负责监控节点健康状态。<br>2. 主节点异常时会选举新主。<br>3. 它解决的是高可用，不解决海量数据分片问题。"},{"title":"16. 什么是集群脑裂？","content":"<strong>结论：</strong>脑裂是因为网络分区等原因，系统里短时间出现多个都认为自己合法的主节点。<br><br><strong>要点：</strong><br>1. 它会带来数据不一致风险。<br>2. 常见诱因是网络分区和心跳异常。<br>3. 应对思路是合理配置复制确认和故障判定策略。"},{"title":"17. Redis 事务怎么理解？","content":"<strong>结论：</strong>Redis 事务更像“命令批量顺序执行”，和关系型数据库事务不是一个强度。<br><br><strong>要点：</strong><br>1. 它能保证队列中的命令按顺序执行。<br>2. 但通常不具备关系型数据库那种完整回滚能力。<br>3. 面试里不要把 Redis 事务和 MySQL 事务等同。"},{"title":"18. Redis 怎么实现分布式锁？","content":"<strong>结论：</strong>分布式锁的核心是“互斥 + 过期时间 + 只释放自己的锁”。<br><br><strong>要点：</strong><br>1. 需要防止死锁，所以一定要设置过期时间。<br>2. 删除锁时要保证只能删掉自己加的锁。<br>3. 面试中还可以补充：它适合很多业务场景，但不是绝对强一致锁。"},{"title":"19. 什么是缓存穿透？怎么解决？","content":"<strong>结论：</strong>缓存穿透是请求的数据既不在缓存，也不在数据库，导致流量直接打到数据库。<br><br><strong>要点：</strong><br>1. 常见原因是恶意请求或查询不存在的数据。<br>2. 解决思路包括布隆过滤器、缓存空值、参数校验。<br>3. 核心目标是别让无效请求反复穿到 DB。"},{"title":"20. 什么是缓存击穿？怎么解决？","content":"<strong>结论：</strong>缓存击穿是某个热点 key 失效瞬间，大量请求同时打到数据库。<br><br><strong>要点：</strong><br>1. 它强调的是“热点 key”。<br>2. 解决办法常见有互斥锁、逻辑过期、热点永不过期。<br>3. 和缓存雪崩、穿透要区分开。"},{"title":"21. 什么是缓存雪崩？怎么解决？","content":"<strong>结论：</strong>缓存雪崩是大量缓存同一时间失效，导致数据库压力骤增。<br><br><strong>要点：</strong><br>1. 它强调的是“大量 key 同时失效”。<br>2. 解决思路包括过期时间加随机值、限流降级、多级缓存。<br>3. 本质是避免失效时间过于集中。"},{"title":"22. Cache Aside 是什么？","content":"<strong>结论：</strong>Cache Aside 是最常见缓存模式：先查缓存，没命中再查数据库并回填缓存。<br><br><strong>要点：</strong><br>1. 读路径通常是“先缓存后数据库”。<br>2. 写路径常见做法是更新数据库后删除缓存。<br>3. 这种模式实现简单，业务中最常用。"},{"title":"23. Read Through / Write Through 怎么理解？","content":"<strong>结论：</strong>它们把缓存和数据库的一部分读写逻辑封装到统一层里。<br><br><strong>要点：</strong><br>1. Read Through 由缓存层负责读穿透数据库。<br>2. Write Through 由缓存层同步写数据库。<br>3. 面试里知道概念和与 Cache Aside 的区别就够了。"}];
+var knowledgePoints = [];
+window.__PAGE_SLUG__ = 'redis-topics';
+var PENDING_SEED = [
+  {
+    "title": "1. Redis 是什么？有什么特点？",
+    "content": "<strong>结论：</strong>Redis 是一个基于内存的高性能键值数据库，常用于缓存、计数、排行榜和分布式协调。<br><br><strong>要点：</strong><br>1. 读写快，适合高并发场景。<br>2. 支持多种数据结构，不只是简单字符串。<br>3. 常见问题也集中在内存、持久化和高可用。"
+  },
+  {
+    "title": "2. Redis 为什么快？",
+    "content": "<strong>结论：</strong>Redis 快的核心原因是内存操作 + 高效数据结构 + 较少上下文切换。<br><br><strong>要点：</strong><br>1. 数据主要在内存里，避免大量磁盘 IO。<br>2. 命令执行路径短，数据结构做了专门优化。<br>3. 单线程模型避免了很多锁竞争开销。"
+  },
+  {
+    "title": "3. Redis 是单线程吗？",
+    "content": "<strong>结论：</strong>Redis 的命令执行核心模型长期以单线程为主，但并不意味着整个系统所有工作都只有一个线程。<br><br><strong>要点：</strong><br>1. 命令执行单线程，简化并发控制。<br>2. 某些版本在网络读写等环节引入了多线程优化。<br>3. 面试重点不是“绝对单线程”，而是它为什么单线程还能快。"
+  },
+  {
+    "title": "4. Redis 常见数据类型有哪些？",
+    "content": "<strong>结论：</strong>高频记住 String、List、Hash、Set、ZSet。<br><br><strong>要点：</strong><br>1. String 最通用，可做缓存、计数、分布式锁。<br>2. Hash 常用于存对象字段。<br>3. ZSet 常用于排行榜、带分数排序场景。"
+  },
+  {
+    "title": "5. BitMap、HyperLogLog、GEO、Stream 分别适合什么场景？",
+    "content": "<strong>结论：</strong>它们是 Redis 的扩展能力，分别解决位图统计、基数估算、地理位置、消息流处理问题。<br><br><strong>要点：</strong><br>1. BitMap 适合签到、活跃标记。<br>2. HyperLogLog 适合海量去重计数但允许少量误差。<br>3. GEO 适合附近的人，Stream 适合轻量消息队列。"
+  },
+  {
+    "title": "6. Redis 持久化有哪些方式？",
+    "content": "<strong>结论：</strong>高频记住 RDB、AOF、混合持久化。<br><br><strong>要点：</strong><br>1. RDB 是快照，恢复快，但可能丢最近一段时间数据。<br>2. AOF 是追加日志，数据更完整，但文件更大。<br>3. 混合持久化兼顾恢复速度和数据完整性。"
+  },
+  {
+    "title": "7. RDB 和 AOF 有什么区别？",
+    "content": "<strong>结论：</strong>RDB 偏恢复速度，AOF 偏数据完整性。<br><br><strong>要点：</strong><br>1. RDB 适合做备份和快速恢复。<br>2. AOF 适合降低数据丢失风险。<br>3. 实际生产常常是多种机制组合使用。"
+  },
+  {
+    "title": "8. AOF 的三种写回策略是什么？",
+    "content": "<strong>结论：</strong>核心是 always、everysec、no，区别在于性能和数据安全性的平衡。<br><br><strong>要点：</strong><br>1. always 最安全，但性能开销最大。<br>2. everysec 是最常见折中方案。<br>3. no 把刷盘时机更多交给操作系统，风险更高。"
+  },
+  {
+    "title": "9. 什么是 AOF 重写？",
+    "content": "<strong>结论：</strong>AOF 重写是把冗余命令压缩成恢复当前数据状态所需的更精简指令集合。<br><br><strong>要点：</strong><br>1. 目的是缩小 AOF 文件体积。<br>2. 它不是简单复制原日志，而是重建更短的恢复命令。<br>3. 本质是以当前结果为准，而不是保留所有历史过程。"
+  },
+  {
+    "title": "10. Redis 过期删除机制怎么理解？",
+    "content": "<strong>结论：</strong>Redis 不会在键一到期就立刻全部删除，而是采用惰性删除 + 定期删除。<br><br><strong>要点：</strong><br>1. 惰性删除：访问时发现过期再删。<br>2. 定期删除：周期性抽样清理过期键。<br>3. 这样在 CPU 和内存回收之间做平衡。"
+  },
+  {
+    "title": "11. Redis 为什么还需要内存淘汰机制？",
+    "content": "<strong>结论：</strong>因为只靠过期删除不一定能及时释放足够内存。<br><br><strong>要点：</strong><br>1. 有些键没设置过期时间。<br>2. 有些过期键未被访问，可能暂时还留在内存里。<br>3. 当内存达到上限时，就需要淘汰策略参与。"
+  },
+  {
+    "title": "12. 常见内存淘汰策略有哪些？",
+    "content": "<strong>结论：</strong>高频记住 noeviction、LRU、LFU、TTL 这几类思路。<br><br><strong>要点：</strong><br>1. noeviction 表示不淘汰，直接报错。<br>2. LRU 偏向淘汰最近最少使用的数据。<br>3. LFU 偏向淘汰访问频率最低的数据。"
+  },
+  {
+    "title": "13. Redis 主从复制怎么理解？",
+    "content": "<strong>结论：</strong>主从复制就是主节点负责写，从节点同步主节点数据，常用于读扩展和高可用基础。<br><br><strong>要点：</strong><br>1. 初次同步通常是全量复制。<br>2. 后续大多走增量复制。<br>3. 它是哨兵和高可用切换的前提。"
+  },
+  {
+    "title": "14. 全量复制和增量复制有什么区别？",
+    "content": "<strong>结论：</strong>全量复制传的是完整数据快照，增量复制传的是复制积压区中的新增命令。<br><br><strong>要点：</strong><br>1. 全量复制开销更大。<br>2. 网络短暂抖动后，若积压数据还在，通常可走增量复制。<br>3. 增量复制能显著降低恢复同步成本。"
+  },
+  {
+    "title": "15. 哨兵模式的作用是什么？",
+    "content": "<strong>结论：</strong>哨兵模式用于监控 Redis 主从集群并在主节点故障时自动完成故障转移。<br><br><strong>要点：</strong><br>1. 它负责监控节点健康状态。<br>2. 主节点异常时会选举新主。<br>3. 它解决的是高可用，不解决海量数据分片问题。"
+  },
+  {
+    "title": "16. 什么是集群脑裂？",
+    "content": "<strong>结论：</strong>脑裂是因为网络分区等原因，系统里短时间出现多个都认为自己合法的主节点。<br><br><strong>要点：</strong><br>1. 它会带来数据不一致风险。<br>2. 常见诱因是网络分区和心跳异常。<br>3. 应对思路是合理配置复制确认和故障判定策略。"
+  },
+  {
+    "title": "17. Redis 事务怎么理解？",
+    "content": "<strong>结论：</strong>Redis 事务更像“命令批量顺序执行”，和关系型数据库事务不是一个强度。<br><br><strong>要点：</strong><br>1. 它能保证队列中的命令按顺序执行。<br>2. 但通常不具备关系型数据库那种完整回滚能力。<br>3. 面试里不要把 Redis 事务和 MySQL 事务等同。"
+  },
+  {
+    "title": "18. Redis 怎么实现分布式锁？",
+    "content": "<strong>结论：</strong>分布式锁的核心是“互斥 + 过期时间 + 只释放自己的锁”。<br><br><strong>要点：</strong><br>1. 需要防止死锁，所以一定要设置过期时间。<br>2. 删除锁时要保证只能删掉自己加的锁。<br>3. 面试中还可以补充：它适合很多业务场景，但不是绝对强一致锁。"
+  },
+  {
+    "title": "19. 什么是缓存穿透？怎么解决？",
+    "content": "<strong>结论：</strong>缓存穿透是请求的数据既不在缓存，也不在数据库，导致流量直接打到数据库。<br><br><strong>要点：</strong><br>1. 常见原因是恶意请求或查询不存在的数据。<br>2. 解决思路包括布隆过滤器、缓存空值、参数校验。<br>3. 核心目标是别让无效请求反复穿到 DB。"
+  },
+  {
+    "title": "20. 什么是缓存击穿？怎么解决？",
+    "content": "<strong>结论：</strong>缓存击穿是某个热点 key 失效瞬间，大量请求同时打到数据库。<br><br><strong>要点：</strong><br>1. 它强调的是“热点 key”。<br>2. 解决办法常见有互斥锁、逻辑过期、热点永不过期。<br>3. 和缓存雪崩、穿透要区分开。"
+  },
+  {
+    "title": "21. 什么是缓存雪崩？怎么解决？",
+    "content": "<strong>结论：</strong>缓存雪崩是大量缓存同一时间失效，导致数据库压力骤增。<br><br><strong>要点：</strong><br>1. 它强调的是“大量 key 同时失效”。<br>2. 解决思路包括过期时间加随机值、限流降级、多级缓存。<br>3. 本质是避免失效时间过于集中。"
+  },
+  {
+    "title": "22. Cache Aside 是什么？",
+    "content": "<strong>结论：</strong>Cache Aside 是最常见缓存模式：先查缓存，没命中再查数据库并回填缓存。<br><br><strong>要点：</strong><br>1. 读路径通常是“先缓存后数据库”。<br>2. 写路径常见做法是更新数据库后删除缓存。<br>3. 这种模式实现简单，业务中最常用。"
+  },
+  {
+    "title": "23. Read Through / Write Through 怎么理解？",
+    "content": "<strong>结论：</strong>它们把缓存和数据库的一部分读写逻辑封装到统一层里。<br><br><strong>要点：</strong><br>1. Read Through 由缓存层负责读穿透数据库。<br>2. Write Through 由缓存层同步写数据库。<br>3. 面试里知道概念和与 Cache Aside 的区别就够了。"
+  }
+];
 
 const countdownEl = document.getElementById('countdown');
 const progressBar = document.getElementById('progress-bar');
@@ -772,7 +869,10 @@ function closeEditModal(saveChanges = false) {
     if (detailEl) {
       detailEl.innerHTML = updatedContent;
     }
-    if (typeof sidebarMgr !== 'undefined') sidebarMgr.save();
+    if (typeof DbManager !== 'undefined') {
+      var cardId = knowledgePoints[index].id;
+      if (cardId) DbManager.updateCard(cardId, knowledgePoints[index].title, updatedContent);
+    }
   }
 
   if (editModalEditor) {
@@ -981,8 +1081,22 @@ setupTtsPlayer({
   apiUrl: '/api/tts'
 });
 
-// 初始显示
-showKnowledge();
+// 数据库初始化后再显示
+(async function initDbAndShow() {
+  try {
+    await DbManager.init(PENDING_SEED, window.__PAGE_SLUG__);
+    var cards = DbManager.getCards();
+    knowledgePoints.length = 0;
+    cards.forEach(function(c) { knowledgePoints.push(c); });
+    if (typeof sidebarMgr !== 'undefined') sidebarMgr.render();
+  } catch(e) {
+    // fallback: 直接用种子数据
+    if (!knowledgePoints.length && PENDING_SEED.length) {
+      PENDING_SEED.forEach(function(c) { knowledgePoints.push(c); });
+    }
+  }
+  showKnowledge();
+})();
 
 // 每秒倒计时
 setInterval(() => {

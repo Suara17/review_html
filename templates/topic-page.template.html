@@ -672,6 +672,8 @@ body.modal-open {
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
 <div class="sidebar-swipe-area" id="sidebar-swipe-area" aria-hidden="true"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+<script src="./db-manager.js"></script>
 <script src="./tts-player.js"></script>
 <script src="./sidebar-manager.js"></script>
 <script src="./gist-sync.js"></script>
@@ -715,7 +717,9 @@ window.addEventListener('resize', () => {
 });
 
 // ===== 知识点展示逻辑 =====
-let knowledgePoints = __KNOWLEDGE_POINTS_JSON__;
+var knowledgePoints = [];
+window.__PAGE_SLUG__ = '{{PAGE_ID}}';
+var PENDING_SEED = __KNOWLEDGE_POINTS_JSON__;
 
 const countdownEl = document.getElementById('countdown');
 const progressBar = document.getElementById('progress-bar');
@@ -772,7 +776,10 @@ function closeEditModal(saveChanges = false) {
     if (detailEl) {
       detailEl.innerHTML = updatedContent;
     }
-    if (typeof sidebarMgr !== 'undefined') sidebarMgr.save();
+    if (typeof DbManager !== 'undefined') {
+      var cardId = knowledgePoints[index].id;
+      if (cardId) DbManager.updateCard(cardId, knowledgePoints[index].title, updatedContent);
+    }
   }
 
   if (editModalEditor) {
@@ -981,8 +988,22 @@ setupTtsPlayer({
   apiUrl: '/api/tts'
 });
 
-// 初始显示
-showKnowledge();
+// 数据库初始化后再显示
+(async function initDbAndShow() {
+  try {
+    await DbManager.init(PENDING_SEED, window.__PAGE_SLUG__);
+    var cards = DbManager.getCards();
+    knowledgePoints.length = 0;
+    cards.forEach(function(c) { knowledgePoints.push(c); });
+    if (typeof sidebarMgr !== 'undefined') sidebarMgr.render();
+  } catch(e) {
+    // fallback: 直接用种子数据
+    if (!knowledgePoints.length && PENDING_SEED.length) {
+      PENDING_SEED.forEach(function(c) { knowledgePoints.push(c); });
+    }
+  }
+  showKnowledge();
+})();
 
 // 每秒倒计时
 setInterval(() => {

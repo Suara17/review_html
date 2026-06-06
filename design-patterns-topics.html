@@ -672,6 +672,8 @@ body.modal-open {
 <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
 <div class="sidebar-swipe-area" id="sidebar-swipe-area" aria-hidden="true"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+<script src="./db-manager.js"></script>
 <script src="./tts-player.js"></script>
 <script src="./sidebar-manager.js"></script>
 <script src="./gist-sync.js"></script>
@@ -715,7 +717,66 @@ window.addEventListener('resize', () => {
 });
 
 // ===== 知识点展示逻辑 =====
-let knowledgePoints = [{"title":"1. 什么是设计模式？为什么要学？","content":"<strong>结论：</strong>设计模式是对常见软件设计问题的经典解决方案总结。<br><br><strong>要点：</strong><br>1. 它不是固定代码模板，而是可复用设计思想。<br>2. 目的是提升可扩展性、可维护性和沟通效率。<br>3. 面试更看你是否理解适用场景，而不是背定义。"},{"title":"2. 单例模式是什么？适合什么场景？","content":"<strong>结论：</strong>单例模式保证一个类全局只有一个实例，并提供统一访问入口。<br><br><strong>要点：</strong><br>1. 常见于配置中心、线程池、连接池管理器。<br>2. 好处是避免重复创建和状态不一致。<br>3. 代价是容易引入全局状态，测试和扩展也可能受影响。"},{"title":"3. 工厂模式的核心思想是什么？","content":"<strong>结论：</strong>工厂模式的核心是把“对象创建”与“对象使用”解耦。<br><br><strong>要点：</strong><br>1. 调用方不直接 new 具体对象。<br>2. 这样更利于扩展和替换实现。<br>3. 面试中常被问简单工厂、工厂方法、抽象工厂的区别。"},{"title":"4. 工厂方法和抽象工厂有什么区别？","content":"<strong>结论：</strong>工厂方法更像“生产一种产品”，抽象工厂更像“生产一整套相关产品”。<br><br><strong>要点：</strong><br>1. 工厂方法聚焦单一产品层级扩展。<br>2. 抽象工厂适合一组相关对象需要配套出现的场景。<br>3. 回答时可用“产品等级结构”和“产品族”来区分。"},{"title":"5. 观察者模式是什么？","content":"<strong>结论：</strong>观察者模式定义了一种一对多依赖关系，被观察对象状态变化时，所有观察者都会收到通知。<br><br><strong>要点：</strong><br>1. 适合事件通知、消息订阅、UI 联动。<br>2. 能降低发布者和订阅者的直接耦合。<br>3. 面试中可类比发布-订阅思想。"},{"title":"6. 策略模式是什么？","content":"<strong>结论：</strong>策略模式把一组可互换算法封装起来，并在运行时按需选择。<br><br><strong>要点：</strong><br>1. 它的核心是“把 if-else 分支背后的算法独立出来”。<br>2. 适合支付方式、排序规则、折扣规则等场景。<br>3. 好处是新增策略时不用改原有核心逻辑。"},{"title":"7. 装饰器模式是什么？","content":"<strong>结论：</strong>装饰器模式是在不改原对象结构的前提下，动态给对象增加功能。<br><br><strong>要点：</strong><br>1. 它强调“组合增强”，而不是继承扩展。<br>2. 适合权限、日志、缓存、附加职责场景。<br>3. 面试中要注意和代理模式区分。"},{"title":"8. 代理模式和装饰器模式怎么区分？","content":"<strong>结论：</strong>两者结构相似，但代理模式更强调“控制访问”，装饰器模式更强调“增强功能”。<br><br><strong>要点：</strong><br>1. 代理常用于权限控制、延迟加载、远程调用。<br>2. 装饰器常用于动态叠加职责。<br>3. 回答时从“设计目的”切入最清晰。"},{"title":"9. 为什么常说组合优于继承？","content":"<strong>结论：</strong>组合通常比继承更灵活，耦合更低。<br><br><strong>要点：</strong><br>1. 继承会把父子类强绑定。<br>2. 组合可以在运行时按需替换能力。<br>3. 很多设计模式本质上都在强调组合思想。"},{"title":"10. 单一职责原则是什么？","content":"<strong>结论：</strong>一个类或模块最好只负责一类职责。<br><br><strong>要点：</strong><br>1. 职责越单一，修改原因越单一。<br>2. 有利于测试、维护和拆分。<br>3. 面试中常与高内聚低耦合一起理解。"},{"title":"11. 开闭原则是什么？","content":"<strong>结论：</strong>对扩展开放，对修改关闭。<br><br><strong>要点：</strong><br>1. 新需求尽量通过扩展实现，而不是大量改老代码。<br>2. 这是很多设计模式背后的核心原则。<br>3. 真正价值在于降低改动风险。"},{"title":"12. 里氏替换原则是什么？","content":"<strong>结论：</strong>子类应该能够替换父类，并且不破坏原有程序正确性。<br><br><strong>要点：</strong><br>1. 继承不能只图复用代码，还要保持行为契约一致。<br>2. 子类不要随意削弱父类承诺。<br>3. 面试中常用于判断继承设计是否合理。"},{"title":"13. 接口隔离原则是什么？","content":"<strong>结论：</strong>接口应尽量小而专，不要让调用方依赖不需要的方法。<br><br><strong>要点：</strong><br>1. 大而全接口会增加耦合。<br>2. 细粒度接口更利于复用和演进。<br>3. 本质是在控制依赖范围。"},{"title":"14. 依赖倒置原则是什么？","content":"<strong>结论：</strong>高层模块不应依赖低层实现，双方都应依赖抽象。<br><br><strong>要点：</strong><br>1. 面向接口编程就是典型体现。<br>2. 这样更容易替换具体实现。<br>3. 是解耦和可测试性的关键原则之一。"}];
+var knowledgePoints = [];
+window.__PAGE_SLUG__ = 'design-patterns-topics';
+var PENDING_SEED = [
+  {
+    "title": "1. 什么是设计模式？为什么要学？",
+    "content": "<strong>结论：</strong>设计模式是对常见软件设计问题的经典解决方案总结。<br><br><strong>要点：</strong><br>1. 它不是固定代码模板，而是可复用设计思想。<br>2. 目的是提升可扩展性、可维护性和沟通效率。<br>3. 面试更看你是否理解适用场景，而不是背定义。"
+  },
+  {
+    "title": "2. 单例模式是什么？适合什么场景？",
+    "content": "<strong>结论：</strong>单例模式保证一个类全局只有一个实例，并提供统一访问入口。<br><br><strong>要点：</strong><br>1. 常见于配置中心、线程池、连接池管理器。<br>2. 好处是避免重复创建和状态不一致。<br>3. 代价是容易引入全局状态，测试和扩展也可能受影响。"
+  },
+  {
+    "title": "3. 工厂模式的核心思想是什么？",
+    "content": "<strong>结论：</strong>工厂模式的核心是把“对象创建”与“对象使用”解耦。<br><br><strong>要点：</strong><br>1. 调用方不直接 new 具体对象。<br>2. 这样更利于扩展和替换实现。<br>3. 面试中常被问简单工厂、工厂方法、抽象工厂的区别。"
+  },
+  {
+    "title": "4. 工厂方法和抽象工厂有什么区别？",
+    "content": "<strong>结论：</strong>工厂方法更像“生产一种产品”，抽象工厂更像“生产一整套相关产品”。<br><br><strong>要点：</strong><br>1. 工厂方法聚焦单一产品层级扩展。<br>2. 抽象工厂适合一组相关对象需要配套出现的场景。<br>3. 回答时可用“产品等级结构”和“产品族”来区分。"
+  },
+  {
+    "title": "5. 观察者模式是什么？",
+    "content": "<strong>结论：</strong>观察者模式定义了一种一对多依赖关系，被观察对象状态变化时，所有观察者都会收到通知。<br><br><strong>要点：</strong><br>1. 适合事件通知、消息订阅、UI 联动。<br>2. 能降低发布者和订阅者的直接耦合。<br>3. 面试中可类比发布-订阅思想。"
+  },
+  {
+    "title": "6. 策略模式是什么？",
+    "content": "<strong>结论：</strong>策略模式把一组可互换算法封装起来，并在运行时按需选择。<br><br><strong>要点：</strong><br>1. 它的核心是“把 if-else 分支背后的算法独立出来”。<br>2. 适合支付方式、排序规则、折扣规则等场景。<br>3. 好处是新增策略时不用改原有核心逻辑。"
+  },
+  {
+    "title": "7. 装饰器模式是什么？",
+    "content": "<strong>结论：</strong>装饰器模式是在不改原对象结构的前提下，动态给对象增加功能。<br><br><strong>要点：</strong><br>1. 它强调“组合增强”，而不是继承扩展。<br>2. 适合权限、日志、缓存、附加职责场景。<br>3. 面试中要注意和代理模式区分。"
+  },
+  {
+    "title": "8. 代理模式和装饰器模式怎么区分？",
+    "content": "<strong>结论：</strong>两者结构相似，但代理模式更强调“控制访问”，装饰器模式更强调“增强功能”。<br><br><strong>要点：</strong><br>1. 代理常用于权限控制、延迟加载、远程调用。<br>2. 装饰器常用于动态叠加职责。<br>3. 回答时从“设计目的”切入最清晰。"
+  },
+  {
+    "title": "9. 为什么常说组合优于继承？",
+    "content": "<strong>结论：</strong>组合通常比继承更灵活，耦合更低。<br><br><strong>要点：</strong><br>1. 继承会把父子类强绑定。<br>2. 组合可以在运行时按需替换能力。<br>3. 很多设计模式本质上都在强调组合思想。"
+  },
+  {
+    "title": "10. 单一职责原则是什么？",
+    "content": "<strong>结论：</strong>一个类或模块最好只负责一类职责。<br><br><strong>要点：</strong><br>1. 职责越单一，修改原因越单一。<br>2. 有利于测试、维护和拆分。<br>3. 面试中常与高内聚低耦合一起理解。"
+  },
+  {
+    "title": "11. 开闭原则是什么？",
+    "content": "<strong>结论：</strong>对扩展开放，对修改关闭。<br><br><strong>要点：</strong><br>1. 新需求尽量通过扩展实现，而不是大量改老代码。<br>2. 这是很多设计模式背后的核心原则。<br>3. 真正价值在于降低改动风险。"
+  },
+  {
+    "title": "12. 里氏替换原则是什么？",
+    "content": "<strong>结论：</strong>子类应该能够替换父类，并且不破坏原有程序正确性。<br><br><strong>要点：</strong><br>1. 继承不能只图复用代码，还要保持行为契约一致。<br>2. 子类不要随意削弱父类承诺。<br>3. 面试中常用于判断继承设计是否合理。"
+  },
+  {
+    "title": "13. 接口隔离原则是什么？",
+    "content": "<strong>结论：</strong>接口应尽量小而专，不要让调用方依赖不需要的方法。<br><br><strong>要点：</strong><br>1. 大而全接口会增加耦合。<br>2. 细粒度接口更利于复用和演进。<br>3. 本质是在控制依赖范围。"
+  },
+  {
+    "title": "14. 依赖倒置原则是什么？",
+    "content": "<strong>结论：</strong>高层模块不应依赖低层实现，双方都应依赖抽象。<br><br><strong>要点：</strong><br>1. 面向接口编程就是典型体现。<br>2. 这样更容易替换具体实现。<br>3. 是解耦和可测试性的关键原则之一。"
+  }
+];
 
 const countdownEl = document.getElementById('countdown');
 const progressBar = document.getElementById('progress-bar');
@@ -772,7 +833,10 @@ function closeEditModal(saveChanges = false) {
     if (detailEl) {
       detailEl.innerHTML = updatedContent;
     }
-    if (typeof sidebarMgr !== 'undefined') sidebarMgr.save();
+    if (typeof DbManager !== 'undefined') {
+      var cardId = knowledgePoints[index].id;
+      if (cardId) DbManager.updateCard(cardId, knowledgePoints[index].title, updatedContent);
+    }
   }
 
   if (editModalEditor) {
@@ -981,8 +1045,22 @@ setupTtsPlayer({
   apiUrl: '/api/tts'
 });
 
-// 初始显示
-showKnowledge();
+// 数据库初始化后再显示
+(async function initDbAndShow() {
+  try {
+    await DbManager.init(PENDING_SEED, window.__PAGE_SLUG__);
+    var cards = DbManager.getCards();
+    knowledgePoints.length = 0;
+    cards.forEach(function(c) { knowledgePoints.push(c); });
+    if (typeof sidebarMgr !== 'undefined') sidebarMgr.render();
+  } catch(e) {
+    // fallback: 直接用种子数据
+    if (!knowledgePoints.length && PENDING_SEED.length) {
+      PENDING_SEED.forEach(function(c) { knowledgePoints.push(c); });
+    }
+  }
+  showKnowledge();
+})();
 
 // 每秒倒计时
 setInterval(() => {
