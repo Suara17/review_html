@@ -719,7 +719,33 @@ window.addEventListener('resize', () => {
 // ===== 知识点展示逻辑 =====
 var knowledgePoints = [];
 window.__PAGE_SLUG__ = 'system-design-topics';
-var PENDING_SEED = __KNOWLEDGE_POINTS_JSON__;
+var PENDING_SEED = [
+  {
+    "id": "system-design-topics--001--item",
+    "title": "1. 如何设计一个高性能系统？",
+    "content": "<strong>结论：</strong>系统设计题先抓目标，再围绕分层、缓存、异步、扩展性和高可用展开。<br><br><strong>要点：</strong><br>1. 先明确 QPS、延迟、数据量和一致性要求。<br>2. 常见手段有缓存、读写分离、异步削峰、水平扩展。<br>3. 最后补充监控、容灾、限流、降级。"
+  },
+  {
+    "id": "system-design-topics--002--item",
+    "title": "2. 如何设计一个本地缓存？",
+    "content": "<strong>结论：</strong>本地缓存的核心是用内存换性能，但必须考虑一致性和淘汰策略。<br><br><strong>要点：</strong><br>1. 适合热点数据、配置数据、只读高频数据。<br>2. 需要考虑容量上限、过期时间、淘汰策略。<br>3. 最大难点通常不是“怎么缓存”，而是“怎么保持不过旧”。"
+  },
+  {
+    "id": "system-design-topics--003--rpc",
+    "title": "3. 如何设计一个 RPC 框架？",
+    "content": "<strong>结论：</strong>RPC 框架核心是“像调用本地方法一样调用远程服务”。<br><br><strong>要点：</strong><br>1. 关键模块包括服务注册发现、序列化、网络通信、负载均衡。<br>2. 工程上还要考虑超时、重试、熔断、链路追踪。<br>3. 面试里最好体现调用链和容错思维。"
+  },
+  {
+    "id": "system-design-topics--004--item",
+    "title": "4. 微信红包怎么设计？",
+    "content": "<strong>结论：</strong>红包系统的关键是高并发、资金安全、幂等和防超发。<br><br><strong>要点：</strong><br>1. 先扣减总额，再控制并发领取。<br>2. 要保证一个用户不能重复抢同一红包。<br>3. 核心答题点是原子性、库存控制、异步落库和补偿机制。"
+  },
+  {
+    "id": "system-design-topics--005--item",
+    "title": "5. 扫码登录怎么设计？",
+    "content": "<strong>结论：</strong>扫码登录本质是“PC 端等待确认，移动端完成身份认证并回传结果”。<br><br><strong>要点：</strong><br>1. 先生成唯一二维码标识。<br>2. 手机扫码后确认用户身份和授权。<br>3. PC 端通过轮询或长连接感知状态变更并完成登录。"
+  }
+];
 
 const countdownEl = document.getElementById('countdown');
 const progressBar = document.getElementById('progress-bar');

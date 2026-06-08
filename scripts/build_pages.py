@@ -71,6 +71,7 @@ def build_page(group: dict, payload: dict) -> str:
         '{{SIDEBAR_TITLE}}': escape(payload.get('sidebar_title') or group['sidebar_title']),
         '{{PAGE_ID}}': escape(payload.get('page_id') or group['page_id']),
         '{{KNOWLEDGE_POINTS_JSON}}': json.dumps(cards, ensure_ascii=False, indent=2),
+        '__KNOWLEDGE_POINTS_JSON__': json.dumps(cards, ensure_ascii=False, indent=2),
     }
     html = template
     for marker, value in replacements.items():

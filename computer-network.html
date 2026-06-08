@@ -719,7 +719,168 @@ window.addEventListener('resize', () => {
 // ===== 知识点展示逻辑 =====
 var knowledgePoints = [];
 window.__PAGE_SLUG__ = 'computer-network';
-var PENDING_SEED = __KNOWLEDGE_POINTS_JSON__;
+var PENDING_SEED = [
+  {
+    "id": "computer-network--001--url",
+    "title": "1. 从输入 URL 到页面展示，大致发生了什么？",
+    "content": "<strong>结论：</strong>大致会经过 DNS 解析、建立连接、发送 HTTP 请求、服务端处理、浏览器解析渲染几个阶段。<br><br><strong>要点：</strong><br>1. 先解析域名拿到 IP。<br>2. 再建立 TCP / TLS 连接并发送请求。<br>3. 浏览器收到响应后解析 HTML、CSS、JS，最终渲染页面。"
+  },
+  {
+    "id": "computer-network--002--dns",
+    "title": "2. DNS 是什么？",
+    "content": "<strong>结论：</strong>DNS 是把域名解析成 IP 地址的系统。<br><br><strong>要点：</strong><br>1. 人更适合记域名，机器通信更依赖 IP。<br>2. DNS 充当互联网的“电话簿”。<br>3. 面试常接着问解析过程和递归/迭代查询。"
+  },
+  {
+    "id": "computer-network--003--dns",
+    "title": "3. DNS 解析过程怎么说？",
+    "content": "<strong>结论：</strong>本地先查缓存，缓存没有时再逐级向 DNS 体系查询。<br><br><strong>要点：</strong><br>1. 先看浏览器、系统、本地域名服务器缓存。<br>2. 再逐步向根、顶级域、权威域名服务器查询。<br>3. 最终拿到目标 IP 返回给客户端。"
+  },
+  {
+    "id": "computer-network--004--item",
+    "title": "4. 递归查询和迭代查询有什么区别？",
+    "content": "<strong>结论：</strong>递归查询是“你帮我查到底”，迭代查询是“你告诉我下一步问谁”。<br><br><strong>要点：</strong><br>1. 客户端向本地域名服务器常表现为递归。<br>2. DNS 服务器之间通常更多是迭代。<br>3. 面试记住角色差异即可。"
+  },
+  {
+    "id": "computer-network--005--http",
+    "title": "5. HTTP 是什么？有什么特点？",
+    "content": "<strong>结论：</strong>HTTP 是应用层协议，用于浏览器和服务器之间传输数据。<br><br><strong>要点：</strong><br>1. 它本身是无状态协议。<br>2. 文本可读性强，应用广泛。<br>3. 面试高频点是版本演进、缓存、状态码、HTTPS。"
+  },
+  {
+    "id": "computer-network--006--http-1-1-http-2-http-3",
+    "title": "6. HTTP/1.1、HTTP/2、HTTP/3 的核心区别是什么？",
+    "content": "<strong>结论：</strong>版本升级的核心方向是减少延迟、提升并发、解决队头阻塞。<br><br><strong>要点：</strong><br>1. HTTP/1.1 以长连接为主，但仍存在队头阻塞问题。<br>2. HTTP/2 支持多路复用、头部压缩、服务器推送。<br>3. HTTP/3 基于 QUIC，进一步优化传输层体验。"
+  },
+  {
+    "id": "computer-network--007--http-2",
+    "title": "7. HTTP/2 有什么优点？",
+    "content": "<strong>结论：</strong>HTTP/2 的核心收益是多路复用和头部压缩。<br><br><strong>要点：</strong><br>1. 多个请求可以复用同一连接并发传输。<br>2. 头部压缩降低重复传输开销。<br>3. 相比 HTTP/1.1 更适合现代网页高并发资源加载。"
+  },
+  {
+    "id": "computer-network--008--http-3-quic",
+    "title": "8. HTTP/3 / QUIC 为什么出现？",
+    "content": "<strong>结论：</strong>HTTP/3 主要为了解决 TCP 层队头阻塞和弱网场景下体验差的问题。<br><br><strong>要点：</strong><br>1. QUIC 基于 UDP 实现更灵活的传输控制。<br>2. 丢一个包不一定阻塞所有流。<br>3. 更适合移动网络和高延迟场景。"
+  },
+  {
+    "id": "computer-network--009--http",
+    "title": "9. HTTP 常见请求方法有哪些？",
+    "content": "<strong>结论：</strong>高频记住 GET、POST、PUT、DELETE。<br><br><strong>要点：</strong><br>1. GET 常用于获取资源。<br>2. POST 常用于提交或创建。<br>3. PUT、DELETE 更常出现在 REST 风格接口。"
+  },
+  {
+    "id": "computer-network--010--item",
+    "title": "10. 什么是幂等？哪些请求通常是幂等的？",
+    "content": "<strong>结论：</strong>幂等指多次执行同一操作，结果和执行一次一致。<br><br><strong>要点：</strong><br>1. GET 通常是幂等的。<br>2. PUT、DELETE 在语义上通常也设计为幂等。<br>3. POST 通常不是天然幂等。"
+  },
+  {
+    "id": "computer-network--011--http",
+    "title": "11. HTTP 常见状态码怎么记？",
+    "content": "<strong>结论：</strong>记住 2xx 成功、3xx 重定向、4xx 客户端错误、5xx 服务端错误。<br><br><strong>要点：</strong><br>1. 200 表示成功。<br>2. 301/302 常见于重定向。<br>3. 404、500 是最常见面试和实际场景状态码。"
+  },
+  {
+    "id": "computer-network--012--http",
+    "title": "12. HTTP 缓存分哪两类？",
+    "content": "<strong>结论：</strong>高频记住强缓存和协商缓存。<br><br><strong>要点：</strong><br>1. 强缓存命中时，浏览器直接用本地缓存，不发请求或不拿新内容。<br>2. 协商缓存会向服务器确认资源是否变更。<br>3. 两者都用于降低延迟和节省带宽。"
+  },
+  {
+    "id": "computer-network--013--item",
+    "title": "13. 强缓存和协商缓存有什么区别？",
+    "content": "<strong>结论：</strong>强缓存是浏览器自己判断还能不能直接用，协商缓存是要和服务器确认。<br><br><strong>要点：</strong><br>1. 强缓存优先级更高。<br>2. 协商缓存常见返回 304。<br>3. 面试中可以强调：目标都是减少重复传输。"
+  },
+  {
+    "id": "computer-network--014--https-http",
+    "title": "14. HTTPS 和 HTTP 的区别是什么？",
+    "content": "<strong>结论：</strong>HTTPS 比 HTTP 多了一层 TLS/SSL 安全机制。<br><br><strong>要点：</strong><br>1. HTTPS 能提供加密。<br>2. 还能提供身份认证和完整性校验。<br>3. 代价是握手更复杂、性能开销略高。"
+  },
+  {
+    "id": "computer-network--015--https",
+    "title": "15. HTTPS 握手为什么要同时用对称加密和非对称加密？",
+    "content": "<strong>结论：</strong>非对称加密适合安全交换密钥，对称加密适合高效传输数据。<br><br><strong>要点：</strong><br>1. 纯非对称加密安全但慢。<br>2. 纯对称加密快，但密钥分发不安全。<br>3. 混合加密兼顾了安全和效率。"
+  },
+  {
+    "id": "computer-network--016--item",
+    "title": "16. 数字证书的作用是什么？",
+    "content": "<strong>结论：</strong>数字证书用于证明“你访问的服务器身份是真的”。<br><br><strong>要点：</strong><br>1. 它解决的是身份可信问题。<br>2. 证书里包含公钥和身份信息。<br>3. 浏览器会基于 CA 信任链进行验证。"
+  },
+  {
+    "id": "computer-network--017--tcp-udp",
+    "title": "17. TCP 和 UDP 的核心区别是什么？",
+    "content": "<strong>结论：</strong>TCP 面向连接、可靠；UDP 无连接、轻量、快。<br><br><strong>要点：</strong><br>1. TCP 保证顺序、可靠传输。<br>2. UDP 更适合实时性高、能容忍少量丢包的场景。<br>3. 面试常追问各自适用场景。"
+  },
+  {
+    "id": "computer-network--018--tcp",
+    "title": "18. TCP 为什么可靠？",
+    "content": "<strong>结论：</strong>TCP 通过确认应答、重传、流量控制、拥塞控制等机制保证可靠性。<br><br><strong>要点：</strong><br>1. 丢包了会重传。<br>2. 乱序了会重排。<br>3. 还能根据网络情况动态调节发送速度。"
+  },
+  {
+    "id": "computer-network--019--tcp",
+    "title": "19. TCP 三次握手怎么说？",
+    "content": "<strong>结论：</strong>三次握手的本质是双方确认“自己能发、也能收”。<br><br><strong>要点：</strong><br>1. 客户端先发起连接请求。<br>2. 服务端确认并回应。<br>3. 客户端再确认一次，连接建立。"
+  },
+  {
+    "id": "computer-network--020--tcp",
+    "title": "20. 为什么 TCP 需要三次握手，不能两次？",
+    "content": "<strong>结论：</strong>三次握手是为了让双方都确认收发能力正常，并避免历史无效连接误建立。<br><br><strong>要点：</strong><br>1. 两次握手下，客户端无法确认服务端是否具备接收确认能力。<br>2. 也更难处理旧连接请求干扰问题。<br>3. 面试答题关键词：收发能力确认、避免历史报文干扰。"
+  },
+  {
+    "id": "computer-network--021--syn",
+    "title": "21. 什么是半连接队列？什么是 SYN 攻击？",
+    "content": "<strong>结论：</strong>半连接队列存放尚未完成三次握手的连接；SYN 攻击就是恶意占满这类资源。<br><br><strong>要点：</strong><br>1. 攻击者大量发 SYN 但不完成握手。<br>2. 服务器资源会被耗住。<br>3. 常见防御思路有 SYN Cookie、限流和队列调优。"
+  },
+  {
+    "id": "computer-network--022--tcp",
+    "title": "22. TCP 四次挥手怎么说？",
+    "content": "<strong>结论：</strong>四次挥手的本质是双方分别关闭各自的发送通道。<br><br><strong>要点：</strong><br>1. 一方先表示“我发完了”。<br>2. 另一方确认后，等自己也发完再发关闭请求。<br>3. 最后再由对方确认，连接完全关闭。"
+  },
+  {
+    "id": "computer-network--023--item",
+    "title": "23. 为什么挥手通常是四次？",
+    "content": "<strong>结论：</strong>因为 TCP 是全双工，双方关闭发送能力通常要分开处理。<br><br><strong>要点：</strong><br>1. 一方说“我不发了”，不代表另一方也立刻发完。<br>2. 所以确认和自己的关闭请求通常不是同一个时刻。<br>3. 这就是四次挥手常见原因。"
+  },
+  {
+    "id": "computer-network--024--time-wait",
+    "title": "24. TIME_WAIT 为什么存在？",
+    "content": "<strong>结论：</strong>TIME_WAIT 主要是为了保证最后的确认能送达，并避免旧连接报文影响新连接。<br><br><strong>要点：</strong><br>1. 若最后一个 ACK 丢失，对方还能重发 FIN。<br>2. 还能让旧报文自然消失。<br>3. TIME_WAIT 过多时，可能占用端口和连接资源。"
+  },
+  {
+    "id": "computer-network--025--tcp",
+    "title": "25. TCP 重传机制怎么理解？",
+    "content": "<strong>结论：</strong>发送方发现数据可能丢了，就会重新发送。<br><br><strong>要点：</strong><br>1. 常见依据有超时未确认和重复确认。<br>2. 它是 TCP 可靠传输的关键机制之一。<br>3. 面试里说清“发现丢包后如何补救”即可。"
+  },
+  {
+    "id": "computer-network--026--tcp",
+    "title": "26. TCP 流量控制是什么？",
+    "content": "<strong>结论：</strong>流量控制解决的是“发送方别把接收方撑爆”。<br><br><strong>要点：</strong><br>1. 它关注接收方来不来得及处理。<br>2. 本质是按接收能力调节发送速度。<br>3. 不要和拥塞控制混淆。"
+  },
+  {
+    "id": "computer-network--027--tcp",
+    "title": "27. TCP 拥塞控制是什么？",
+    "content": "<strong>结论：</strong>拥塞控制解决的是“别把网络本身压垮”。<br><br><strong>要点：</strong><br>1. 它关注的是整个网络链路是否拥堵。<br>2. 发送速度会根据网络情况动态调整。<br>3. 和流量控制相比，目标对象不同。"
+  },
+  {
+    "id": "computer-network--028--osi-tcp-ip",
+    "title": "28. OSI 七层和 TCP/IP 模型怎么记？",
+    "content": "<strong>结论：</strong>面试不用死背所有细节，但要知道它们是分层通信模型。<br><br><strong>要点：</strong><br>1. OSI 七层更偏理论。<br>2. TCP/IP 模型更贴近实际互联网实现。<br>3. 常见回答重点是应用层、传输层、网络层、链路层。"
+  },
+  {
+    "id": "computer-network--029--tcp-udp",
+    "title": "29. 什么是 TCP 粘包和拆包？UDP 会有吗？",
+    "content": "<strong>结论：</strong>粘包拆包是因为 TCP 面向字节流，没有天然消息边界；UDP 一般没有这个问题。<br><br><strong>要点：</strong><br>1. TCP 只管传字节，不管应用层消息边界。<br>2. 应用层要自己设计协议长度或分隔符。<br>3. UDP 面向报文，天然保留消息边界。"
+  },
+  {
+    "id": "computer-network--030--cookie-session",
+    "title": "30. Cookie 和 Session 有什么区别？",
+    "content": "<strong>结论：</strong>Cookie 主要存客户端，Session 主要存服务端。<br><br><strong>要点：</strong><br>1. Cookie 常用于携带会话标识。<br>2. Session 常用于保存用户登录状态。<br>3. 面试里要强调：HTTP 本身无状态，它们是状态保持方案。"
+  },
+  {
+    "id": "computer-network--031--cdn",
+    "title": "31. CDN 是什么？为什么能加速？",
+    "content": "<strong>结论：</strong>CDN 是内容分发网络，本质是让用户从更近的节点获取内容。<br><br><strong>要点：</strong><br>1. 就近访问能降低时延。<br>2. 可减轻源站压力。<br>3. 特别适合静态资源、视频、下载等场景。"
+  },
+  {
+    "id": "computer-network--032--keep-alive-http-keep-alive-tcp-keepalive",
+    "title": "32. Keep-Alive 是什么？HTTP Keep-Alive 和 TCP Keepalive 一样吗？",
+    "content": "<strong>结论：</strong>两者不是一回事。HTTP Keep-Alive 主要是复用连接，TCP Keepalive 主要是探测连接是否还活着。<br><br><strong>要点：</strong><br>1. HTTP Keep-Alive 关注减少重复建连开销。<br>2. TCP Keepalive 关注长时间空闲连接的存活检测。<br>3. 面试里这道题很适合体现你区分协议层次的能力。"
+  }
+];
 
 const countdownEl = document.getElementById('countdown');
 const progressBar = document.getElementById('progress-bar');

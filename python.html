@@ -719,7 +719,168 @@ window.addEventListener('resize', () => {
 // ===== 知识点展示逻辑 =====
 var knowledgePoints = [];
 window.__PAGE_SLUG__ = 'python-notes';
-var PENDING_SEED = __KNOWLEDGE_POINTS_JSON__;
+var PENDING_SEED = [
+  {
+    "id": "python--001--python-is",
+    "title": "1. Python中的 == 和 is 有什么区别？",
+    "content": "<strong>结论：</strong>== 比较值是否相等，is 比较是不是同一个对象。<br><br><strong>要点：</strong><br>1. == 关注内容，is 关注内存地址（对象身份）。<br>2. 判断变量是否为 None 时，推荐用 is。<br>3. 两个值相同的对象，== 可能为 True，但 is 不一定为 True。"
+  },
+  {
+    "id": "python--002--python",
+    "title": "2. Python 常见数据类型有哪些？",
+    "content": "<strong>结论：</strong>面试里重点记住数字、字符串、布尔、列表、元组、字典、集合。<br><br><strong>要点：</strong><br>1. 不可变类型常见有：int、float、str、tuple、bool。<br>2. 可变类型常见有：list、dict、set。<br>3. 可变和不可变的区别，会直接影响参数传递、拷贝和哈希能力。"
+  },
+  {
+    "id": "python--003--list-tuple",
+    "title": "3. list 和 tuple 的核心区别是什么？",
+    "content": "<strong>结论：</strong>list 可变，tuple 不可变。<br><br><strong>要点：</strong><br>1. list 适合频繁增删改；tuple 适合存放不希望被修改的数据。<br>2. tuple 通常比 list 更轻量，语义上更安全。<br>3. 当需要作为字典键或集合元素时，通常要求对象可哈希，tuple 更有机会满足。"
+  },
+  {
+    "id": "python--004--item",
+    "title": "4. 浅拷贝和深拷贝有什么区别？",
+    "content": "<strong>结论：</strong>浅拷贝只复制最外层，深拷贝会递归复制内部嵌套对象。<br><br><strong>要点：</strong><br>1. 浅拷贝后，内部子对象往往还是共享的。<br>2. 深拷贝后，新旧对象通常彼此独立。<br>3. 面试里最常见追问：嵌套 list、dict 被修改时，浅拷贝会互相影响。"
+  },
+  {
+    "id": "python--005--item",
+    "title": "5. 可变对象作为默认参数为什么是坑？",
+    "content": "<strong>结论：</strong>默认参数只在函数定义时创建一次，可变对象会被多次调用共享。<br><br><strong>要点：</strong><br>1. 常见坑是默认参数写成 list 或 dict。<br>2. 多次调用后，之前修改的内容会残留。<br>3. 标准做法是默认传 None，在函数内部再初始化。"
+  },
+  {
+    "id": "python--006--python",
+    "title": "6. Python 的参数传递怎么理解？",
+    "content": "<strong>结论：</strong>Python 本质是对象引用传递。<br><br><strong>要点：</strong><br>1. 传进去的是“对象的引用”，不是传统意义的值拷贝。<br>2. 如果函数内部修改可变对象本身，外部能感知到。<br>3. 如果只是让形参重新绑定到新对象，通常不会影响外部变量。"
+  },
+  {
+    "id": "python--007--args-kwargs",
+    "title": "7. *args 和 **kwargs 有什么作用？",
+    "content": "<strong>结论：</strong>*args 接收多余位置参数，**kwargs 接收多余关键字参数。<br><br><strong>要点：</strong><br>1. *args 会打包成 tuple。<br>2. **kwargs 会打包成 dict。<br>3. 常用于封装通用函数、装饰器和接口透传。"
+  },
+  {
+    "id": "python--008--python-legb",
+    "title": "8. Python 的作用域规则 LEGB 是什么？",
+    "content": "<strong>结论：</strong>变量查找顺序是 Local → Enclosing → Global → Built-in。<br><br><strong>要点：</strong><br>1. Local 是当前函数内部。<br>2. Enclosing 是外层嵌套函数作用域。<br>3. Global 是当前模块全局作用域，Built-in 是内置命名空间。"
+  },
+  {
+    "id": "python--009--global-nonlocal",
+    "title": "9. global 和 nonlocal 有什么区别？",
+    "content": "<strong>结论：</strong>global 修改全局变量，nonlocal 修改外层函数变量。<br><br><strong>要点：</strong><br>1. global 用在函数里，声明变量来自模块级作用域。<br>2. nonlocal 用在嵌套函数里，声明变量来自最近一层外部函数。<br>3. nonlocal 常和闭包一起出现。"
+  },
+  {
+    "id": "python--010--item",
+    "title": "10. 什么是闭包？",
+    "content": "<strong>结论：</strong>闭包就是“函数 + 它记住的外部变量环境”。<br><br><strong>要点：</strong><br>1. 内部函数引用了外部函数变量，即可形成闭包。<br>2. 闭包常用于封装状态、延迟执行、装饰器。<br>3. 面试常结合 nonlocal 一起问。"
+  },
+  {
+    "id": "python--011--item",
+    "title": "11. 装饰器的本质是什么？",
+    "content": "<strong>结论：</strong>装饰器本质是一个接收函数并返回新函数的高阶函数。<br><br><strong>要点：</strong><br>1. 作用是在不改原函数代码的前提下增强功能。<br>2. 常见用途有日志、鉴权、缓存、统计耗时。<br>3. 本质依赖函数是一等公民和闭包。"
+  },
+  {
+    "id": "python--012--item",
+    "title": "12. 多个装饰器叠加时执行顺序是什么？",
+    "content": "<strong>结论：</strong>装饰阶段从下往上，执行阶段从上往下。<br><br><strong>要点：</strong><br>1. 离函数最近的装饰器先包裹。<br>2. 最外层装饰器最先执行入口逻辑。<br>3. 回答时记一句：像洋葱一样一层层包起来。"
+  },
+  {
+    "id": "python--013--if-name-main",
+    "title": "13. if __name__ == \"__main__\" 的作用是什么？",
+    "content": "<strong>结论：</strong>它用于区分“当前文件是直接运行”还是“被别人导入”。<br><br><strong>要点：</strong><br>1. 直接运行脚本时，__name__ 的值是 __main__。<br>2. 被导入时，__name__ 通常是模块名。<br>3. 常用于放测试代码、启动入口代码。"
+  },
+  {
+    "id": "python--014--and-or-not",
+    "title": "14. and、or、not 的返回规律是什么？",
+    "content": "<strong>结论：</strong>Python 的 and、or 不一定返回布尔值，常返回参与运算的对象本身。<br><br><strong>要点：</strong><br>1. and 遇到第一个假值就返回，否则返回最后一个值。<br>2. or 遇到第一个真值就返回，否则返回最后一个值。<br>3. not 才一定返回布尔值。"
+  },
+  {
+    "id": "python--015--python",
+    "title": "15. Python 常见字符串格式化方式有哪些？",
+    "content": "<strong>结论：</strong>常见有 %、format、f-string，面试最推荐 f-string。<br><br><strong>要点：</strong><br>1. % 是老写法，直观但灵活性一般。<br>2. format 功能更完整。<br>3. f-string 可读性最好，现代 Python 使用最广。"
+  },
+  {
+    "id": "python--016--item",
+    "title": "16. 实例方法、类方法、静态方法有什么区别？",
+    "content": "<strong>结论：</strong>三者区别主要在于第一个参数和使用场景。<br><br><strong>要点：</strong><br>1. 实例方法默认第一个参数是 self，用于访问实例状态。<br>2. 类方法默认第一个参数是 cls，常用于工厂方法或操作类级数据。<br>3. 静态方法没有默认首参，更像写在类里的普通工具函数。"
+  },
+  {
+    "id": "python--017--property",
+    "title": "17. @property 的作用是什么？",
+    "content": "<strong>结论：</strong>@property 可以把方法伪装成属性，提升封装性。<br><br><strong>要点：</strong><br>1. 外部调用时像访问属性，内部仍可加校验逻辑。<br>2. 有利于后续扩展，而不破坏调用方式。<br>3. 常用于只读属性、计算属性、参数检查。"
+  },
+  {
+    "id": "python--018--item",
+    "title": "18. 类变量和实例变量有什么区别？",
+    "content": "<strong>结论：</strong>类变量属于类，实例变量属于对象实例。<br><br><strong>要点：</strong><br>1. 类变量通常被所有实例共享。<br>2. 实例变量通常存储每个对象自己的状态。<br>3. 面试常问：实例给同名属性赋值后，会优先读实例自己的属性。"
+  },
+  {
+    "id": "python--019--new-init",
+    "title": "19. __new__ 和 __init__ 有什么区别？",
+    "content": "<strong>结论：</strong>__new__ 负责创建对象，__init__ 负责初始化对象。<br><br><strong>要点：</strong><br>1. 执行顺序上，先 __new__，后 __init__。<br>2. __new__ 主要用于控制实例创建过程，常见于不可变类型子类化或单例。<br>3. __init__ 不创建对象，只在对象创建后补充属性。"
+  },
+  {
+    "id": "python--020--mro-super",
+    "title": "20. 什么是 MRO？super() 的作用是什么？",
+    "content": "<strong>结论：</strong>MRO 是方法解析顺序，super() 用于按这个顺序去调用父类逻辑。<br><br><strong>要点：</strong><br>1. 多继承场景下，MRO 决定找方法的先后顺序。<br>2. super() 不等于“直接找父类”，而是按 MRO 链继续往后找。<br>3. 它能让多继承调用更可控。"
+  },
+  {
+    "id": "python--021--slots",
+    "title": "21. __slots__ 的作用是什么？",
+    "content": "<strong>结论：</strong>__slots__ 用来限制实例可拥有的属性，并可节省部分内存。<br><br><strong>要点：</strong><br>1. 使用后，实例不能随意动态新增未声明属性。<br>2. 适合大量小对象、属性集合固定的场景。<br>3. 本质上是在灵活性和内存效率之间做取舍。"
+  },
+  {
+    "id": "python--022--python",
+    "title": "22. Python 中单下划线和双下划线分别表示什么？",
+    "content": "<strong>结论：</strong>下划线更多是约定和命名机制，不是真正的强制访问控制。<br><br><strong>要点：</strong><br>1. 单下划线通常表示“内部使用，不建议外部直接访问”。<br>2. 双下划线会触发名称改写，主要为避免子类命名冲突。<br>3. 前后双下划线通常是魔术方法，如 __init__。"
+  },
+  {
+    "id": "python--023--item",
+    "title": "23. 什么是鸭子类型？",
+    "content": "<strong>结论：</strong>鸭子类型强调“看行为，不看出身”。<br><br><strong>要点：</strong><br>1. 只要对象实现了需要的方法，就可以被当作该类型使用。<br>2. 这体现了 Python 的动态语言特性。<br>3. 好处是灵活，代价是类型错误往往在运行时暴露。"
+  },
+  {
+    "id": "python--024--item",
+    "title": "24. 什么是迭代器？什么是生成器？",
+    "content": "<strong>结论：</strong>迭代器是可逐个取值的对象，生成器是创建迭代器的更简洁方式。<br><br><strong>要点：</strong><br>1. 迭代器适合顺序访问数据。<br>2. 生成器按需产出数据，更省内存。<br>3. 面试常考：生成器适合处理大数据流或延迟计算。"
+  },
+  {
+    "id": "python--025--item",
+    "title": "25. 生成器为什么更省内存？",
+    "content": "<strong>结论：</strong>因为它不是一次性把所有结果都放到内存里，而是用一个产一个。<br><br><strong>要点：</strong><br>1. 适合大文件、批量数据、流式处理。<br>2. 每次迭代只保留当前状态。<br>3. 这是 Python 常见的空间换时间优化手段。"
+  },
+  {
+    "id": "python--026--send",
+    "title": "26. 生成器的 send() 方法有什么用？",
+    "content": "<strong>结论：</strong>send() 可以向暂停中的生成器发送值，让生成器变成双向通信。<br><br><strong>要点：</strong><br>1. 普通 next() 是单向取值。<br>2. send() 可把外部数据传回生成器内部。<br>3. 这个思想后来也影响了协程模型。"
+  },
+  {
+    "id": "python--027--async-await",
+    "title": "27. 什么是协程？async/await 是做什么的？",
+    "content": "<strong>结论：</strong>协程是一种用户态轻量并发模型，async/await 是 Python 编写异步协程的核心语法。<br><br><strong>要点：</strong><br>1. 协程适合大量 I/O 等待场景。<br>2. await 表示当前任务挂起，把执行权让出去。<br>3. 协程不是并行，但可以显著提升 I/O 并发效率。"
+  },
+  {
+    "id": "python--028--item",
+    "title": "28. 线程、进程、协程怎么区分？",
+    "content": "<strong>结论：</strong>进程最重、线程次之、协程最轻；适用场景也不同。<br><br><strong>要点：</strong><br>1. 进程适合 CPU 隔离和多核利用。<br>2. 线程适合一般并发任务，但切换成本高于协程。<br>3. 协程最适合高并发 I/O 场景，如网络请求。"
+  },
+  {
+    "id": "python--029--gil",
+    "title": "29. 什么是 GIL？它主要限制了什么？",
+    "content": "<strong>结论：</strong>GIL 是 CPython 的全局解释器锁，它限制了同一时刻只有一个线程执行 Python 字节码。<br><br><strong>要点：</strong><br>1. 它对多线程的 CPU 密集型任务影响最大。<br>2. 对 I/O 密集型任务，多线程依然常常有价值。<br>3. 真想并行跑 CPU 密集任务，通常更推荐多进程。"
+  },
+  {
+    "id": "python--030--python",
+    "title": "30. Python 的垃圾回收机制怎么理解？",
+    "content": "<strong>结论：</strong>Python 主要用引用计数，并辅以循环垃圾回收。<br><br><strong>要点：</strong><br>1. 引用计数让大多数对象能及时回收。<br>2. 但循环引用单靠引用计数解决不了。<br>3. 所以 Python 还引入了 GC 来处理循环引用问题。"
+  },
+  {
+    "id": "python--031--with",
+    "title": "31. 什么是上下文管理器？with 语句有什么用？",
+    "content": "<strong>结论：</strong>上下文管理器用于托管资源，with 语句能确保资源正确获取和释放。<br><br><strong>要点：</strong><br>1. 常见场景有文件、锁、数据库连接。<br>2. 即使中间发生异常，也能执行清理动作。<br>3. 它的核心价值是让资源管理更安全、更简洁。"
+  },
+  {
+    "id": "python--032--python",
+    "title": "32. Python 的主要语言特点有哪些？",
+    "content": "<strong>结论：</strong>Python 的关键词是简洁、动态、开发效率高。<br><br><strong>要点：</strong><br>1. 语法清晰，上手快，适合快速开发。<br>2. 拥有丰富生态，覆盖后端、数据、AI、自动化等方向。<br>3. 缺点是运行效率通常不如 C/C++/Java 这类编译型或强类型语言。"
+  }
+];
 
 const countdownEl = document.getElementById('countdown');
 const progressBar = document.getElementById('progress-bar');
