@@ -137,8 +137,9 @@
       }
     }
 
+    var origItems = this._knowledgePointsRef || [];
+
     if (!this._data) {
-      var origItems = this._knowledgePointsRef;
       var items = [];
       for (var k = 0; k < origItems.length; k++) {
         items.push({ title: stripNumber(origItems[k].title), content: origItems[k].content });
@@ -146,6 +147,8 @@
       var order = [];
       for (var m = 0; m < items.length; m++) order.push(m);
       this._data = { items: items, order: order };
+    } else {
+      this._data = this._reconcileWithSeed(this._data, origItems);
     }
 
     // strip any existing number prefixes from loaded data
@@ -153,6 +156,51 @@
       this._data.items[s].title = stripNumber(this._data.items[s].title);
     }
     this._syncToKP();
+  };
+
+  proto._reconcileWithSeed = function (data, seedItems) {
+    if (!data || !Array.isArray(data.items) || !Array.isArray(data.order)) {
+      data = { items: [], order: [] };
+    }
+
+    var normalizedSeed = [];
+    for (var i = 0; i < seedItems.length; i++) {
+      normalizedSeed.push({
+        title: stripNumber(seedItems[i] && seedItems[i].title),
+        content: seedItems[i] ? seedItems[i].content : ''
+      });
+    }
+
+    // 若当前页面内置种子数量与缓存数量不一致，说明源码知识点已被增删；
+    // 此时优先以最新种子为准，避免旧缓存把已删除的目录项继续带回来。
+    if (data.items.length !== normalizedSeed.length || data.order.length !== normalizedSeed.length) {
+      var rebuiltItems = [];
+      var rebuiltOrder = [];
+      for (var j = 0; j < normalizedSeed.length; j++) {
+        rebuiltItems.push({
+          title: normalizedSeed[j].title,
+          content: normalizedSeed[j].content
+        });
+        rebuiltOrder.push(j);
+      }
+      return { items: rebuiltItems, order: rebuiltOrder };
+    }
+
+    // 数量一致时保留用户本地编辑内容，但修正非法 order。
+    var validOrder = [];
+    var seen = {};
+    for (var k = 0; k < data.order.length; k++) {
+      var idx = data.order[k];
+      if (typeof idx === 'number' && idx >= 0 && idx < data.items.length && !seen[idx]) {
+        validOrder.push(idx);
+        seen[idx] = true;
+      }
+    }
+    for (var n = 0; n < data.items.length; n++) {
+      if (!seen[n]) validOrder.push(n);
+    }
+    data.order = validOrder;
+    return data;
   };
 
   proto._syncToKP = function () {
