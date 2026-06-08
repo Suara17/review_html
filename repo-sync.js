@@ -4,6 +4,7 @@
   var TOKEN_KEY = 'repo-sync-token';
   var OWNER_KEY = 'repo-sync-owner';
   var REPO_KEY = 'repo-sync-repo';
+  var SHA_KEY_PREFIX = 'repo-sync-sha:';
   var DEFAULT_OWNER = 'Suara17';
   var DEFAULT_REPO = 'review_html';
   var API_ROOT = 'https://api.github.com';
@@ -17,6 +18,22 @@
 
   function getFilePath() {
     return JSON_BASE_PATH + '/' + getPageSlug() + '.json';
+  }
+
+  function getShaStorageKey() {
+    return SHA_KEY_PREFIX + getPageSlug();
+  }
+
+  function getCachedSha() {
+    return localStorage.getItem(getShaStorageKey()) || '';
+  }
+
+  function setCachedSha(sha) {
+    if (sha) localStorage.setItem(getShaStorageKey(), sha);
+  }
+
+  function clearCachedSha() {
+    localStorage.removeItem(getShaStorageKey());
   }
 
   function toBase64Unicode(str) {
@@ -47,12 +64,8 @@
       cfg.token = window.prompt('请输入 GitHub PAT（需要 repo 权限）', cfg.token || '');
       if (!cfg.token) return null;
     }
-    if (!cfg.owner) {
-      cfg.owner = window.prompt('GitHub owner', DEFAULT_OWNER) || DEFAULT_OWNER;
-    }
-    if (!cfg.repo) {
-      cfg.repo = window.prompt('GitHub repo', DEFAULT_REPO) || DEFAULT_REPO;
-    }
+    if (!cfg.owner) cfg.owner = window.prompt('GitHub owner', DEFAULT_OWNER) || DEFAULT_OWNER;
+    if (!cfg.repo) cfg.repo = window.prompt('GitHub repo', DEFAULT_REPO) || DEFAULT_REPO;
     writeConfig(cfg);
     return cfg;
   }
@@ -87,6 +100,31 @@
     };
   }
 
+  async function parseGitHubError(res) {
+    var text = await res.text();
+    var payload = null;
+    try { payload = JSON.parse(text); } catch (e) {}
+    var message = (payload && (payload.message || payload.error)) || text || ('HTTP ' + res.status);
+
+    if (res.status === 401) {
+      return 'GitHub Token 无效或已过期，请重新填写 PAT。';
+    }
+    if (res.status === 403) {
+      if (/rate limit/i.test(message)) return 'GitHub API 触发限流，请稍后再试。';
+      return '没有权限访问该仓库，请确认 PAT 具备 repo 权限，且 owner/repo 填写正确。';
+    }
+    if (res.status === 404) {
+      return '仓库或文件不存在，请确认 owner/repo 正确，且 PAT 对该仓库有访问权限。';
+    }
+    if (res.status === 409 || /sha/i.test(message)) {
+      return '检测到远端文件已变更（SHA 冲突）。请先点“从 GitHub 拉取”，确认是否覆盖本地缓存后再重新保存。';
+    }
+    if (res.status === 422) {
+      return '提交内容未通过 GitHub 校验，请检查仓库状态、分支保护或文件内容是否合法。';
+    }
+    return 'GitHub 请求失败：' + res.status + ' ' + message;
+  }
+
   async function fetchRepoFile(cfg) {
     var url = API_ROOT + '/repos/' + encodeURIComponent(cfg.owner) + '/' + encodeURIComponent(cfg.repo) + '/contents/' + getFilePath();
     var res = await fetch(url, {
@@ -97,9 +135,11 @@
     });
     if (res.status === 404) return null;
     if (!res.ok) {
-      throw new Error('读取 GitHub 文件失败：' + res.status);
+      throw new Error(await parseGitHubError(res));
     }
-    return await res.json();
+    var json = await res.json();
+    if (json && json.sha) setCachedSha(json.sha);
+    return json;
   }
 
   async function saveRepoFile(cfg, payload, sha) {
@@ -119,8 +159,7 @@
       body: JSON.stringify(body)
     });
     if (!res.ok) {
-      var text = await res.text();
-      throw new Error('保存到 GitHub 失败：' + res.status + ' ' + text);
+      throw new Error(await parseGitHubError(res));
     }
     return await res.json();
   }
@@ -149,20 +188,25 @@
   async function pullFromGitHub() {
     var cfg = ensureConfig();
     if (!cfg) return;
+    if (!window.confirm('从 GitHub 拉取会覆盖当前浏览器里的本地缓存。\n\n如果你本地还有未保存改动，请先点“保存到 GitHub”。\n\n确定继续拉取并覆盖吗？')) {
+      setStatus('已取消拉取，保留本地缓存。', 'warn');
+      return;
+    }
     setStatus('正在从 GitHub 拉取...', '');
     try {
       var remote = await fetchRepoFile(cfg);
       if (!remote) {
-        setStatus('GitHub 上还没有这个页面的 JSON 文件', 'warn');
+        setStatus('GitHub 上还没有这个页面的 JSON 文件。', 'warn');
         return;
       }
       var payload = JSON.parse(fromBase64Unicode(remote.content || ''));
       var ok = applyRemoteState(payload);
       if (ok) {
         localStorage.setItem('sidebar-data:' + location.pathname, JSON.stringify(payload.state));
-        setStatus('已从 GitHub 拉取并覆盖本地缓存', 'success');
+        if (remote.sha) setCachedSha(remote.sha);
+        setStatus('已从 GitHub 拉取，并覆盖当前浏览器本地缓存。', 'success');
       } else {
-        setStatus('拉取成功，但当前页面未就绪', 'warn');
+        setStatus('拉取成功，但当前页面尚未完成初始化，请刷新后重试。', 'warn');
       }
     } catch (err) {
       setStatus(err.message || String(err), 'error');
@@ -173,20 +217,39 @@
     var cfg = ensureConfig();
     if (!cfg) return;
     if (!window.knowledgePoints || !window.knowledgePoints.length) {
-      setStatus('当前没有可保存的知识点', 'warn');
+      setStatus('当前没有可保存的知识点。', 'warn');
       return;
     }
     setStatus('正在保存到 GitHub...', '');
     try {
-      var current = await fetchRepoFile(cfg);
-      var sha = current && current.sha ? current.sha : null;
+      var sha = getCachedSha() || null;
+      if (!sha) {
+        var current = await fetchRepoFile(cfg);
+        sha = current && current.sha ? current.sha : null;
+      }
       var payload = normalizeStateFromKnowledgePoints(window.knowledgePoints);
       var saved = await saveRepoFile(cfg, payload, sha);
-      if (saved && saved.content && saved.content.sha) {
-        window.__REPO_SYNC_LAST_SHA__ = saved.content.sha;
+      var savedSha = saved && saved.content && saved.content.sha ? saved.content.sha : '';
+      if (savedSha) {
+        setCachedSha(savedSha);
+        window.__REPO_SYNC_LAST_SHA__ = savedSha;
+      } else {
+        clearCachedSha();
       }
       localStorage.setItem('sidebar-data:' + location.pathname, JSON.stringify(payload.state));
-      setStatus('已保存到 GitHub JSON', 'success');
+
+      // 保存成功后，再主动刷新一次远端 sha，减少下次因旧 sha 产生的冲突。
+      try {
+        var refreshed = await fetchRepoFile(cfg);
+        if (refreshed && refreshed.sha) {
+          setCachedSha(refreshed.sha);
+          window.__REPO_SYNC_LAST_SHA__ = refreshed.sha;
+        }
+      } catch (e) {
+        // 不因刷新 sha 失败而影响主保存成功结果
+      }
+
+      setStatus('已保存到 GitHub JSON，并刷新远端 SHA。', 'success');
     } catch (err) {
       setStatus(err.message || String(err), 'error');
     }
