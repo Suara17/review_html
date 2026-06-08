@@ -305,7 +305,14 @@
     var localState = this._loadLocalState();
     var legacyState = localState ? null : this._loadLegacyState();
     var remoteState = await this._fetchRemoteState();
-    this._data = this._mergeStates(seedState, remoteState, localState, legacyState);
+    var merged = this._mergeStates(seedState, remoteState, localState, legacyState);
+    this._data = this._normalizeState(merged);
+    if (!this._data || !Array.isArray(this._data.items) || !Array.isArray(this._data.order)) {
+      this._data = this._makeSeedState(this._knowledgePointsRef || []);
+    }
+    if (!this._data.order.length && this._data.items.length) {
+      this._data = this._makeSeedState(this._knowledgePointsRef || []);
+    }
     this._syncToKP();
     this._persist(false);
     this.render();
@@ -316,6 +323,10 @@
   proto._syncToKP = function () {
     var kp = this._knowledgePointsRef;
     var data = this._data;
+    if (!data || !Array.isArray(data.items) || !Array.isArray(data.order)) {
+      data = this._makeSeedState(kp || []);
+      this._data = data;
+    }
     var mapped = [];
     for (var i = 0; i < data.order.length; i++) {
       var item = data.items[data.order[i]];
