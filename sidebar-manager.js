@@ -102,56 +102,16 @@
 
   /* ── data migration + hydration ── */
   proto._loadAndHydrate = function () {
-    var storageKey = STORAGE_PREFIX + location.pathname;
-    var raw = null;
-    try { raw = localStorage.getItem(storageKey); } catch (e) {}
-    if (raw) {
-      try { this._data = JSON.parse(raw); } catch (e) { this._data = null; }
-    }
-
-    // migration from old format
-    if (!this._data) {
-      var oldKey = 'knowledge-point-overrides:' + location.pathname;
-      var oldRaw = null;
-      try { oldRaw = localStorage.getItem(oldKey); } catch (e) {}
-      if (oldRaw) {
-        try {
-          var contents = JSON.parse(oldRaw);
-          if (Array.isArray(contents)) {
-            var orig = this._knowledgePointsRef;
-            var items = [];
-            var len = Math.max(orig.length, contents.length);
-            for (var i = 0; i < len; i++) {
-              items.push({
-                title: stripNumber(orig[i] ? orig[i].title : ('知识点 ' + (i + 1))),
-                content: (typeof contents[i] === 'string') ? contents[i] : (orig[i] ? orig[i].content : '')
-              });
-            }
-            var order = [];
-            for (var j = 0; j < items.length; j++) order.push(j);
-            this._data = { items: items, order: order };
-            this._persist();
-            try { localStorage.removeItem(oldKey); } catch (e) {}
-          }
-        } catch (e) { /* ignore */ }
-      }
-    }
-
     var origItems = this._knowledgePointsRef || [];
 
-    if (!this._data) {
-      var items = [];
-      for (var k = 0; k < origItems.length; k++) {
-        items.push({ title: stripNumber(origItems[k].title), content: origItems[k].content });
-      }
-      var order = [];
-      for (var m = 0; m < items.length; m++) order.push(m);
-      this._data = { items: items, order: order };
-    } else {
-      this._data = this._reconcileWithSeed(this._data, origItems);
+    var items = [];
+    for (var k = 0; k < origItems.length; k++) {
+      items.push({ title: stripNumber(origItems[k].title), content: origItems[k].content });
     }
+    var order = [];
+    for (var m = 0; m < items.length; m++) order.push(m);
+    this._data = { items: items, order: order };
 
-    // strip any existing number prefixes from loaded data
     for (var s = 0; s < this._data.items.length; s++) {
       this._data.items[s].title = stripNumber(this._data.items[s].title);
     }
