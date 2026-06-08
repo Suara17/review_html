@@ -1,0 +1,100 @@
+{
+  "page_id": "git-topics",
+  "updated_at": null,
+  "state": {
+    "items": [
+      {
+        "id": "git-topics--001--git",
+        "title": "Git 的三个核心区域是什么？",
+        "content": "<strong>结论：</strong>高频记住工作区、暂存区、本地仓库。<br><br><strong>要点：</strong><br>1. 工作区是你正在改的文件。<br>2. 暂存区是本次准备提交的内容。<br>3. 本地仓库保存正式提交历史。"
+      },
+      {
+        "id": "git-topics--002--git-status",
+        "title": "git status 为什么重要？",
+        "content": "<strong>结论：</strong>git status 是最基础的状态确认命令，很多误操作都能靠它提前避免。<br><br><strong>要点：</strong><br>1. 它能看出哪些文件修改了。<br>2. 还能看出哪些文件已暂存、哪些还没暂存。<br>3. 做 add、commit、pull、push 前先看一眼很稳。"
+      },
+      {
+        "id": "git-topics--003--git-add",
+        "title": "git add 的本质是什么？",
+        "content": "<strong>结论：</strong>git add 的本质是把“这次想提交的改动”放进暂存区。<br><br><strong>要点：</strong><br>1. 它不是直接提交。<br>2. 它决定了 commit 会带上哪些内容。<br>3. 面试里要强调：提交的是暂存区，不是工作区全部内容。"
+      },
+      {
+        "id": "git-topics--004--commit",
+        "title": "commit 的本质是什么？",
+        "content": "<strong>结论：</strong>commit 是把暂存区内容固化成一次有边界的历史记录。<br><br><strong>要点：</strong><br>1. 好的提交应该语义清晰。<br>2. 一个 commit 最好只做一件事。<br>3. 这会直接影响回滚、审查和协作体验。"
+      },
+      {
+        "id": "git-topics--005--branch-switch",
+        "title": "branch / switch 的作用是什么？",
+        "content": "<strong>结论：</strong>分支用于隔离不同开发任务，避免大家直接在主线互相干扰。<br><br><strong>要点：</strong><br>1. 新需求、新修复最好开新分支。<br>2. switch 用于切换分支。<br>3. 分支本质是指向某个提交的可移动引用。"
+      },
+      {
+        "id": "git-topics--006--merge-rebase",
+        "title": "merge 和 rebase 有什么区别？",
+        "content": "<strong>结论：</strong>两者都能同步代码，但 merge 保留分叉历史，rebase 改写提交基底让历史更线性。<br><br><strong>要点：</strong><br>1. merge 更安全，历史更真实。<br>2. rebase 历史更整洁。<br>3. 公共分支上要谨慎 rebase。"
+      },
+      {
+        "id": "git-topics--007--git-pull",
+        "title": "git pull 本质做了什么？",
+        "content": "<strong>结论：</strong>git pull 本质是先 fetch，再 merge 或 rebase。<br><br><strong>要点：</strong><br>1. 它会把远程更新拉到本地。<br>2. 然后尝试和当前分支整合。<br>3. 面试里最好补一句：想更稳，可以先 fetch 再手动决定怎么合。"
+      },
+      {
+        "id": "git-topics--008--git-push",
+        "title": "git push 前为什么常要先同步远程？",
+        "content": "<strong>结论：</strong>因为远程分支可能已经有别人新提交，直接 push 容易被拒绝或引发覆盖风险。<br><br><strong>要点：</strong><br>1. 先同步能减少冲突。<br>2. 也能避免把自己的分支建立在过时历史上。<br>3. 团队协作中这是基本习惯。"
+      },
+      {
+        "id": "git-topics--009--git-reset-git-revert",
+        "title": "git reset 和 git revert 有什么区别？",
+        "content": "<strong>结论：</strong>reset 更像回退历史指针，revert 更像新增一次“反向提交”。<br><br><strong>要点：</strong><br>1. reset 常用于本地整理提交。<br>2. revert 更适合公共分支撤销，因为不会抹掉历史。<br>3. 面试里要强调：公共历史慎用 reset 改写。"
+      },
+      {
+        "id": "git-topics--010--soft-mixed-hard-reset",
+        "title": "soft / mixed / hard reset 怎么区分？",
+        "content": "<strong>结论：</strong>三者区别在于是否保留暂存区和工作区改动。<br><br><strong>要点：</strong><br>1. soft 回退提交，但保留暂存区和工作区。<br>2. mixed 回退提交并清空暂存区，但保留工作区。<br>3. hard 会连工作区一起重置，风险最大。"
+      },
+      {
+        "id": "git-topics--011--git-stash",
+        "title": "git stash 是做什么的？",
+        "content": "<strong>结论：</strong>stash 是把当前未完成改动临时收起来，等会儿再恢复。<br><br><strong>要点：</strong><br>1. 适合中途切分支、临时救火。<br>2. 它不是正式历史，不适合长期保存。<br>3. 用完记得及时清理和恢复。"
+      },
+      {
+        "id": "git-topics--012--item",
+        "title": "冲突为什么会发生？怎么处理？",
+        "content": "<strong>结论：</strong>同一位置的改动 Git 无法自动判断该保留谁时，就会发生冲突。<br><br><strong>要点：</strong><br>1. 先理解双方改了什么。<br>2. 再人工决定保留哪部分，或把两边正确内容合并。<br>3. 处理完后记得重新 add 并完成合并流程。"
+      },
+      {
+        "id": "git-topics--013--cherry-pick",
+        "title": "cherry-pick 是什么？",
+        "content": "<strong>结论：</strong>cherry-pick 用于把某一个指定提交拣到当前分支。<br><br><strong>要点：</strong><br>1. 它适合补丁迁移、热修复迁移。<br>2. 不需要把整个分支历史都合过来。<br>3. 面试里常被拿来和 merge、rebase 对比。"
+      },
+      {
+        "id": "git-topics--014--force-push",
+        "title": "force push 为什么危险？",
+        "content": "<strong>结论：</strong>force push 会改写远程分支历史，可能把别人的提交直接覆盖掉。<br><br><strong>要点：</strong><br>1. 在多人共享分支上风险尤其高。<br>2. 使用前必须确认影响范围。<br>3. 如果确实要用，也要优先考虑更稳妥流程和团队沟通。"
+      },
+      {
+        "id": "git-topics--015--git",
+        "title": "一套稳妥的日常 Git 工作流怎么说？",
+        "content": "<strong>结论：</strong>最稳的习惯是：先看状态，再拉最新，改完后小步提交，最后再推送。<br><br><strong>要点：</strong><br>1. 开工前先同步远程。<br>2. 提交时保持一次只做一件事。<br>3. push 前再检查状态和分支，能显著减少事故。"
+      }
+    ],
+    "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ]
+  }
+}
