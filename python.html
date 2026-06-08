@@ -676,7 +676,7 @@ body.modal-open {
 <script src="./db-manager.js"></script>
 <script src="./tts-player.js"></script>
 <script src="./sidebar-manager.js"></script>
-<script src="./gist-sync.js"></script>
+<script src="./repo-sync.js"></script>
 <script>
 // ===== 数字雨背景动画 =====
 const canvas = document.getElementById('matrix-canvas');
@@ -718,6 +718,7 @@ window.addEventListener('resize', () => {
 
 // ===== 知识点展示逻辑 =====
 var knowledgePoints = [];
+window.knowledgePoints = knowledgePoints;
 window.__PAGE_SLUG__ = 'python-notes';
 var PENDING_SEED = [
   {
@@ -902,6 +903,10 @@ const editCancelBtn = document.getElementById('edit-cancel-btn');
 const editSaveBtn = document.getElementById('edit-save-btn');
 
 let index = 0;
+Object.defineProperty(window, 'index', {
+  get() { return index; },
+  set(v) { index = v; }
+});
 let timeLeft = 30;
 let phase = 'hidden'; // hidden(仅标题)→shown(展开内容)→下一知识点
 let isEditModalOpen = false;
@@ -1067,6 +1072,7 @@ var sidebarMgr = new SidebarManager({
     closeSidebar();
   }
 });
+window.sidebarMgr = sidebarMgr;
 sidebarMgr.render();
 
 
@@ -1156,7 +1162,7 @@ setupTtsPlayer({
     var cards = DbManager.getCards();
     knowledgePoints.length = 0;
     cards.forEach(function(c) { knowledgePoints.push(c); });
-    if (typeof sidebarMgr !== 'undefined') sidebarMgr.render();
+    if (typeof sidebarMgr !== 'undefined') sidebarMgr.syncFromKnowledgePoints();
   } catch(e) {
     // fallback: 直接用种子数据
     if (!knowledgePoints.length && PENDING_SEED.length) {

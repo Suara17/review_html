@@ -267,6 +267,19 @@
     this._onNavigate(this._activeIndex);
   };
 
+  proto.syncFromKnowledgePoints = function () {
+    this._data = null;
+    this._loadAndHydrate();
+    this.render();
+    if (this._data && this._data.order && this._data.order.length) {
+      if (this._activeIndex >= this._data.order.length) this._activeIndex = this._data.order.length - 1;
+      if (this._activeIndex < 0) this._activeIndex = 0;
+    } else {
+      this._activeIndex = 0;
+    }
+    this.setActiveIndex(this._activeIndex);
+  };
+
   proto.setActiveIndex = function (i) {
     this._activeIndex = i;
     var items = this._sidebarUl.querySelectorAll('.sidebar-manager-item');
