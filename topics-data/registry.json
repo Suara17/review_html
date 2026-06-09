@@ -3,7 +3,7 @@
     {
       "slug": "computer-network",
       "page_id": "computer-network",
-      "title": "计算机网络知识点动态展示 - 精讲版",
+      "title": "计算机网络知识点笔记",
       "sidebar_title": "计算机网络高频知识点",
       "description": "计算机网络核心面试题速刷，覆盖 TCP/IP、HTTP、浏览器请求链路等高频问题。",
       "tag": "计算机基础",
@@ -14,7 +14,7 @@
     {
       "slug": "operating-system",
       "page_id": "operating-system",
-      "title": "操作系统知识点动态展示 - 精讲版",
+      "title": "操作系统知识点笔记",
       "sidebar_title": "操作系统高频知识点",
       "description": "操作系统高频知识点整理，覆盖进程线程、内存管理、调度与 Linux 基础。",
       "tag": "计算机基础",
@@ -25,7 +25,7 @@
     {
       "slug": "mysql-topics",
       "page_id": "mysql-topics",
-      "title": "MySQL知识点动态展示 - 精讲版",
+      "title": "MySQL知识点笔记",
       "sidebar_title": "MySQL 高频知识点",
       "description": "MySQL 面试速刷，包含索引、事务、锁、日志与调优等关键主题。",
       "tag": "数据库",
@@ -36,7 +36,7 @@
     {
       "slug": "redis-topics",
       "page_id": "redis-topics",
-      "title": "Redis知识点动态展示 - 精讲版",
+      "title": "Redis知识点笔记",
       "sidebar_title": "Redis 高频知识点",
       "description": "Redis 常见面试题与核心机制，涵盖数据结构、持久化、缓存与分布式场景。",
       "tag": "数据库",
@@ -47,7 +47,7 @@
     {
       "slug": "design-patterns-topics",
       "page_id": "design-patterns-topics",
-      "title": "设计模式知识点动态展示 - 精讲版",
+      "title": "设计模式知识点笔记",
       "sidebar_title": "设计模式高频知识点",
       "description": "常见设计模式概念与面试表达整理，适合快速记忆与复习。",
       "tag": "软件设计",
@@ -58,7 +58,7 @@
     {
       "slug": "system-design-topics",
       "page_id": "system-design-topics",
-      "title": "系统设计场景题动态展示 - 精讲版",
+      "title": "系统设计场景题知识点笔记",
       "sidebar_title": "场景题与系统设计",
       "description": "系统设计与场景题答题框架，适合面试前快速预演。",
       "tag": "系统设计",
@@ -69,8 +69,8 @@
     {
       "slug": "python",
       "page_id": "python-notes",
-      "title": "Python知识点动态展示 - 精讲版",
-      "sidebar_title": "Python 高频知识点精讲",
+      "title": "Python知识点笔记",
+      "sidebar_title": "Python 知识点笔记",
       "description": "Python 高频八股与工程实践问题，涵盖语言特性、并发、元编程与常用库。",
       "tag": "编程语言",
       "output": "python.html",
@@ -80,7 +80,7 @@
     {
       "slug": "git-topics",
       "page_id": "git-topics",
-      "title": "Git知识点动态展示 - 精讲版",
+      "title": "Git知识点笔记",
       "sidebar_title": "Git 高频知识点",
       "description": "Git 常用命令、协作流程与面试问答整理。",
       "tag": "工程工具",
@@ -91,7 +91,7 @@
     {
       "slug": "guanlan",
       "page_id": "guanlan-interview",
-      "title": "天工·弈控面试问题动态展示 - 精讲版",
+      "title": "天工·弈控面试问题知识点笔记",
       "sidebar_title": "天工·弈控面试问题",
       "description": "围绕天工·弈控项目的项目面试问答，便于演练项目介绍与追问应答。",
       "tag": "项目面试",
@@ -102,7 +102,7 @@
     {
       "slug": "learning-research-agent",
       "page_id": "learning-research-agent",
-      "title": "Research Agent学习问答动态展示 - 精讲版",
+      "title": "Research Agent学习问答知识点笔记",
       "sidebar_title": "Research Agent 学习问答",
       "description": "围绕 research-agent 项目的学习记录、原理理解与面试问答整理。",
       "tag": "项目面试",

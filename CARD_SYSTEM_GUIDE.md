@@ -46,8 +46,8 @@
 {
   "slug": "python",
   "page_id": "python-notes",
-  "title": "Python知识点动态展示 - 精讲版",
-  "sidebar_title": "Python 高频知识点精讲",
+  "title": "Python知识点笔记",
+  "sidebar_title": "Python 知识点笔记",
   "description": "Python 高频八股与工程实践问题，涵盖语言特性、并发、元编程与常用库。",
   "tag": "编程语言",
   "output": "python.html",
@@ -76,8 +76,8 @@
 ```json
 {
   "slug": "python",
-  "title": "Python知识点动态展示 - 精讲版",
-  "sidebar_title": "Python 高频知识点精讲",
+  "title": "Python知识点笔记",
+  "sidebar_title": "Python 知识点笔记",
   "page_id": "python-notes",
   "knowledge_points": [
     {
@@ -118,7 +118,7 @@ python scripts/add_group.py --slug new-group --title "新卡片组"
 ```bash
 python scripts/add_group.py \
   --slug java \
-  --title "Java知识点动态展示 - 精讲版" \
+  --title "Java知识点笔记" \
   --sidebar-title "Java 高频知识点" \
   --description "Java 高频面试题整理" \
   --tag "编程语言"

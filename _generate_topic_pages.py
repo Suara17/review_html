@@ -22,42 +22,42 @@ for idx, title in heading_positions:
 
 sections = {
     "computer-network": {
-        "page_title": "计算机网络知识点动态展示 - 精讲版",
+        "page_title": "计算机网络知识点笔记",
         "sidebar_title": "计算机网络高频知识点",
         "page_id": "computer-network",
         "output": root / "computer-network.html",
         "ranges": [("计算机⽹络", "操作系统")],
     },
     "operating-system": {
-        "page_title": "操作系统知识点动态展示 - 精讲版",
+        "page_title": "操作系统知识点笔记",
         "sidebar_title": "操作系统高频知识点",
         "page_id": "operating-system",
         "output": root / "operating-system.html",
         "ranges": [("操作系统", "数据库-MySQL"), ("计算机系统&Linux", "场景题 & 系统设计")],
     },
     "mysql-topics": {
-        "page_title": "MySQL知识点动态展示 - 精讲版",
+        "page_title": "MySQL知识点笔记",
         "sidebar_title": "MySQL 高频知识点",
         "page_id": "mysql-topics",
         "output": root / "mysql-topics.html",
         "ranges": [("数据库-MySQL", "数据库-Redis")],
     },
     "redis-topics": {
-        "page_title": "Redis知识点动态展示 - 精讲版",
+        "page_title": "Redis知识点笔记",
         "sidebar_title": "Redis 高频知识点",
         "page_id": "redis-topics",
         "output": root / "redis-topics.html",
         "ranges": [("数据库-Redis", "设计模式")],
     },
     "design-patterns-topics": {
-        "page_title": "设计模式知识点动态展示 - 精讲版",
+        "page_title": "设计模式知识点笔记",
         "sidebar_title": "设计模式高频知识点",
         "page_id": "design-patterns-topics",
         "output": root / "design-patterns-topics.html",
         "ranges": [("设计模式", "计算机系统&Linux")],
     },
     "system-design-topics": {
-        "page_title": "系统设计场景题动态展示 - 精讲版",
+        "page_title": "系统设计场景题知识点笔记",
         "sidebar_title": "场景题与系统设计",
         "page_id": "system-design-topics",
         "output": root / "system-design-topics.html",
@@ -444,8 +444,8 @@ for config in sections.values():
         entries = post_process_design_patterns(entries)
 
     page = template
-    page = page.replace("<title>Python知识点动态展示 - 精讲版</title>", f"<title>{config['page_title']}</title>")
-    page = page.replace("<h3>Python 高频知识点精讲</h3>", f"<h3>{config['sidebar_title']}</h3>")
+    page = page.replace("<title>Python知识点笔记</title>", f"<title>{config['page_title']}</title>")
+    page = page.replace("<h3>Python 知识点笔记</h3>", f"<h3>{config['sidebar_title']}</h3>")
     page = page.replace("pageId: 'python-notes'", f"pageId: '{config['page_id']}'")
     serialized = json.dumps(entries, ensure_ascii=False, separators=(",", ":"))
     page = pattern.sub(lambda _: 'let knowledgePoints = ' + serialized + ';', page, count=1)
