@@ -14,19 +14,22 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
 .hero-kicker { font-size: 0.82em; letter-spacing: 2px; color: rgba(0,255,255,0.76); margin-bottom: 10px; }
 .hero h1 { font-size: 1.8em; color: #00ffff; text-shadow: 0 0 8px rgba(0,255,255,0.35); margin-bottom: 10px; line-height: 1.4; }
 .hero p { color: rgba(255,255,255,0.82); line-height: 1.8; font-size: 1em; }
-.card-grid { max-width: 680px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.nav-card { background: rgba(0,10,20,0.78); border: 1px solid rgba(0,255,255,0.14); border-radius: 14px; padding: 14px 14px 12px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(0,0,0,0.18); transition: transform 0.2s, border-color 0.2s; display: flex; flex-direction: column; min-height: 0; }
-.nav-card:active { transform: scale(0.97); }
-.card-tag { display: inline-flex; align-items: center; width: fit-content; padding: 2px 8px; margin-bottom: 8px; border-radius: 999px; border: 1px solid rgba(0,255,255,0.20); background: rgba(0,255,255,0.06); color: #00ffff; font-size: 0.7em; letter-spacing: 0.3px; }
-.nav-card h2 { font-size: 0.92em; line-height: 1.4; color: #ffffff; margin-bottom: 6px; font-weight: 600; }
-.route, .description, .meta { display: none; }
-.enter-btn { display: block; text-align: center; padding: 5px 0; border-radius: 8px; text-decoration: none; font-weight: 500; color: rgba(0,255,255,0.88); background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.18); font-size: 0.75em; transition: all 0.2s; margin-top: 4px; }
-.enter-btn:hover { background: rgba(0,255,255,0.15); }
-.enter-btn:hover { background: rgba(0,255,255,0.22); box-shadow: 0 0 20px rgba(0,255,255,0.16); }
+.card-grid { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.nav-card { display: block; text-decoration: none; background: rgba(0,10,20,0.78); border: 1px solid rgba(0,255,255,0.12); border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(0,0,0,0.16); transition: transform 0.18s, border-color 0.18s, background 0.18s; }
+.nav-card:hover { border-color: rgba(0,255,255,0.26); background: rgba(0,18,30,0.86); }
+.nav-card:active { transform: scale(0.985); }
+.nav-card-inner { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.card-icon { width: 34px; height: 28px; border-radius: 8px 8px 6px 6px; background: linear-gradient(180deg, rgba(0,255,255,0.22), rgba(0,255,255,0.08)); border: 1px solid rgba(0,255,255,0.16); position: relative; flex: 0 0 auto; }
+.card-icon::before { content: ''; position: absolute; left: 4px; top: -5px; width: 16px; height: 8px; border-radius: 6px 6px 0 0; background: rgba(0,255,255,0.18); border: 1px solid rgba(0,255,255,0.12); border-bottom: none; }
+.card-main { min-width: 0; flex: 1; }
+.card-tag { display: inline-flex; align-items: center; width: fit-content; padding: 1px 7px; margin-bottom: 5px; border-radius: 999px; border: 1px solid rgba(0,255,255,0.16); background: rgba(0,255,255,0.05); color: rgba(143,255,255,0.88); font-size: 0.68em; letter-spacing: 0.2px; }
+.nav-card h2 { font-size: 0.98em; line-height: 1.35; color: #ffffff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.route, .description, .meta, .enter-btn { display: none; }
+.card-arrow { flex: 0 0 auto; color: rgba(0,255,255,0.72); font-size: 1.05em; padding-left: 8px; }
 .toolbar { max-width: 980px; margin: 0 auto 18px; display: flex; gap: 10px; flex-wrap: wrap; color: rgba(255,255,255,0.72); }
 .toolbar code { background: rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 8px; }
-@media (max-width: 900px) { .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .page-shell { padding: 16px 14px 28px; } .hero { padding: 18px 16px 16px; border-radius: 16px; margin-bottom: 16px; } .hero h1 { font-size: 1.28em; } .hero p { font-size: 0.92em; line-height: 1.68; } .card-grid { grid-template-columns: 1fr; gap: 14px; } .nav-card { min-height: auto; border-radius: 16px; padding: 16px; } }
+@media (max-width: 900px) { .card-grid { max-width: 100%; } }
+@media (max-width: 640px) { .page-shell { padding: 16px 14px 28px; } .hero { padding: 18px 16px 16px; border-radius: 16px; margin-bottom: 16px; } .hero h1 { font-size: 1.28em; } .hero p { font-size: 0.92em; line-height: 1.68; } .nav-card { padding: 13px 14px; border-radius: 13px; } .card-icon { width: 30px; height: 24px; } .nav-card h2 { font-size: 0.94em; } }
 </style>
 </head>
 <body>
@@ -39,66 +42,106 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
     <p>按知识点分类整理的高频面试题，点击卡片进入对应模块。</p>
   </section>
   <section class="card-grid">
-      <article class="nav-card">
-        <span class="card-tag">计算机基础</span>
-        <h2>计算机网络知识点笔记</h2>
-        <div class="route">/computer-network.html</div>
-        <a class="enter-btn" href="./computer-network.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">计算机基础</span>
-        <h2>操作系统知识点笔记</h2>
-        <div class="route">/operating-system.html</div>
-        <a class="enter-btn" href="./operating-system.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">数据库</span>
-        <h2>MySQL知识点笔记</h2>
-        <div class="route">/mysql-topics.html</div>
-        <a class="enter-btn" href="./mysql-topics.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">数据库</span>
-        <h2>Redis知识点笔记</h2>
-        <div class="route">/redis-topics.html</div>
-        <a class="enter-btn" href="./redis-topics.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">软件设计</span>
-        <h2>设计模式知识点笔记</h2>
-        <div class="route">/design-patterns-topics.html</div>
-        <a class="enter-btn" href="./design-patterns-topics.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">系统设计</span>
-        <h2>系统设计场景题知识点笔记</h2>
-        <div class="route">/system-design-topics.html</div>
-        <a class="enter-btn" href="./system-design-topics.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">编程语言</span>
-        <h2>Python知识点笔记</h2>
-        <div class="route">/python.html</div>
-        <a class="enter-btn" href="./python.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">工程工具</span>
-        <h2>Git知识点笔记</h2>
-        <div class="route">/git-topics.html</div>
-        <a class="enter-btn" href="./git-topics.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">项目面试</span>
-        <h2>天工·弈控面试问题知识点笔记</h2>
-        <div class="route">/guanlan.html</div>
-        <a class="enter-btn" href="./guanlan.html">进入卡片组</a>
-      </article>
-      <article class="nav-card">
-        <span class="card-tag">项目面试</span>
-        <h2>Research Agent学习问答知识点笔记</h2>
-        <div class="route">/learning-research-agent.html</div>
-        <a class="enter-btn" href="./learning-research-agent.html">进入卡片组</a>
-      </article>
+      <a class="nav-card" href="./computer-network.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">计算机基础</span>
+            <h2>计算机网络知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./operating-system.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">计算机基础</span>
+            <h2>操作系统知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./mysql-topics.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">数据库</span>
+            <h2>MySQL知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./redis-topics.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">数据库</span>
+            <h2>Redis知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./design-patterns-topics.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">软件设计</span>
+            <h2>设计模式知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./system-design-topics.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">系统设计</span>
+            <h2>系统设计场景题知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./python.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">编程语言</span>
+            <h2>Python知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./git-topics.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">工程工具</span>
+            <h2>Git知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./guanlan.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">项目面试</span>
+            <h2>天工·弈控面试问题知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
+      <a class="nav-card" href="./learning-research-agent.html">
+        <div class="nav-card-inner">
+          <div class="card-icon"></div>
+          <div class="card-main">
+            <span class="card-tag">项目面试</span>
+            <h2>Research Agent学习问答知识点笔记</h2>
+          </div>
+          <div class="card-arrow">›</div>
+        </div>
+      </a>
   </section>
 </div>
 <script>
