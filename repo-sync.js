@@ -255,6 +255,54 @@
     }
   }
 
+  async function forceResetPage() {
+    var slug = getPageSlug();
+    if (!slug) {
+      setStatus('当前页面缺少 slug，无法重置。', 'error');
+      return;
+    }
+    if (!window.confirm('强制重置会清空本页本地数据库、localStorage 缓存，并用页面内置知识点重新构建。\n\n此操作不会自动修改 GitHub 远端文件。\n\n确定继续吗？')) {
+      setStatus('已取消强制重置。', 'warn');
+      return;
+    }
+
+    setStatus('正在强制重置本页...', '');
+    try {
+      try { localStorage.removeItem('sidebar-data:' + location.pathname); } catch (e) {}
+      try { localStorage.removeItem('knowledge-point-overrides:' + location.pathname); } catch (e) {}
+      try { localStorage.removeItem('db_fallback_' + slug); } catch (e) {}
+      try { clearCachedSha(); } catch (e) {}
+
+      var seed = Array.isArray(window.PENDING_SEED) ? window.PENDING_SEED : [];
+      if (!window.DbManager || typeof window.DbManager.forceReset !== 'function') {
+        throw new Error('DbManager.forceReset 不可用，请刷新后重试。');
+      }
+      await window.DbManager.forceReset(seed, slug);
+
+      if (Array.isArray(window.knowledgePoints)) {
+        window.knowledgePoints.length = 0;
+        seed.forEach(function (item) {
+          window.knowledgePoints.push({
+            id: item.id,
+            title: item.title,
+            content: item.content
+          });
+        });
+      }
+
+      if (window.sidebarMgr && typeof window.sidebarMgr.syncFromKnowledgePoints === 'function') {
+        window.sidebarMgr.syncFromKnowledgePoints();
+      }
+      window.index = 0;
+      if (typeof window.showKnowledge === 'function') {
+        window.showKnowledge();
+      }
+      setStatus('已强制重置本页本地数据，并按页面种子重建。建议再手动刷新一次页面确认。', 'success');
+    } catch (err) {
+      setStatus(err.message || String(err), 'error');
+    }
+  }
+
   function buildUi() {
     var sidebar = document.querySelector('.sidebar');
     if (!sidebar || document.getElementById(ACTIONS_ID)) return;
@@ -265,6 +313,7 @@
     wrap.innerHTML = [
       '<button type="button" class="repo-sync-btn" data-action="pull">从 GitHub 拉取</button>',
       '<button type="button" class="repo-sync-btn" data-action="push">保存到 GitHub</button>',
+      '<button type="button" class="repo-sync-btn repo-sync-btn-danger" data-action="reset">强制重置本页</button>',
       '<div id="' + STATUS_ID + '" class="repo-sync-status"></div>'
     ].join('');
 
@@ -272,6 +321,7 @@
       var action = e.target && e.target.getAttribute('data-action');
       if (action === 'pull') pullFromGitHub();
       if (action === 'push') pushToGitHub();
+      if (action === 'reset') forceResetPage();
     });
 
     sidebar.appendChild(wrap);
@@ -285,6 +335,8 @@
       '.repo-sync-actions{padding:12px 14px;border-top:1px solid rgba(0,255,255,0.18);display:flex;flex-direction:column;gap:8px}',
       '.repo-sync-btn{padding:9px 12px;border-radius:10px;border:1px solid rgba(0,255,255,0.35);background:rgba(0,255,255,0.08);color:#9ff;cursor:pointer}',
       '.repo-sync-btn:hover{background:rgba(0,255,255,0.16)}',
+      '.repo-sync-btn-danger{border-color:rgba(255,120,120,0.45);background:rgba(255,80,80,0.10);color:#ffb3b3}',
+      '.repo-sync-btn-danger:hover{background:rgba(255,80,80,0.18)}',
       '.repo-sync-status{font-size:12px;line-height:1.4;color:#9cc;white-space:pre-wrap}',
       '.repo-sync-status.success{color:#75f7b3}',
       '.repo-sync-status.warn{color:#ffd36a}',

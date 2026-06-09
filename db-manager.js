@@ -118,6 +118,31 @@
     flush: function () {
       if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
       _saveToIDB(currentSlug);
+    },
+
+    /** 强制重置当前页：清空 IndexedDB + fallback，再用 seed 重建 */
+    forceReset: async function (seedCards, slug) {
+      currentSlug = slug || currentSlug;
+      await _deleteFromIDB(currentSlug);
+      try { localStorage.removeItem('db_fallback_' + currentSlug); } catch (_) {}
+
+      if (!SQL) {
+        SQL = await initSqlJs({
+          locateFile: function (f) {
+            return 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/' + f;
+          }
+        });
+      }
+
+      db = new SQL.Database();
+      db.run('CREATE TABLE IF NOT EXISTS cards (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, sort_order INTEGER NOT NULL DEFAULT 0)');
+      var stmt = db.prepare('INSERT INTO cards (title, content, sort_order) VALUES (?, ?, ?)');
+      for (var i = 0; i < (seedCards || []).length; i++) {
+        stmt.run([seedCards[i].title || '', seedCards[i].content || '', i]);
+      }
+      stmt.free();
+      await _saveToIDB(currentSlug);
+      return this;
     }
   };
 
@@ -153,6 +178,24 @@
         req.onsuccess = function (e) {
           var tx = e.target.result.transaction(STORE_NAME, 'readwrite');
           tx.objectStore(STORE_NAME).put(data, 'db:' + slug);
+          tx.oncomplete = function () { resolve(); };
+          tx.onerror = function () { resolve(); };
+        };
+        req.onerror = function () { resolve(); };
+      } catch (_) { resolve(); }
+    });
+  }
+
+  function _deleteFromIDB(slug) {
+    return new Promise(function (resolve) {
+      try {
+        var req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = function (e) {
+          e.target.result.createObjectStore(STORE_NAME);
+        };
+        req.onsuccess = function (e) {
+          var tx = e.target.result.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).delete('db:' + slug);
           tx.oncomplete = function () { resolve(); };
           tx.onerror = function () { resolve(); };
         };
