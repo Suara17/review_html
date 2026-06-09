@@ -299,17 +299,8 @@ setInterval(drawMatrix, 38);
     setStatus('已恢复默认排序。','success');
   }
   const toolbar = document.querySelector('.homepage-sync-toolbar');
-  if(toolbar){
-    toolbar.addEventListener('click', (e) => {
-      const action = e.target && e.target.getAttribute('data-action');
-      if(action === 'toggle-sort'){ sortMode = !sortMode; if(!sortMode) endDrag(); updateSortUi(); }
-      if(action === 'pull-order') pullOrderFromGitHub();
-      if(action === 'push-order') pushOrderToGitHub();
-      if(action === 'reset-order') resetOrder();
-    });
-  }
-
   let pressTimer=null, draggingEl=null, ghost=null, startX=0, startY=0, moved=false, longPressed=false, sortMode=false;
+  const dragBindings = new Map();
 
   function clearPress(){ if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } }
   function cleanupDrag(){
@@ -338,40 +329,78 @@ setInterval(drawMatrix, 38);
     ghost.classList.add('drag-ghost');
     if(navigator.vibrate) navigator.vibrate(16);
   }
-
-  list.querySelectorAll('.nav-card').forEach(card=>{
-    card.addEventListener('click', (e)=>{ if(sortMode){ e.preventDefault(); } });
-    card.addEventListener('pointerdown', (e)=>{
-      if(!sortMode) return;
-      if(e.pointerType === 'mouse' && e.button !== 0) return;
-      startX=e.clientX; startY=e.clientY; moved=false; longPressed=false;
-      clearPress();
-      pressTimer=setTimeout(()=> startDrag(card), 320);
-    }, {passive:true});
-
-    card.addEventListener('pointermove', (e)=>{
-      if(Math.abs(e.clientX-startX) > 8 || Math.abs(e.clientY-startY) > 8) moved=true;
-      if(!longPressed || !draggingEl) return;
-      e.preventDefault();
-      const afterEl = getAfterElement(e.clientY);
-      if(afterEl == null) list.appendChild(draggingEl);
-      else if(afterEl !== draggingEl) list.insertBefore(draggingEl, afterEl);
-    });
-
-    card.addEventListener('pointerup', (e)=>{
-      if(longPressed && draggingEl){
+  function bindDragHandlers(){
+    if(dragBindings.size) return;
+    list.querySelectorAll('.nav-card').forEach(card=>{
+      const onClick = (e)=>{ if(sortMode){ e.preventDefault(); e.stopPropagation(); } };
+      const onDown = (e)=>{
+        if(e.pointerType === 'mouse' && e.button !== 0) return;
+        startX=e.clientX; startY=e.clientY; moved=false; longPressed=false;
+        clearPress();
+        pressTimer=setTimeout(()=> startDrag(card), 320);
+      };
+      const onMove = (e)=>{
+        if(Math.abs(e.clientX-startX) > 8 || Math.abs(e.clientY-startY) > 8) moved=true;
+        if(!longPressed || !draggingEl) return;
         e.preventDefault();
-        saveOrder();
-      }
-      cleanupDrag();
+        const afterEl = getAfterElement(e.clientY);
+        if(afterEl == null) list.appendChild(draggingEl);
+        else if(afterEl !== draggingEl) list.insertBefore(draggingEl, afterEl);
+      };
+      const onUp = (e)=>{
+        if(longPressed && draggingEl){
+          e.preventDefault();
+          saveOrder();
+        }
+        cleanupDrag();
+      };
+      const onCancel = ()=> cleanupDrag();
+      const onLeave = ()=>{ if(!longPressed && moved) clearPress(); };
+      card.addEventListener('click', onClick);
+      card.addEventListener('pointerdown', onDown, {passive:true});
+      card.addEventListener('pointermove', onMove);
+      card.addEventListener('pointerup', onUp);
+      card.addEventListener('pointercancel', onCancel);
+      card.addEventListener('pointerleave', onLeave);
+      dragBindings.set(card, {onClick,onDown,onMove,onUp,onCancel,onLeave});
     });
-
-    card.addEventListener('pointercancel', cleanupDrag);
-    card.addEventListener('pointerleave', ()=>{ if(!longPressed && moved) clearPress(); });
-    card.addEventListener('click', (e)=>{ if(longPressed) { e.preventDefault(); e.stopPropagation(); } });
-  });
-
-  document.addEventListener('scroll', ()=>{ if(longPressed) saveOrder(); }, {passive:true});
+    document.addEventListener('scroll', onDocScroll, {passive:true});
+  }
+  function unbindDragHandlers(){
+    dragBindings.forEach((h, card)=>{
+      card.removeEventListener('click', h.onClick);
+      card.removeEventListener('pointerdown', h.onDown, {passive:true});
+      card.removeEventListener('pointermove', h.onMove);
+      card.removeEventListener('pointerup', h.onUp);
+      card.removeEventListener('pointercancel', h.onCancel);
+      card.removeEventListener('pointerleave', h.onLeave);
+    });
+    dragBindings.clear();
+    document.removeEventListener('scroll', onDocScroll, {passive:true});
+    cleanupDrag();
+  }
+  function onDocScroll(){ if(longPressed) saveOrder(); }
+  function updateSortUi(){
+    const tip=document.getElementById('sort-mode-tip');
+    const btn=document.querySelector('[data-action="toggle-sort"]');
+    if(list){ list.classList.toggle('sort-mode', !!sortMode); }
+    if(tip){ tip.textContent = sortMode ? '排序模式已开启：拖动列表项调整顺序' : '默认可直接点击进入卡片组'; }
+    if(btn){ btn.textContent = sortMode ? '完成排序' : '进入排序'; btn.classList.toggle('sync-btn-muted', !!sortMode); }
+  }
+  if(toolbar){
+    toolbar.addEventListener('click', (e) => {
+      const action = e.target && e.target.getAttribute('data-action');
+      if(action === 'toggle-sort'){
+        sortMode = !sortMode;
+        if(sortMode) bindDragHandlers(); else unbindDragHandlers();
+        updateSortUi();
+      }
+      if(action === 'pull-order') pullOrderFromGitHub();
+      if(action === 'push-order') pushOrderToGitHub();
+      if(action === 'reset-order') resetOrder();
+    });
+  }
+  updateSortUi();
 })();
 </script>
 </body>
