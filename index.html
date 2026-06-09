@@ -23,8 +23,8 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
 .nav-card.drag-ghost { border-color: rgba(0,255,255,0.28); background: rgba(9,28,38,0.92); box-shadow: 0 8px 18px rgba(0,0,0,0.18); }
 .toolbar { max-width: 760px; margin: 0 auto 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: rgba(255,255,255,0.56); }
 .sort-tip { margin: 0; color: rgba(180,255,255,0.60); font-size: 0.76em; }
-.sync-btn { border: none; border-radius: 0; padding: 0; font-size: 12px; color: rgba(170,245,255,0.72); background: transparent; border-bottom: 1px dashed rgba(170,245,255,0.18); }
-.sync-btn-muted { color: rgba(255,255,255,0.56); border-bottom-color: rgba(255,255,255,0.12); }
+.sync-btn { border: none; border-radius: 999px; padding: 6px 10px; font-size: 12px; color: #d9ffff; background: rgba(0,255,255,0.10); border: 1px solid rgba(0,255,255,0.16); }
+.sync-btn-muted { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.82); }
 .homepage-sync-status { max-width: 760px; margin: 0 auto 8px; color: rgba(170,245,255,0.66); font-size: 11px; line-height: 1.45; white-space: pre-wrap; }
 .nav-card-inner { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .card-icon { width: 28px; height: 22px; border-radius: 6px 6px 5px 5px; background: linear-gradient(180deg, rgba(0,255,255,0.16), rgba(0,255,255,0.05)); border: 1px solid rgba(255,255,255,0.07); position: relative; flex: 0 0 auto; }
@@ -48,7 +48,8 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
     <p>按知识点分类整理的高频面试题，点击卡片进入对应模块。</p>
   </section>
   <div class="toolbar homepage-sync-toolbar">
-    <span class="sort-tip">长按列表项可拖拽排序</span>
+    <button type="button" class="sync-btn" data-action="toggle-sort">进入排序</button>
+    <span class="sort-tip" id="sort-mode-tip">默认可直接点击进入卡片组</span>
     <button type="button" class="sync-btn" data-action="pull-order">从 GitHub 拉取排序</button>
     <button type="button" class="sync-btn" data-action="push-order">保存排序到 GitHub</button>
     <button type="button" class="sync-btn sync-btn-muted" data-action="reset-order">恢复默认排序</button>
@@ -301,13 +302,14 @@ setInterval(drawMatrix, 38);
   if(toolbar){
     toolbar.addEventListener('click', (e) => {
       const action = e.target && e.target.getAttribute('data-action');
+      if(action === 'toggle-sort'){ sortMode = !sortMode; if(!sortMode) endDrag(); updateSortUi(); }
       if(action === 'pull-order') pullOrderFromGitHub();
       if(action === 'push-order') pushOrderToGitHub();
       if(action === 'reset-order') resetOrder();
     });
   }
 
-  let pressTimer=null, draggingEl=null, ghost=null, startX=0, startY=0, moved=false, longPressed=false;
+  let pressTimer=null, draggingEl=null, ghost=null, startX=0, startY=0, moved=false, longPressed=false, sortMode=false;
 
   function clearPress(){ if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } }
   function cleanupDrag(){
@@ -338,7 +340,9 @@ setInterval(drawMatrix, 38);
   }
 
   list.querySelectorAll('.nav-card').forEach(card=>{
+    card.addEventListener('click', (e)=>{ if(sortMode){ e.preventDefault(); } });
     card.addEventListener('pointerdown', (e)=>{
+      if(!sortMode) return;
       if(e.pointerType === 'mouse' && e.button !== 0) return;
       startX=e.clientX; startY=e.clientY; moved=false; longPressed=false;
       clearPress();
