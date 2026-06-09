@@ -15,9 +15,13 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
 .hero h1 { font-size: 1.8em; color: #00ffff; text-shadow: 0 0 8px rgba(0,255,255,0.35); margin-bottom: 10px; line-height: 1.4; }
 .hero p { color: rgba(255,255,255,0.82); line-height: 1.8; font-size: 1em; }
 .card-grid { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
-.nav-card { display: block; text-decoration: none; background: rgba(0,10,20,0.78); border: 1px solid rgba(0,255,255,0.12); border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(0,0,0,0.16); transition: transform 0.18s, border-color 0.18s, background 0.18s; }
+.card-grid.dragging { gap: 8px; }
+.nav-card { display: block; text-decoration: none; background: rgba(0,10,20,0.78); border: 1px solid rgba(0,255,255,0.12); border-radius: 14px; padding: 14px 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 6px 18px rgba(0,0,0,0.16); transition: transform 0.18s, border-color 0.18s, background 0.18s, opacity 0.18s; touch-action: none; user-select: none; -webkit-user-select: none; }
 .nav-card:hover { border-color: rgba(0,255,255,0.26); background: rgba(0,18,30,0.86); }
 .nav-card:active { transform: scale(0.985); }
+.nav-card.drag-source { opacity: 0.35; }
+.nav-card.drag-ghost { border-color: rgba(0,255,255,0.42); background: rgba(0,30,45,0.92); box-shadow: 0 0 0 1px rgba(0,255,255,0.16), 0 10px 24px rgba(0,0,0,0.28); }
+.sort-tip { max-width: 760px; margin: 0 auto 12px; color: rgba(160,255,255,0.74); font-size: 0.82em; }
 .nav-card-inner { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .card-icon { width: 34px; height: 28px; border-radius: 8px 8px 6px 6px; background: linear-gradient(180deg, rgba(0,255,255,0.22), rgba(0,255,255,0.08)); border: 1px solid rgba(0,255,255,0.16); position: relative; flex: 0 0 auto; }
 .card-icon::before { content: ''; position: absolute; left: 4px; top: -5px; width: 16px; height: 8px; border-radius: 6px 6px 0 0; background: rgba(0,255,255,0.18); border: 1px solid rgba(0,255,255,0.12); border-bottom: none; }
@@ -41,7 +45,8 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
     <h1>面经笔记卡片组</h1>
     <p>按知识点分类整理的高频面试题，点击卡片进入对应模块。</p>
   </section>
-  <section class="card-grid">
+  <div class="sort-tip">长按列表项可拖拽排序</div>
+  <section class="card-grid" id="folder-list">
       <a class="nav-card" href="./computer-network.html">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
@@ -144,14 +149,117 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
       </a>
   </section>
 </div>
+
 <script>
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
-let w, h, columns, drops; const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; columns = Math.floor(w / 20); drops = Array(columns).fill(1); }
-function draw() { ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(0,0,w,h); ctx.fillStyle = '#00ffff'; ctx.font = '14px monospace'; for (let i = 0; i < drops.length; i += 1) { const text = chars[Math.floor(Math.random() * chars.length)]; ctx.fillText(text, i * 20, drops[i] * 20); if (drops[i] * 20 > h && Math.random() > 0.975) drops[i] = 0; drops[i] += 1; } }
-function animate() { draw(); requestAnimationFrame(animate); }
-resize(); window.addEventListener('resize', resize); animate();
+function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const fontSize = 14;
+let columns = Math.floor(window.innerWidth / fontSize);
+let drops = Array(columns).fill(1);
+function drawMatrix(){
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#0ff';
+  ctx.font = fontSize + 'px monospace';
+  for(let i=0;i<drops.length;i++){
+    const text = chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+    if(drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i]=0;
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 38);
+
+(function(){
+  const STORAGE_KEY='homepage-folder-order-v1';
+  const list=document.getElementById('folder-list');
+  if(!list) return;
+  const items=Array.from(list.querySelectorAll('.nav-card'));
+  items.forEach((el,i)=>{ if(!el.dataset.key) el.dataset.key = el.getAttribute('href') || String(i); });
+
+  function saveOrder(){
+    const order = Array.from(list.querySelectorAll('.nav-card')).map(el => el.dataset.key);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(order)); } catch(e) {}
+  }
+  function restoreOrder(){
+    let raw=null;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+    if(!raw) return;
+    try {
+      const order = JSON.parse(raw);
+      const map = new Map(Array.from(list.querySelectorAll('.nav-card')).map(el => [el.dataset.key, el]));
+      order.forEach(key => { const el = map.get(key); if(el) list.appendChild(el); });
+      Array.from(map.keys()).forEach(key => { if(!order.includes(key)) list.appendChild(map.get(key)); });
+    } catch(e) {}
+  }
+  restoreOrder();
+
+  let pressTimer=null, draggingEl=null, ghost=null, startX=0, startY=0, moved=false, longPressed=false;
+
+  function clearPress(){ if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } }
+  function cleanupDrag(){
+    clearPress();
+    list.classList.remove('dragging');
+    Array.from(list.querySelectorAll('.nav-card')).forEach(el => el.classList.remove('drag-source','drag-ghost'));
+    draggingEl=null; ghost=null; moved=false; longPressed=false;
+  }
+  function getAfterElement(y){
+    const els=[...list.querySelectorAll('.nav-card:not(.drag-source)')];
+    let closest={offset:Number.NEGATIVE_INFINITY, el:null};
+    els.forEach(el=>{
+      const box=el.getBoundingClientRect();
+      const offset=y - box.top - box.height/2;
+      if(offset < 0 && offset > closest.offset) closest={offset, el};
+    });
+    return closest.el;
+  }
+  function startDrag(target){
+    draggingEl = target.closest('.nav-card');
+    if(!draggingEl) return;
+    longPressed = true;
+    list.classList.add('dragging');
+    draggingEl.classList.add('drag-source');
+    ghost = draggingEl;
+    ghost.classList.add('drag-ghost');
+    if(navigator.vibrate) navigator.vibrate(16);
+  }
+
+  list.querySelectorAll('.nav-card').forEach(card=>{
+    card.addEventListener('pointerdown', (e)=>{
+      if(e.pointerType === 'mouse' && e.button !== 0) return;
+      startX=e.clientX; startY=e.clientY; moved=false; longPressed=false;
+      clearPress();
+      pressTimer=setTimeout(()=> startDrag(card), 320);
+    }, {passive:true});
+
+    card.addEventListener('pointermove', (e)=>{
+      if(Math.abs(e.clientX-startX) > 8 || Math.abs(e.clientY-startY) > 8) moved=true;
+      if(!longPressed || !draggingEl) return;
+      e.preventDefault();
+      const afterEl = getAfterElement(e.clientY);
+      if(afterEl == null) list.appendChild(draggingEl);
+      else if(afterEl !== draggingEl) list.insertBefore(draggingEl, afterEl);
+    });
+
+    card.addEventListener('pointerup', (e)=>{
+      if(longPressed && draggingEl){
+        e.preventDefault();
+        saveOrder();
+      }
+      cleanupDrag();
+    });
+
+    card.addEventListener('pointercancel', cleanupDrag);
+    card.addEventListener('pointerleave', ()=>{ if(!longPressed && moved) clearPress(); });
+    card.addEventListener('click', (e)=>{ if(longPressed) { e.preventDefault(); e.stopPropagation(); } });
+  });
+
+  document.addEventListener('scroll', ()=>{ if(longPressed) saveOrder(); }, {passive:true});
+})();
 </script>
 </body>
 </html>
