@@ -1,0 +1,14 @@
+{
+  "order": [
+    "python",
+    "computer-network",
+    "operating-system",
+    "redis-topics",
+    "mysql-topics",
+    "design-patterns-topics",
+    "system-design-topics",
+    "git-topics",
+    "guanlan",
+    "learning-research-agent"
+  ]
+}
