@@ -16,7 +16,8 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
 .hero p { color: rgba(180,255,255,0.62); line-height: 1.5; font-size: 0.82em; }
 .card-grid { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
 .card-grid.dragging { gap: 6px; }
-.nav-card { display: block; text-decoration: none; background: rgba(7,16,22,0.72); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 13px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: none; transition: transform 0.16s, border-color 0.16s, background 0.16s, opacity 0.16s; touch-action: none; user-select: none; -webkit-user-select: none; }
+.nav-card { display: block; text-decoration: none; background: rgba(7,16,22,0.72); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 13px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: none; transition: transform 0.16s, border-color 0.16s, background 0.16s, opacity 0.16s; touch-action: auto; user-select: none; -webkit-user-select: none; }
+.card-grid.sort-mode .nav-card { touch-action: none; }
 .nav-card:hover { border-color: rgba(0,255,255,0.16); background: rgba(8,22,30,0.82); }
 .nav-card:active { transform: scale(0.992); }
 .nav-card.drag-source { opacity: 0.32; }
