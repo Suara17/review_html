@@ -21,8 +21,12 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
 .nav-card:active { transform: scale(0.985); }
 .nav-card.drag-source { opacity: 0.35; }
 .nav-card.drag-ghost { border-color: rgba(0,255,255,0.42); background: rgba(0,30,45,0.92); box-shadow: 0 0 0 1px rgba(0,255,255,0.16), 0 10px 24px rgba(0,0,0,0.28); }
-.sort-tip { max-width: 760px; margin: 0 auto 12px; color: rgba(160,255,255,0.74); font-size: 0.82em; }
-.nav-card-inner { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.toolbar { max-width: 760px; margin: 0 auto 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: rgba(255,255,255,0.72); }
+.sort-tip { margin: 0; color: rgba(160,255,255,0.74); font-size: 0.82em; }
+.sync-btn { border: none; border-radius: 999px; padding: 6px 10px; font-size: 12px; color: #d9ffff; background: rgba(0,255,255,0.10); border: 1px solid rgba(0,255,255,0.16); }
+.sync-btn-muted { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.82); }
+.homepage-sync-status { max-width: 760px; margin: 0 auto 12px; color: #9cc; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+.toolbar code { background: rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 8px; }
 .card-icon { width: 34px; height: 28px; border-radius: 8px 8px 6px 6px; background: linear-gradient(180deg, rgba(0,255,255,0.22), rgba(0,255,255,0.08)); border: 1px solid rgba(0,255,255,0.16); position: relative; flex: 0 0 auto; }
 .card-icon::before { content: ''; position: absolute; left: 4px; top: -5px; width: 16px; height: 8px; border-radius: 6px 6px 0 0; background: rgba(0,255,255,0.18); border: 1px solid rgba(0,255,255,0.12); border-bottom: none; }
 .card-main { min-width: 0; flex: 1; }
@@ -45,9 +49,15 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
     <h1>面经笔记卡片组</h1>
     <p>按知识点分类整理的高频面试题，点击卡片进入对应模块。</p>
   </section>
-  <div class="sort-tip">长按列表项可拖拽排序</div>
+  <div class="toolbar homepage-sync-toolbar">
+    <span class="sort-tip">长按列表项可拖拽排序</span>
+    <button type="button" class="sync-btn" data-action="pull-order">从 GitHub 拉取排序</button>
+    <button type="button" class="sync-btn" data-action="push-order">保存排序到 GitHub</button>
+    <button type="button" class="sync-btn sync-btn-muted" data-action="reset-order">恢复默认排序</button>
+  </div>
+  <div id="homepage-sync-status" class="homepage-sync-status"></div>
   <section class="card-grid" id="folder-list">
-      <a class="nav-card" href="./computer-network.html">
+      <a class="nav-card" href="./computer-network.html" data-slug="computer-network">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -57,7 +67,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./operating-system.html">
+      <a class="nav-card" href="./operating-system.html" data-slug="operating-system">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -67,7 +77,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./mysql-topics.html">
+      <a class="nav-card" href="./mysql-topics.html" data-slug="mysql-topics">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -77,7 +87,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./redis-topics.html">
+      <a class="nav-card" href="./redis-topics.html" data-slug="redis-topics">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -87,7 +97,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./design-patterns-topics.html">
+      <a class="nav-card" href="./design-patterns-topics.html" data-slug="design-patterns-topics">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -97,7 +107,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./system-design-topics.html">
+      <a class="nav-card" href="./system-design-topics.html" data-slug="system-design-topics">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -107,7 +117,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./python.html">
+      <a class="nav-card" href="./python.html" data-slug="python">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -117,7 +127,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./git-topics.html">
+      <a class="nav-card" href="./git-topics.html" data-slug="git-topics">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -127,7 +137,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./guanlan.html">
+      <a class="nav-card" href="./guanlan.html" data-slug="guanlan">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -137,7 +147,7 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff
           <div class="card-arrow">›</div>
         </div>
       </a>
-      <a class="nav-card" href="./learning-research-agent.html">
+      <a class="nav-card" href="./learning-research-agent.html" data-slug="learning-research-agent">
         <div class="nav-card-inner">
           <div class="card-icon"></div>
           <div class="card-main">
@@ -176,14 +186,27 @@ setInterval(drawMatrix, 38);
 
 (function(){
   const STORAGE_KEY='homepage-folder-order-v1';
+  const ORDER_FILE_PATH='data/sidebar-state/homepage-folder-order.json';
+  const SHA_KEY='homepage-folder-order-sha';
+  const TOKEN_KEY='repo-sync-token';
+  const OWNER_KEY='repo-sync-owner';
+  const REPO_KEY='repo-sync-repo';
+  const DEFAULT_OWNER='Suara17';
+  const DEFAULT_REPO='review_html';
+  const API_ROOT='https://api.github.com';
   const list=document.getElementById('folder-list');
   if(!list) return;
   const items=Array.from(list.querySelectorAll('.nav-card'));
-  items.forEach((el,i)=>{ if(!el.dataset.key) el.dataset.key = el.getAttribute('href') || String(i); });
+  items.forEach((el,i)=>{
+    if(!el.dataset.key) el.dataset.key = el.dataset.slug || el.getAttribute('href') || String(i);
+    el.dataset.defaultOrder = String(i);
+  });
 
+  function getOrder(){
+    return Array.from(list.querySelectorAll('.nav-card')).map(el => el.dataset.key);
+  }
   function saveOrder(){
-    const order = Array.from(list.querySelectorAll('.nav-card')).map(el => el.dataset.key);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(order)); } catch(e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(getOrder())); } catch(e) {}
   }
   function restoreOrder(){
     let raw=null;
@@ -197,6 +220,94 @@ setInterval(drawMatrix, 38);
     } catch(e) {}
   }
   restoreOrder();
+
+  function setStatus(msg, type){
+    const el=document.getElementById('homepage-sync-status');
+    if(!el) return;
+    el.textContent = msg || '';
+    el.style.color = type==='error' ? '#ff9b9b' : type==='success' ? '#9ff7c2' : type==='warn' ? '#ffd37a' : '#9cc';
+  }
+  function getConfig(){
+    const token=(localStorage.getItem(TOKEN_KEY)||'').trim();
+    const owner=(localStorage.getItem(OWNER_KEY)||DEFAULT_OWNER).trim();
+    const repo=(localStorage.getItem(REPO_KEY)||DEFAULT_REPO).trim();
+    if(!token){ setStatus('未找到 GitHub Token，请先在知识点页面配置后再试。','warn'); return null; }
+    return { token, owner, repo };
+  }
+  function applyOrder(order){
+    if(!Array.isArray(order) || !order.length) return;
+    const map = new Map(Array.from(list.querySelectorAll('.nav-card')).map(el => [el.dataset.key, el]));
+    const frag = document.createDocumentFragment();
+    const used = new Set();
+    order.forEach(key => { const el = map.get(key); if(el){ frag.appendChild(el); used.add(key); } });
+    map.forEach((el,key) => { if(!used.has(key)) frag.appendChild(el); });
+    list.appendChild(frag);
+    saveOrder();
+  }
+  function clearOrder(){ try { localStorage.removeItem(STORAGE_KEY); } catch(e) {} }
+  function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
+  function b64DecodeUnicode(str){ return decodeURIComponent(escape(atob(str))); }
+  async function ghFetchFile(cfg){
+    const url = API_ROOT + '/repos/' + cfg.owner + '/' + cfg.repo + '/contents/' + ORDER_FILE_PATH;
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github+json' } });
+    if(res.status === 404) return null;
+    if(!res.ok) throw new Error('拉取 GitHub 排序失败：' + res.status);
+    return await res.json();
+  }
+  async function ghSaveFile(cfg, order, sha){
+    const url = API_ROOT + '/repos/' + cfg.owner + '/' + cfg.repo + '/contents/' + ORDER_FILE_PATH;
+    const body = { message: 'chore: update homepage folder order', content: b64EncodeUnicode(JSON.stringify({ order: order }, null, 2)) };
+    if(sha) body.sha = sha;
+    const res = await fetch(url, { method: 'PUT', headers: { Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if(!res.ok){ const txt = await res.text(); throw new Error('保存 GitHub 排序失败：' + res.status + ' ' + txt.slice(0,160)); }
+    return await res.json();
+  }
+  async function pullOrderFromGitHub(){
+    const cfg = getConfig(); if(!cfg) return;
+    setStatus('正在从 GitHub 拉取首页排序...');
+    try {
+      const file = await ghFetchFile(cfg);
+      if(!file){ setStatus('GitHub 上还没有首页排序文件。','warn'); return; }
+      const json = JSON.parse(b64DecodeUnicode((file.content || '').replace(/\n/g,'')));
+      applyOrder(json.order || []);
+      try { localStorage.setItem(SHA_KEY, file.sha || ''); } catch(e) {}
+      setStatus('已从 GitHub 拉取首页排序。','success');
+    } catch(err) {
+      setStatus(err.message || String(err),'error');
+    }
+  }
+  async function pushOrderToGitHub(){
+    const cfg = getConfig(); if(!cfg) return;
+    setStatus('正在保存首页排序到 GitHub...');
+    try {
+      let sha = '';
+      try { sha = localStorage.getItem(SHA_KEY) || ''; } catch(e) {}
+      if(!sha){ const cur = await ghFetchFile(cfg); sha = cur && cur.sha ? cur.sha : ''; }
+      const saved = await ghSaveFile(cfg, getOrder(), sha);
+      try { localStorage.setItem(SHA_KEY, saved.content && saved.content.sha ? saved.content.sha : ''); } catch(e) {}
+      setStatus('已保存首页排序到 GitHub。','success');
+    } catch(err) {
+      setStatus(err.message || String(err),'error');
+    }
+  }
+  function resetOrder(){
+    if(!confirm('恢复默认排序会清空本地首页顺序，并按页面原始顺序重新排列。是否继续？')) return;
+    const arr = Array.from(list.querySelectorAll('.nav-card')).sort((a,b)=>(+a.dataset.defaultOrder)-(+b.dataset.defaultOrder));
+    const frag = document.createDocumentFragment();
+    arr.forEach(el => frag.appendChild(el));
+    list.appendChild(frag);
+    clearOrder();
+    setStatus('已恢复默认排序。','success');
+  }
+  const toolbar = document.querySelector('.homepage-sync-toolbar');
+  if(toolbar){
+    toolbar.addEventListener('click', (e) => {
+      const action = e.target && e.target.getAttribute('data-action');
+      if(action === 'pull-order') pullOrderFromGitHub();
+      if(action === 'push-order') pushOrderToGitHub();
+      if(action === 'reset-order') resetOrder();
+    });
+  }
 
   let pressTimer=null, draggingEl=null, ghost=null, startX=0, startY=0, moved=false, longPressed=false;
 
