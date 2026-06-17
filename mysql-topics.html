@@ -674,10 +674,17 @@ body.modal-open {
 
 <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
 <script src="./db-manager.js"></script>
+<script src="./d1-sync.js" data-api-url=""></script>
 <script src="./tts-player.js"></script>
 <script src="./sidebar-manager.js"></script>
 <script src="./repo-sync.js"></script>
 <script>
+// ===== Cloudflare Worker API 地址配置 =====
+// 部署 Worker 后，把以下地址替换为实际的 workers.dev 域名
+// 如果 Workers 和 Pages 在同一域名下，留空则用相对路径
+window.__API_BASE__  = '';  // 例: 'https://review-cards-api.xxx.workers.dev'
+window.__D1_API_URL__ = window.__API_BASE__ || undefined;
+
 // ===== 数字雨背景动画 =====
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
@@ -1142,23 +1149,50 @@ setupTtsPlayer({
     showKnowledge();
   },
   ensureExpanded: () => toggleContent(true),
-  apiUrl: '/api/tts'
+  apiUrl: (window.__API_BASE__ || '') + '/api/tts'
 });
 
 // 数据库初始化后再显示
 (async function initDbAndShow() {
-  try {
-    await DbManager.init(PENDING_SEED, window.__PAGE_SLUG__);
-    var cards = DbManager.getCards();
-    knowledgePoints.length = 0;
-    cards.forEach(function(c) { knowledgePoints.push(c); });
-    if (typeof sidebarMgr !== 'undefined') sidebarMgr.syncFromKnowledgePoints();
-  } catch(e) {
-    // fallback: 直接用种子数据
-    if (!knowledgePoints.length && PENDING_SEED.length) {
-      PENDING_SEED.forEach(function(c) { knowledgePoints.push(c); });
+  var cards = null;
+
+  // Phase 1: 优先从 D1 云端拉取（跨设备持久化）
+  if (typeof D1Sync !== 'undefined' && D1Sync.isConfigured()) {
+    try {
+      var d1Cards = await D1Sync.init(window.__PAGE_SLUG__);
+      if (d1Cards && d1Cards.length > 0) {
+        cards = d1Cards;
+        // 存入本地 IndexedDB 作为缓存
+        await DbManager.init([], window.__PAGE_SLUG__);
+        DbManager.syncFromArray(cards);
+        cards = DbManager.getCards();
+      }
+    } catch(e) {
+      console.warn('[Init] D1 unavailable, falling back to local:', e);
     }
   }
+
+  // Phase 2: 降级到本地 DbManager（IndexedDB）
+  if (!cards || !cards.length) {
+    try {
+      await DbManager.init(PENDING_SEED, window.__PAGE_SLUG__);
+      cards = DbManager.getCards();
+    } catch(e) {
+      console.warn('[Init] DbManager failed, using seed data:', e);
+    }
+  }
+
+  // Phase 3: 最后的兜底 — 直接使用页面内嵌种子数据
+  if (!cards || !cards.length) {
+    cards = PENDING_SEED;
+  }
+
+  // 填充 knowledgePoints
+  knowledgePoints.length = 0;
+  (cards || []).forEach(function(c) {
+    knowledgePoints.push(c.id ? { id: c.id, title: c.title, content: c.content } : c);
+  });
+  if (typeof sidebarMgr !== 'undefined') sidebarMgr.syncFromKnowledgePoints();
   showKnowledge();
 })();
 

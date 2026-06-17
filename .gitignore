@@ -5,3 +5,5 @@ __pycache__/
 .serena/
 .atomcode/
 .spec-workflow/
+worker/node_modules/
+worker/.wrangler/

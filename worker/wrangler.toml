@@ -1,0 +1,14 @@
+name = "review-cards-api"
+main = "src/index.js"
+compatibility_date = "2025-04-01"
+# WebSocket 客户端连接 (new WebSocket()) 用于 Edge TTS 协议
+
+# D1 数据库绑定
+# 部署前需要:
+#   1. npx wrangler d1 create review-cards-db
+#   2. 把返回的 database_id 填入下方
+#   3. npx wrangler d1 execute review-cards-db --file=schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "review-cards-db"
+database_id = "YOUR_DATABASE_ID"
