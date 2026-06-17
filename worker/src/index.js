@@ -14,7 +14,6 @@
  */
 
 // 出站 WebSocket 连接（用于 Edge TTS 协议）
-import { connect } from 'cloudflare:websocket';
 
 /* ============================
    CORS
@@ -199,7 +198,7 @@ async function synthesizeSpeech(fullText, voice, rate, textSegments) {
   // 2. 连接 WebSocket
   const connId = uuid();
   const wsUrl  = `${EDGE_WSS_BASE}/?trustedclienttoken=${encodeURIComponent(token)}&connectionId=${connId}`;
-  const ws     = connect(wsUrl);
+  const ws     = new WebSocket(wsUrl);
 
   return new Promise((resolve, reject) => {
     const audioChunks    = [];
