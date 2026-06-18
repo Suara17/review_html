@@ -662,7 +662,65 @@
       return result;
     }
 
+    // Web Speech API 降级方案（当后端 TTS 不可用时使用浏览器内置语音合成）
+    let webSpeechSession = 0;
+
+    function stopWebSpeech() {
+      webSpeechSession += 1;
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    function speakWithWebSpeech(text, segments, targetIndex, localSession) {
+      return new Promise((resolve, reject) => {
+        if (!window.speechSynthesis) {
+          reject(new Error('浏览器不支持语音合成'));
+          return;
+        }
+        const mySession = webSpeechSession;
+        window.speechSynthesis.cancel();
+
+        const texts = segments && segments.length
+          ? segments.map(s => s.spokenText || s.visibleText)
+          : [text];
+        let segIdx = 0;
+
+        function speakNext() {
+          if (mySession !== webSpeechSession || segIdx >= texts.length) {
+            resolve();
+            return;
+          }
+          const utterance = new SpeechSynthesisUtterance(texts[segIdx]);
+          utterance.lang = 'zh-CN';
+          utterance.rate = parseFloat(rate) || 1.0;
+          utterance.onstart = () => {
+            if (mySession !== webSpeechSession) return;
+            setActiveSegment(segIdx);
+            setStatus(`正在朗读第 ${targetIndex + 1} 块（浏览器语音）`, 'playing');
+          };
+          utterance.onend = () => {
+            if (mySession !== webSpeechSession) return;
+            segIdx += 1;
+            speakNext();
+          };
+          utterance.onerror = (e) => {
+            if (mySession !== webSpeechSession) return;
+            if (segIdx < texts.length - 1) {
+              segIdx += 1;
+              speakNext();
+            } else {
+              reject(new Error(e.error || '浏览器语音合成失败'));
+            }
+          };
+          window.speechSynthesis.speak(utterance);
+        }
+        speakNext();
+      });
+    }
+
     function stopAudio(updateStatus) {
+      stopWebSpeech();
       sessionId += 1;
       currentMode = 'idle';
       stopProgressTracking();
@@ -722,14 +780,27 @@
           setStatus(`正在循环朗读第 ${targetIndex + 1} 块`, 'playing');
           return audio.play();
         })
-        .catch((error) => {
+        .catch(async (error) => {
           if (localSession !== sessionId) return;
           if (playPromise) {
             playPromise.catch(() => {});
           }
           console.error(error);
           stopProgressTracking();
-          setStatus(`朗读失败：${error.message}`, 'error');
+          // 降级到浏览器内置 TTS（Web Speech API）
+          try {
+            const fallbackText = getSpeechText(targetIndex);
+            const fallbackSegments = currentRendered?.segments || [];
+            if (!fallbackText) throw new Error('没有可朗读文本');
+            setStatus('正在使用浏览器语音朗读...', 'loading');
+            await speakWithWebSpeech(fallbackText, fallbackSegments, targetIndex, localSession);
+            if (localSession === sessionId) {
+              setStatus('朗读完成', 'idle');
+            }
+          } catch (speechErr) {
+            console.error('Web Speech fallback also failed:', speechErr);
+            setStatus(`朗读失败：${error.message}`, 'error');
+          }
         });
     }
 

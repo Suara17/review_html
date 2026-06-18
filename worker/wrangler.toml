@@ -1,7 +1,14 @@
 name = "review"
 main = "src/index.js"
 compatibility_date = "2025-04-01"
-# WebSocket 客户端连接 (connect()) 用于 Edge TTS 协议
+
+# TTS 上游地址（建议设置）
+# Worker 会把 /api/tts 请求转发到上游 Vercel Python API 进行合成。
+# 若不设置，Worker 会自动从请求来源（Origin/Referer）推断上游地址，
+# 大多数情况下都能正常工作（因为前端页面本身托管在 Vercel 上）。
+# 但显式设置可以避免来源推断失败，同时更可控。
+# [vars]
+# TTS_UPSTREAM = "https://your-vercel-project.vercel.app"
 
 # D1 数据库绑定
 [[d1_databases]]
