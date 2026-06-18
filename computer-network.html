@@ -1,52 +1,56 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>计算机网络知识点笔记</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5/dist/full.css" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #ffffff;
   display: flex;
   height: 100vh;
   overflow: hidden;
   background: #000;
 }
 
-/* ===== 数字雨背景 ===== */
+/* ─── 数字雨背景 ─── */
 #matrix-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  opacity: 0.3;
-}
-
-/* ===== 扫描线覆盖 ===== */
-.scanlines {
-  position: fixed;
-  top: 0; left: 0;
+  position: fixed; top: 0; left: 0;
   width: 100vw; height: 100vh;
-  z-index: 1;
+  z-index: 0; opacity: 0.12;
   pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,255,255,0.02) 2px,
-    rgba(0,255,255,0.02) 4px
-  );
+}
+.scanlines {
+  position: fixed; top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 1; pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+    transparent, transparent 2px,
+    rgba(34,211,238,0.015) 2px, rgba(34,211,238,0.015) 4px);
 }
 
-/* ===== 主内容 & 侧边栏 ===== */
+/* ─── 主题覆盖（与首页统一） ─── */
+:root {
+  --color-base-100: #0d0d14;
+  --color-base-200: #14141e;
+  --color-base-300: #1c1c2a;
+  --color-base-content: #e2e2f0;
+  --color-primary: #22d3ee;
+  --color-primary-content: #02161c;
+  --color-secondary: #818cf8;
+  --color-secondary-content: #0e0a22;
+  --color-accent: #f472b6;
+  --color-neutral: #1a1a28;
+  --color-info: #67e8f9;
+  --color-success: #6ee7b7;
+  --color-warning: #fcd34d;
+  --color-error: #fca5a5;
+}
+
 .main-content, .sidebar { position: relative; z-index: 2; }
 
-/* ----- 桌面端主区域 ----- */
 .main-content {
   flex: 1;
   display: flex;
@@ -55,245 +59,166 @@ body {
   overflow: hidden;
 }
 
-/* 粘性头部：进度条 + 标题 */
+/* ─── 粘性头部 ─── */
 .sticky-header {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(0,8,16,0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid rgba(0,255,255,0.2);
+  background: color-mix(in srgb, var(--color-base-100) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid var(--color-base-300);
 }
 
-.sticky-header .progress-bar-container {
-  width: 100%;
-  height: 5px;
-  background: rgba(0,255,255,0.1);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-.sticky-header .progress-bar {
-  width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, #00ffff, #00ccff, #00ffff);
-  box-shadow: 0 0 12px #00ffff, 0 0 24px rgba(0,255,255,0.4);
-  transition: width 1s linear;
-  background-size: 200% 100%;
-  animation: progressGlow 2s ease infinite;
-  border-radius: 3px;
-}
-@keyframes progressGlow {
-  0%,100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
+#progress-bar::-moz-progress-bar { background: var(--color-primary); }
+#progress-bar::-webkit-progress-value { background: var(--color-primary); }
+#progress-bar { transition: width 1s linear; }
 
 #knowledge-title {
-  font-size: 1.1em;
-  color: #00ffff;
-  text-shadow: 0 0 8px rgba(0,255,255,0.4);
   cursor: pointer;
   padding-right: 60px;
   line-height: 1.4;
   min-height: 1.6em;
 }
 #knowledge-title:hover {
-  text-shadow: 0 0 15px #00ffff, 0 0 30px rgba(0,255,255,0.3);
+  color: var(--color-primary);
 }
 
-/* 卡片（滚动区域） */
-.card {
+/* ─── 内容区 ─── */
+#card {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 20px 80px;
-  background: rgba(0,10,20,0.35);
-  margin: 0;
+  padding: 24px 20px 90px;
+  background: color-mix(in srgb, var(--color-base-200) 40%, transparent);
   position: relative;
 }
-
-.card .content {
+#knowledge-container {
   font-size: 1.18em;
   line-height: 1.85em;
 }
-.card .content strong {
-  color: #00ffcc;
-  text-shadow: 0 0 8px rgba(0,255,204,0.4);
+#knowledge-container strong {
+  color: var(--color-primary);
 }
 
-/* 倒计时（固定在头部右侧） */
-.countdown {
+/* ─── 倒计时 ─── */
+#countdown {
   position: absolute;
-  top: 14px;
+  top: 12px;
   right: 20px;
-  font-size: 1.3em;
-  background: rgba(0,255,255,0.12);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  padding: 6px 16px;
-  border-radius: 10px;
-  color: #00ffff;
-  text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.5);
-  font-weight: bold;
-  border: 1px solid rgba(0,255,255,0.4);
-  letter-spacing: 1px;
   z-index: 11;
 }
 
-/* ===== 下一个按钮 ===== */
-.next-btn {
+/* ─── 编辑弹窗 ─── */
+.edit-modal {
   position: fixed;
-  bottom: 24px;
-  right: 30px;
-  z-index: 20;
-  background: rgba(0,255,255,0.15);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(0,255,255,0.4);
-  color: #00ffff;
-  padding: 12px 28px;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,0.72);
+}
+.edit-modal[hidden] { display: none; }
+.edit-modal.open { display: flex; }
+
+.edit-modal-editor {
+  min-height: 280px;
+  padding: 18px;
+  border: 1px solid var(--color-base-300);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-base-200) 80%, transparent);
+  color: var(--color-base-content);
+  line-height: 1.8;
+  outline: none;
+}
+.edit-modal-editor:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 20px rgba(34,211,238,0.12);
+}
+.edit-modal-editor strong { color: var(--color-primary); }
+.edit-modal-editor p { margin: 0 0 1em; }
+.edit-modal-editor ul, .edit-modal-editor ol { margin: 0 0 1.2em 1.4em; }
+.edit-modal-editor li { margin-bottom: 0.45em; }
+.edit-modal-editor pre {
+  margin: 0 0 1.2em;
+  padding: 14px 16px;
   border-radius: 12px;
-  font-size: 1.05em;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
-  text-shadow: 0 0 8px rgba(0,255,255,0.5);
-  letter-spacing: 1px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.45);
+  border: 1px solid var(--color-base-300);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+  line-height: 1.7;
+  color: var(--color-base-content);
 }
-.next-btn:hover {
-  background: rgba(0,255,255,0.25);
-  box-shadow: 0 0 30px rgba(0,255,255,0.3), 0 4px 20px rgba(0,0,0,0.5);
-  transform: scale(1.05);
+.edit-modal-editor code {
+  font-family: 'Consolas', 'SFMono-Regular', monospace;
+  color: var(--color-primary);
 }
-.next-btn:active {
-  transform: scale(0.95);
+.edit-modal-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+.edit-modal-editor th, .edit-modal-editor td {
+  border: 1px solid var(--color-base-300);
+  padding: 8px 10px;
+  text-align: left;
+}
+.edit-modal-editor th {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
 }
 
-/* ===== 侧边栏 ===== */
+/* ─── 侧边栏 ─── */
 .sidebar {
-  width: 340px;
-  background: rgba(0,10,20,0.85);
+  width: 320px;
+  background: color-mix(in srgb, var(--color-base-100) 85%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding: 20px;
   overflow-y: auto;
-  border-left: 2px solid rgba(0,255,255,0.3);
+  border-left: 1px solid var(--color-base-300);
   position: relative;
   z-index: 2;
 }
-.sidebar h3 {
-  color: #00ffff;
-  text-align: center;
-  margin-top: 0;
-  text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.3);
-  font-size: 1.15em;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0,255,255,0.15);
-  letter-spacing: 2px;
-}
+.sidebar-close { display: none; }
 
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  border-bottom: 1px solid rgba(0,255,255,0.15);
-  padding-bottom: 12px;
-}
-.sidebar-header h3 {
-  text-align: left;
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0;
-}
-
-.sidebar-close {
-  display: none;
-  background: none;
-  border: none;
-  color: #00ffff;
-  font-size: 1.4em;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.3s;
-}
-.sidebar-close:hover {
-  background: rgba(0,255,255,0.15);
-}
-
-.sidebar ul {
-  list-style: none;
-}
+.sidebar ul { list-style: none; }
 .sidebar li {
-  padding: 12px 16px;
-  margin: 5px 0;
+  padding: 10px 14px;
+  margin: 3px 0;
   cursor: pointer;
-  border-radius: 10px;
-  transition: all 0.3s;
-  font-size: 1em;
+  border-radius: 8px;
+  font-size: 0.92em;
   border: 1px solid transparent;
-  position: relative;
-  overflow: hidden;
-}
-.sidebar li::before {
-  content: '>';
-  position: absolute;
-  left: -20px;
-  color: #00ffff;
-  opacity: 0;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 .sidebar li:hover {
-  background: rgba(0,255,255,0.15);
-  border-color: rgba(0,255,255,0.3);
-  transform: translateX(12px);
-  box-shadow: 0 0 20px rgba(0,255,255,0.1);
-}
-.sidebar li:hover::before {
-  left: 6px;
-  opacity: 1;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 .sidebar li.active {
-  background: rgba(0,255,255,0.12);
-  border-color: rgba(0,255,255,0.4);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
-/* ===== 侧边栏切换按钮（手机端显示） ===== */
+/* ─── 侧边栏切换（手机端） ─── */
 .sidebar-toggle {
   display: none;
   position: fixed;
   bottom: 24px;
   left: 24px;
   z-index: 30;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: rgba(0,255,255,0.15);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(0,255,255,0.4);
-  color: #00ffff;
-  font-size: 1.5em;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  align-items: center;
-  justify-content: center;
   pointer-events: none;
   opacity: 0;
 }
-.sidebar-toggle:hover {
-  background: rgba(0,255,255,0.25);
-  box-shadow: 0 0 30px rgba(0,255,255,0.2), 0 4px 20px rgba(0,0,0,0.5);
-}
-.sidebar-toggle:active {
-  transform: scale(0.9);
-}
-
-/* 侧边栏遮罩 */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -305,373 +230,112 @@ body {
   transition: opacity 0.3s;
 }
 
+/* ─── 滚动条 ─── */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-base-300); border-radius: 3px; }
 
-/* ===== 内容操作 ===== */
-.content-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 18px;
-}
+body.modal-open { overflow: hidden; }
 
-.edit-btn,
-.edit-modal-close,
-.edit-modal-btn {
-  border: 1px solid rgba(0,255,255,0.35);
-  background: rgba(0,255,255,0.12);
-  color: #00ffff;
-}
-
-.edit-btn,
-.edit-modal-btn {
-  min-width: 72px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 0.92em;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.edit-btn:hover,
-.edit-modal-btn:hover {
-  background: rgba(0,255,255,0.2);
-  box-shadow: 0 0 18px rgba(0,255,255,0.18);
-}
-
-.edit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-#click-hint {
-  margin-top: 12px;
-  font-size: 0.85em;
-  opacity: 0.35;
-  color: #00ffff;
-}
-
-.edit-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0,0,0,0.72);
-}
-
-.edit-modal[hidden] {
-  display: none;
-}
-
-.edit-modal.open {
-  display: flex;
-}
-
-.edit-modal-panel {
-  width: min(860px, 100%);
-  max-height: min(80vh, 760px);
-  display: flex;
-  flex-direction: column;
-  background: rgba(0,12,24,0.96);
-  border: 1px solid rgba(0,255,255,0.24);
-  border-radius: 18px;
-  box-shadow: 0 18px 45px rgba(0,0,0,0.45);
-  overflow: hidden;
-}
-
-.edit-modal-header,
-.edit-modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 18px;
-  background: rgba(0,255,255,0.06);
-}
-
-.edit-modal-header h3 {
-  margin: 0;
-  font-size: 1em;
-  color: #9fffe7;
-}
-
-.edit-modal-close {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  font-size: 1.2em;
-  cursor: pointer;
-}
-
-.edit-modal-body {
-  padding: 18px;
-  overflow: auto;
-}
-
-.edit-modal-editor {
-  min-height: 280px;
-  padding: 18px;
-  border: 1px solid rgba(0,255,255,0.18);
-  border-radius: 14px;
-  background: rgba(0,0,0,0.38);
-  color: #ffffff;
-  line-height: 1.8;
-  outline: none;
-}
-
-.edit-modal-editor:focus {
-  border-color: rgba(0,255,255,0.45);
-  box-shadow: 0 0 20px rgba(0,255,255,0.16);
-}
-
-.edit-modal-editor strong {
-  color: #00ffcc;
-}
-
-.edit-modal-editor p {
-  margin: 0 0 1em;
-}
-
-.edit-modal-editor ul,
-.edit-modal-editor ol {
-  margin: 0 0 1.2em 1.4em;
-}
-
-.edit-modal-editor li {
-  margin-bottom: 0.45em;
-}
-
-.edit-modal-editor .embedded-entry {
-  margin: 0 0 1.1em;
-}
-
-.edit-modal-editor .embedded-entry-title {
-  margin: 0 0 0.55em;
-  color: #9fffe7;
-  font-weight: 700;
-}
-
-.edit-modal-editor pre {
-  margin: 0 0 1.2em;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(0,255,255,0.16);
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: 0.92em;
-  line-height: 1.7;
-}
-
-.edit-modal-editor code {
-  font-family: 'Consolas', 'SFMono-Regular', monospace;
-  color: #9fffe7;
-}
-
-.edit-modal-editor table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0 0 1.2em;
-  font-size: 0.92em;
-  display: block;
-  overflow-x: auto;
-}
-
-.edit-modal-editor th,
-.edit-modal-editor td {
-  border: 1px solid rgba(0,255,255,0.18);
-  padding: 8px 10px;
-  text-align: left;
-}
-
-.edit-modal-editor th {
-  background: rgba(0,255,255,0.08);
-  color: #9fffe7;
-}
-
-.edit-modal-actions {
-  justify-content: flex-end;
-}
-
-body.modal-open {
-  overflow: hidden;
-}
-
-/* ===== 手机适配 ===== */
+/* ─── 手机适配 ─── */
 @media (max-width: 768px) {
-  body {
-    flex-direction: column;
-    overflow: hidden;
-  }
-  #matrix-canvas { opacity: 0.15; }
+  body { flex-direction: column; overflow: hidden; }
+  #matrix-canvas { opacity: 0.08; }
+  .main-content { flex: 1; height: 100vh; }
+  .sticky-header { padding: 10px 14px 8px; }
+  #knowledge-title { font-size: 0.95em; padding-right: 50px; }
+  #card { padding: 14px 14px 90px; }
+  #knowledge-container { font-size: 0.95em; line-height: 1.6em; }
 
-  .main-content {
-    flex: 1;
-    height: 100vh;
-  }
-
-  .sticky-header {
-    padding: 10px 14px 10px;
-  }
-  .sticky-header .progress-bar-container {
-    height: 4px;
-    margin-bottom: 8px;
-  }
-  #knowledge-title {
-    font-size: 0.95em;
-    padding-right: 50px;
-  }
-
-  .card {
-    padding: 14px 14px 90px;
-  }
-  .card .content {
-    font-size: 0.95em;
-    line-height: 1.6em;
-  }
-
-  .countdown {
-    top: 10px;
-    right: 14px;
-    font-size: 1.05em;
-    padding: 4px 12px;
-  }
-
-  .next-btn {
-    bottom: 20px;
-    right: 20px;
-    padding: 10px 22px;
-    font-size: 0.9em;
-  }
-
-  /* 侧边栏切换按钮始终显示（手机端） */
   .sidebar-toggle {
     display: flex;
     pointer-events: auto;
     opacity: 1;
   }
 
-  /* 侧边栏：从左侧滑入覆盖 */
   .sidebar {
     position: fixed;
     top: 0;
-    right: -320px;
+    right: -300px;
     left: auto;
-    width: 300px;
+    width: 280px;
     height: 100vh;
     z-index: 30;
-    border-right: none;
-    border-left: 2px solid rgba(0,255,255,0.3);
+    border-left: 1px solid var(--color-base-300);
     padding: 16px;
     transition: right 0.3s ease;
-    background: rgba(0,8,16,0.92);
+    background: color-mix(in srgb, var(--color-base-100) 95%, transparent);
   }
-  .sidebar.open {
-    right: 0;
-  }
-  .sidebar-close {
-    display: block;
-  }
-  .sidebar ul {
-    padding-bottom: 60px;
-  }
-  .sidebar li {
-    padding: 10px 14px;
-    font-size: 0.92em;
-    margin: 3px 0;
-  }
+  .sidebar.open { right: 0; }
+  .sidebar-close { display: block; }
+  .sidebar ul { padding-bottom: 60px; }
+  .sidebar-overlay.show { display: block; opacity: 1; }
 
-  .sidebar-overlay.show {
-    display: block;
-    opacity: 1;
-  }
-
-  /* 右侧滑出的侧边栏：从右侧边缘向左滑打开 */
   .sidebar-swipe-area {
     position: fixed;
-    top: 0;
-    right: 0;
+    top: 0; right: 0;
     width: 20px;
     height: 100vh;
     z-index: 5;
   }
-
-  
-#click-hint {
-    font-size: 0.78em;
-    margin-top: 14px;
-  }
 }
+
 </style>
 </head>
 <body>
 
 <!-- 数字雨 Canvas -->
+
 <canvas id="matrix-canvas"></canvas>
-<!-- 扫描线叠层 -->
 <div class="scanlines"></div>
 
 <div class="main-content">
-  <!-- 粘性头部：进度条 + 标题 -->
   <div class="sticky-header">
-    <div class="progress-bar-container">
-      <div class="progress-bar" id="progress-bar"></div>
+    <div class="flex items-center gap-3 mb-2">
+      <progress id="progress-bar" class="progress w-full" value="0" max="100"></progress>
+      <span id="countdown" class="badge badge-soft badge-primary shrink-0 tabular-nums">30</span>
     </div>
-    <h2 id="knowledge-title" onclick="toggleContent(true)">加载中...</h2>
+    <h2 id="knowledge-title" class="text-base md:text-lg font-semibold tracking-tight" onclick="toggleContent(true)">加载中...</h2>
   </div>
 
-  <!-- 倒计时（固定在头部右上角） -->
-  <div class="countdown" id="countdown">30</div>
-
-  <!-- 卡片（滚动区域） -->
-  <div class="card" id="card">
-    <div id="knowledge-container" class="content"></div>
-    <div class="content-toolbar">
-      <button class="edit-btn" id="edit-btn" type="button">修改</button>
+  <div id="card">
+    <div id="knowledge-container" class="content px-2"></div>
+    <div class="flex justify-end mt-5">
+      <button class="btn btn-soft btn-primary btn-sm" id="edit-btn" type="button">修改</button>
     </div>
-    <div id="click-hint">点标题展开，点修改编辑</div>
+    <p id="click-hint" class="text-xs text-base-content/30 mt-3">点标题展开 · 点修改编辑</p>
   </div>
 
-  <button class="next-btn" id="next-btn">下一个 →</button>
+  <button class="btn btn-soft btn-primary fixed bottom-6 right-6 z-20 shadow-lg" id="next-btn">下一个 →</button>
 </div>
-
 
 <div class="edit-modal" id="edit-modal" hidden>
-  <div class="edit-modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
-    <div class="edit-modal-header">
-      <h3 id="edit-modal-title">修改内容</h3>
-      <button class="edit-modal-close" id="edit-modal-close" type="button">✕</button>
+  <div class="modal-box max-w-3xl max-h-[80vh] flex flex-col p-0 overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div class="flex items-center justify-between gap-3 px-5 py-4 bg-base-200/50">
+      <h3 id="edit-modal-title" class="font-semibold text-base-content">修改内容</h3>
+      <button class="btn btn-ghost btn-sm btn-square" id="edit-modal-close" type="button">✕</button>
     </div>
-    <div class="edit-modal-body">
+    <div class="flex-1 overflow-auto p-5">
       <div class="edit-modal-editor" id="edit-modal-editor" contenteditable="true" spellcheck="false"></div>
     </div>
-    <div class="edit-modal-actions">
-      <button class="edit-modal-btn" id="edit-cancel-btn" type="button">取消</button>
-      <button class="edit-modal-btn" id="edit-save-btn" type="button">保存</button>
+    <div class="flex justify-end gap-2 px-5 py-3 bg-base-200/50">
+      <button class="btn btn-ghost btn-sm" id="edit-cancel-btn" type="button">取消</button>
+      <button class="btn btn-primary btn-sm" id="edit-save-btn" type="button">保存</button>
     </div>
   </div>
 </div>
 
-<!-- 侧边栏（桌面端侧栏 / 手机端滑动抽屉） -->
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <h3>计算机网络高频知识点</h3>
-    <button class="sidebar-close" id="sidebar-close">✕</button>
+  <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300">
+    <h3 class="font-semibold text-sm text-base-content/70 tracking-wider">计算机网络高频知识点</h3>
+    <button class="btn btn-ghost btn-xs btn-square sidebar-close" id="sidebar-close">✕</button>
   </div>
   <ul id="sidebar-list"></ul>
 </div>
 
-<!-- 侧边栏切换按钮（手机端） -->
-<button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+<button class="sidebar-toggle btn btn-square btn-soft btn-primary fixed bottom-6 left-6 z-30 shadow-lg" id="sidebar-toggle">☰</button>
 <div class="sidebar-swipe-area" id="sidebar-swipe-area" aria-hidden="true"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
 <script src="./db-manager.js"></script>
 <script src="./d1-sync.js" data-api-url=""></script>

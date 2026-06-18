@@ -1,52 +1,54 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Python知识点笔记</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5/dist/full.css" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
+/* ─── 数字雨背景 ─── */
+#matrix-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 0; opacity: 0.12;
+  pointer-events: none;
+}
+.scanlines {
+  position: fixed; top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 1; pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+    transparent, transparent 2px,
+    rgba(34,211,238,0.015) 2px, rgba(34,211,238,0.015) 4px);
+}
 
+/* ─── 主题覆盖（与首页统一） ─── */
+:root {
+  --color-base-100: #0d0d14;
+  --color-base-200: #14141e;
+  --color-base-300: #1c1c2a;
+  --color-base-content: #e2e2f0;
+  --color-primary: #22d3ee;
+  --color-primary-content: #02161c;
+  --color-secondary: #818cf8;
+  --color-secondary-content: #0e0a22;
+  --color-accent: #f472b6;
+  --color-neutral: #1a1a28;
+  --color-info: #67e8f9;
+  --color-success: #6ee7b7;
+  --color-warning: #fcd34d;
+  --color-error: #fca5a5;
+}
+
+/* ─── 布局 ─── */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #ffffff;
   display: flex;
   height: 100vh;
   overflow: hidden;
   background: #000;
 }
-
-/* ===== 数字雨背景 ===== */
-#matrix-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  opacity: 0.3;
-}
-
-/* ===== 扫描线覆盖 ===== */
-.scanlines {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  z-index: 1;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,255,255,0.02) 2px,
-    rgba(0,255,255,0.02) 4px
-  );
-}
-
-/* ===== 主内容 & 侧边栏 ===== */
 .main-content, .sidebar { position: relative; z-index: 2; }
 
-/* ----- 桌面端主区域 ----- */
 .main-content {
   flex: 1;
   display: flex;
@@ -55,245 +57,170 @@ body {
   overflow: hidden;
 }
 
-/* 粘性头部：进度条 + 标题 */
+/* ─── 粘性头部 ─── */
 .sticky-header {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(0,8,16,0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid rgba(0,255,255,0.2);
+  background: color-mix(in srgb, var(--color-base-100) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid var(--color-base-300);
 }
 
-.sticky-header .progress-bar-container {
-  width: 100%;
-  height: 5px;
-  background: rgba(0,255,255,0.1);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-.sticky-header .progress-bar {
-  width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, #00ffff, #00ccff, #00ffff);
-  box-shadow: 0 0 12px #00ffff, 0 0 24px rgba(0,255,255,0.4);
-  transition: width 1s linear;
-  background-size: 200% 100%;
-  animation: progressGlow 2s ease infinite;
-  border-radius: 3px;
-}
-@keyframes progressGlow {
-  0%,100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
+/* ─── 进度条（DaisyUI progress 定制） ─── */
+#progress-bar::-moz-progress-bar { background: var(--color-primary); }
+#progress-bar::-webkit-progress-value { background: var(--color-primary); }
+#progress-bar { transition: width 1s linear; }
 
 #knowledge-title {
-  font-size: 1.1em;
-  color: #00ffff;
-  text-shadow: 0 0 8px rgba(0,255,255,0.4);
   cursor: pointer;
   padding-right: 60px;
   line-height: 1.4;
   min-height: 1.6em;
 }
 #knowledge-title:hover {
-  text-shadow: 0 0 15px #00ffff, 0 0 30px rgba(0,255,255,0.3);
+  color: var(--color-primary);
 }
 
-/* 卡片（滚动区域） */
-.card {
+/* ─── 内容区 ─── */
+#card {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 20px 80px;
-  background: rgba(0,10,20,0.35);
-  margin: 0;
+  padding: 24px 20px 90px;
+  background: color-mix(in srgb, var(--color-base-200) 40%, transparent);
   position: relative;
 }
-
-.card .content {
-  font-size: 1.18em;
+#knowledge-container {
+  font-size: 1.1em;
   line-height: 1.85em;
 }
-.card .content strong {
-  color: #00ffcc;
-  text-shadow: 0 0 8px rgba(0,255,204,0.4);
+#knowledge-container strong {
+  color: var(--color-primary);
 }
 
-/* 倒计时（固定在头部右侧） */
-.countdown {
+/* ─── 倒计时 ─── */
+#countdown {
   position: absolute;
-  top: 14px;
+  top: 12px;
   right: 20px;
-  font-size: 1.3em;
-  background: rgba(0,255,255,0.12);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  padding: 6px 16px;
-  border-radius: 10px;
-  color: #00ffff;
-  text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.5);
-  font-weight: bold;
-  border: 1px solid rgba(0,255,255,0.4);
-  letter-spacing: 1px;
   z-index: 11;
 }
 
-/* ===== 下一个按钮 ===== */
-.next-btn {
+/* ─── 编辑弹窗 ─── */
+.edit-modal {
   position: fixed;
-  bottom: 24px;
-  right: 30px;
-  z-index: 20;
-  background: rgba(0,255,255,0.15);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(0,255,255,0.4);
-  color: #00ffff;
-  padding: 12px 28px;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,0.72);
+}
+.edit-modal[hidden] { display: none; }
+.edit-modal.open { display: flex; }
+
+.edit-modal-editor {
+  min-height: 280px;
+  padding: 18px;
+  border: 1px solid var(--color-base-300);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-base-200) 80%, transparent);
+  color: var(--color-base-content);
+  line-height: 1.8;
+  outline: none;
+}
+.edit-modal-editor:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 20px rgba(34,211,238,0.12);
+}
+.edit-modal-editor strong { color: var(--color-primary); }
+.edit-modal-editor p { margin: 0 0 1em; }
+.edit-modal-editor ul, .edit-modal-editor ol { margin: 0 0 1.2em 1.4em; }
+.edit-modal-editor li { margin-bottom: 0.45em; }
+.edit-modal-editor pre {
+  margin: 0 0 1.2em;
+  padding: 14px 16px;
   border-radius: 12px;
-  font-size: 1.05em;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
-  text-shadow: 0 0 8px rgba(0,255,255,0.5);
-  letter-spacing: 1px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.45);
+  border: 1px solid var(--color-base-300);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+  line-height: 1.7;
+  color: var(--color-base-content);
 }
-.next-btn:hover {
-  background: rgba(0,255,255,0.25);
-  box-shadow: 0 0 30px rgba(0,255,255,0.3), 0 4px 20px rgba(0,0,0,0.5);
-  transform: scale(1.05);
+.edit-modal-editor code {
+  font-family: 'Consolas', 'SFMono-Regular', monospace;
+  color: var(--color-primary);
 }
-.next-btn:active {
-  transform: scale(0.95);
+.edit-modal-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  font-size: 0.92em;
+  display: block;
+  overflow-x: auto;
+}
+.edit-modal-editor th, .edit-modal-editor td {
+  border: 1px solid var(--color-base-300);
+  padding: 8px 10px;
+  text-align: left;
+}
+.edit-modal-editor th {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
 }
 
-/* ===== 侧边栏 ===== */
+/* ─── 侧边栏 ─── */
 .sidebar {
-  width: 340px;
-  background: rgba(0,10,20,0.85);
+  width: 320px;
+  background: color-mix(in srgb, var(--color-base-100) 85%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding: 20px;
   overflow-y: auto;
-  border-left: 2px solid rgba(0,255,255,0.3);
+  border-left: 1px solid var(--color-base-300);
   position: relative;
   z-index: 2;
 }
-.sidebar h3 {
-  color: #00ffff;
-  text-align: center;
-  margin-top: 0;
-  text-shadow: 0 0 10px #00ffff, 0 0 20px rgba(0,255,255,0.3);
-  font-size: 1.15em;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0,255,255,0.15);
-  letter-spacing: 2px;
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  border-bottom: 1px solid rgba(0,255,255,0.15);
-  padding-bottom: 12px;
-}
-.sidebar-header h3 {
-  text-align: left;
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0;
-}
-
 .sidebar-close {
   display: none;
-  background: none;
-  border: none;
-  color: #00ffff;
-  font-size: 1.4em;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.3s;
-}
-.sidebar-close:hover {
-  background: rgba(0,255,255,0.15);
 }
 
-.sidebar ul {
-  list-style: none;
-}
+.sidebar ul { list-style: none; }
 .sidebar li {
-  padding: 12px 16px;
-  margin: 5px 0;
+  padding: 10px 14px;
+  margin: 3px 0;
   cursor: pointer;
-  border-radius: 10px;
-  transition: all 0.3s;
-  font-size: 1em;
+  border-radius: 8px;
+  font-size: 0.92em;
   border: 1px solid transparent;
-  position: relative;
-  overflow: hidden;
-}
-.sidebar li::before {
-  content: '>';
-  position: absolute;
-  left: -20px;
-  color: #00ffff;
-  opacity: 0;
-  transition: all 0.3s;
+  transition: all 0.2s;
 }
 .sidebar li:hover {
-  background: rgba(0,255,255,0.15);
-  border-color: rgba(0,255,255,0.3);
-  transform: translateX(12px);
-  box-shadow: 0 0 20px rgba(0,255,255,0.1);
-}
-.sidebar li:hover::before {
-  left: 6px;
-  opacity: 1;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 .sidebar li.active {
-  background: rgba(0,255,255,0.12);
-  border-color: rgba(0,255,255,0.4);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
-/* ===== 侧边栏切换按钮（手机端显示） ===== */
+/* ─── 侧边栏切换（手机端） ─── */
 .sidebar-toggle {
   display: none;
   position: fixed;
   bottom: 24px;
   left: 24px;
   z-index: 30;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: rgba(0,255,255,0.15);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(0,255,255,0.4);
-  color: #00ffff;
-  font-size: 1.5em;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  align-items: center;
-  justify-content: center;
   pointer-events: none;
   opacity: 0;
 }
-.sidebar-toggle:hover {
-  background: rgba(0,255,255,0.25);
-  box-shadow: 0 0 30px rgba(0,255,255,0.2), 0 4px 20px rgba(0,0,0,0.5);
-}
-.sidebar-toggle:active {
-  transform: scale(0.9);
-}
 
-/* 侧边栏遮罩 */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -305,373 +232,118 @@ body {
   transition: opacity 0.3s;
 }
 
+/* ─── 滚动条 ─── */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
-::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-base-300); border-radius: 3px; }
 
-/* ===== 内容操作 ===== */
-.content-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 18px;
-}
+body.modal-open { overflow: hidden; }
 
-.edit-btn,
-.edit-modal-close,
-.edit-modal-btn {
-  border: 1px solid rgba(0,255,255,0.35);
-  background: rgba(0,255,255,0.12);
-  color: #00ffff;
-}
-
-.edit-btn,
-.edit-modal-btn {
-  min-width: 72px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 0.92em;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-
-.edit-btn:hover,
-.edit-modal-btn:hover {
-  background: rgba(0,255,255,0.2);
-  box-shadow: 0 0 18px rgba(0,255,255,0.18);
-}
-
-.edit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-#click-hint {
-  margin-top: 12px;
-  font-size: 0.85em;
-  opacity: 0.35;
-  color: #00ffff;
-}
-
-.edit-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0,0,0,0.72);
-}
-
-.edit-modal[hidden] {
-  display: none;
-}
-
-.edit-modal.open {
-  display: flex;
-}
-
-.edit-modal-panel {
-  width: min(860px, 100%);
-  max-height: min(80vh, 760px);
-  display: flex;
-  flex-direction: column;
-  background: rgba(0,12,24,0.96);
-  border: 1px solid rgba(0,255,255,0.24);
-  border-radius: 18px;
-  box-shadow: 0 18px 45px rgba(0,0,0,0.45);
-  overflow: hidden;
-}
-
-.edit-modal-header,
-.edit-modal-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 18px;
-  background: rgba(0,255,255,0.06);
-}
-
-.edit-modal-header h3 {
-  margin: 0;
-  font-size: 1em;
-  color: #9fffe7;
-}
-
-.edit-modal-close {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  font-size: 1.2em;
-  cursor: pointer;
-}
-
-.edit-modal-body {
-  padding: 18px;
-  overflow: auto;
-}
-
-.edit-modal-editor {
-  min-height: 280px;
-  padding: 18px;
-  border: 1px solid rgba(0,255,255,0.18);
-  border-radius: 14px;
-  background: rgba(0,0,0,0.38);
-  color: #ffffff;
-  line-height: 1.8;
-  outline: none;
-}
-
-.edit-modal-editor:focus {
-  border-color: rgba(0,255,255,0.45);
-  box-shadow: 0 0 20px rgba(0,255,255,0.16);
-}
-
-.edit-modal-editor strong {
-  color: #00ffcc;
-}
-
-.edit-modal-editor p {
-  margin: 0 0 1em;
-}
-
-.edit-modal-editor ul,
-.edit-modal-editor ol {
-  margin: 0 0 1.2em 1.4em;
-}
-
-.edit-modal-editor li {
-  margin-bottom: 0.45em;
-}
-
-.edit-modal-editor .embedded-entry {
-  margin: 0 0 1.1em;
-}
-
-.edit-modal-editor .embedded-entry-title {
-  margin: 0 0 0.55em;
-  color: #9fffe7;
-  font-weight: 700;
-}
-
-.edit-modal-editor pre {
-  margin: 0 0 1.2em;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(0,255,255,0.16);
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: 0.92em;
-  line-height: 1.7;
-}
-
-.edit-modal-editor code {
-  font-family: 'Consolas', 'SFMono-Regular', monospace;
-  color: #9fffe7;
-}
-
-.edit-modal-editor table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0 0 1.2em;
-  font-size: 0.92em;
-  display: block;
-  overflow-x: auto;
-}
-
-.edit-modal-editor th,
-.edit-modal-editor td {
-  border: 1px solid rgba(0,255,255,0.18);
-  padding: 8px 10px;
-  text-align: left;
-}
-
-.edit-modal-editor th {
-  background: rgba(0,255,255,0.08);
-  color: #9fffe7;
-}
-
-.edit-modal-actions {
-  justify-content: flex-end;
-}
-
-body.modal-open {
-  overflow: hidden;
-}
-
-/* ===== 手机适配 ===== */
+/* ─── 手机适配 ─── */
 @media (max-width: 768px) {
-  body {
-    flex-direction: column;
-    overflow: hidden;
-  }
-  #matrix-canvas { opacity: 0.15; }
+  body { flex-direction: column; overflow: hidden; }
+  #matrix-canvas { opacity: 0.08; }
+  .main-content { flex: 1; height: 100vh; }
+  .sticky-header { padding: 10px 14px 8px; }
+  #knowledge-title { font-size: 0.95em; padding-right: 50px; }
+  #card { padding: 14px 14px 90px; }
+  #knowledge-container { font-size: 0.95em; line-height: 1.6em; }
 
-  .main-content {
-    flex: 1;
-    height: 100vh;
-  }
-
-  .sticky-header {
-    padding: 10px 14px 10px;
-  }
-  .sticky-header .progress-bar-container {
-    height: 4px;
-    margin-bottom: 8px;
-  }
-  #knowledge-title {
-    font-size: 0.95em;
-    padding-right: 50px;
-  }
-
-  .card {
-    padding: 14px 14px 90px;
-  }
-  .card .content {
-    font-size: 0.95em;
-    line-height: 1.6em;
-  }
-
-  .countdown {
-    top: 10px;
-    right: 14px;
-    font-size: 1.05em;
-    padding: 4px 12px;
-  }
-
-  .next-btn {
-    bottom: 20px;
-    right: 20px;
-    padding: 10px 22px;
-    font-size: 0.9em;
-  }
-
-  /* 侧边栏切换按钮始终显示（手机端） */
   .sidebar-toggle {
     display: flex;
     pointer-events: auto;
     opacity: 1;
   }
 
-  /* 侧边栏：从左侧滑入覆盖 */
   .sidebar {
     position: fixed;
     top: 0;
-    right: -320px;
+    right: -300px;
     left: auto;
-    width: 300px;
+    width: 280px;
     height: 100vh;
     z-index: 30;
-    border-right: none;
-    border-left: 2px solid rgba(0,255,255,0.3);
+    border-left: 1px solid var(--color-base-300);
     padding: 16px;
     transition: right 0.3s ease;
-    background: rgba(0,8,16,0.92);
+    background: color-mix(in srgb, var(--color-base-100) 95%, transparent);
   }
-  .sidebar.open {
-    right: 0;
-  }
-  .sidebar-close {
-    display: block;
-  }
-  .sidebar ul {
-    padding-bottom: 60px;
-  }
-  .sidebar li {
-    padding: 10px 14px;
-    font-size: 0.92em;
-    margin: 3px 0;
-  }
+  .sidebar.open { right: 0; }
+  .sidebar-close { display: block; }
+  .sidebar ul { padding-bottom: 60px; }
+  .sidebar-overlay.show { display: block; opacity: 1; }
 
-  .sidebar-overlay.show {
-    display: block;
-    opacity: 1;
-  }
-
-  /* 右侧滑出的侧边栏：从右侧边缘向左滑打开 */
   .sidebar-swipe-area {
     position: fixed;
-    top: 0;
-    right: 0;
+    top: 0; right: 0;
     width: 20px;
     height: 100vh;
     z-index: 5;
-  }
-
-  
-#click-hint {
-    font-size: 0.78em;
-    margin-top: 14px;
   }
 }
 </style>
 </head>
 <body>
 
-<!-- 数字雨 Canvas -->
+<!-- 数字雨 -->
 <canvas id="matrix-canvas"></canvas>
-<!-- 扫描线叠层 -->
 <div class="scanlines"></div>
 
+<!-- 主内容 -->
 <div class="main-content">
-  <!-- 粘性头部：进度条 + 标题 -->
+  <!-- 粘性头部 -->
   <div class="sticky-header">
-    <div class="progress-bar-container">
-      <div class="progress-bar" id="progress-bar"></div>
+    <div class="flex items-center gap-3 mb-2">
+      <progress id="progress-bar" class="progress w-full" value="0" max="100"></progress>
+      <span id="countdown" class="badge badge-soft badge-primary shrink-0 tabular-nums">30</span>
     </div>
-    <h2 id="knowledge-title" onclick="toggleContent(true)">加载中...</h2>
+    <h2 id="knowledge-title" class="text-base md:text-lg font-semibold tracking-tight" onclick="toggleContent(true)">加载中...</h2>
   </div>
 
-  <!-- 倒计时（固定在头部右上角） -->
-  <div class="countdown" id="countdown">30</div>
-
-  <!-- 卡片（滚动区域） -->
-  <div class="card" id="card">
-    <div id="knowledge-container" class="content"></div>
-    <div class="content-toolbar">
-      <button class="edit-btn" id="edit-btn" type="button">修改</button>
+  <!-- 卡片内容区 -->
+  <div id="card">
+    <div id="knowledge-container" class="content px-2"></div>
+    <div class="flex justify-end mt-5">
+      <button class="btn btn-soft btn-primary btn-sm" id="edit-btn" type="button">修改</button>
     </div>
-    <div id="click-hint">点标题展开，点修改编辑</div>
+    <p id="click-hint" class="text-xs text-base-content/30 mt-3">点标题展开 · 点修改编辑</p>
   </div>
 
-  <button class="next-btn" id="next-btn">下一个 →</button>
+  <button class="btn btn-soft btn-primary fixed bottom-6 right-6 z-20 shadow-lg" id="next-btn">下一个 →</button>
 </div>
 
-
+<!-- 编辑弹窗 -->
 <div class="edit-modal" id="edit-modal" hidden>
-  <div class="edit-modal-panel" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
-    <div class="edit-modal-header">
-      <h3 id="edit-modal-title">修改内容</h3>
-      <button class="edit-modal-close" id="edit-modal-close" type="button">✕</button>
+  <div class="modal-box max-w-3xl max-h-[80vh] flex flex-col p-0 overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div class="flex items-center justify-between gap-3 px-5 py-4 bg-base-200/50">
+      <h3 id="edit-modal-title" class="font-semibold text-base-content">修改内容</h3>
+      <button class="btn btn-ghost btn-sm btn-square" id="edit-modal-close" type="button">✕</button>
     </div>
-    <div class="edit-modal-body">
+    <div class="flex-1 overflow-auto p-5">
       <div class="edit-modal-editor" id="edit-modal-editor" contenteditable="true" spellcheck="false"></div>
     </div>
-    <div class="edit-modal-actions">
-      <button class="edit-modal-btn" id="edit-cancel-btn" type="button">取消</button>
-      <button class="edit-modal-btn" id="edit-save-btn" type="button">保存</button>
+    <div class="flex justify-end gap-2 px-5 py-3 bg-base-200/50">
+      <button class="btn btn-ghost btn-sm" id="edit-cancel-btn" type="button">取消</button>
+      <button class="btn btn-primary btn-sm" id="edit-save-btn" type="button">保存</button>
     </div>
   </div>
 </div>
 
-<!-- 侧边栏（桌面端侧栏 / 手机端滑动抽屉） -->
+<!-- 侧边栏 -->
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <h3>Python 知识点笔记</h3>
-    <button class="sidebar-close" id="sidebar-close">✕</button>
+  <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300">
+    <h3 class="font-semibold text-sm text-base-content/70 tracking-wider">Python 知识点笔记</h3>
+    <button class="btn btn-ghost btn-xs btn-square sidebar-close" id="sidebar-close">✕</button>
   </div>
   <ul id="sidebar-list"></ul>
 </div>
 
-<!-- 侧边栏切换按钮（手机端） -->
-<button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+<!-- 侧边栏切换（手机端） -->
+<button class="sidebar-toggle btn btn-square btn-soft btn-primary fixed bottom-6 left-6 z-30 shadow-lg" id="sidebar-toggle">☰</button>
 <div class="sidebar-swipe-area" id="sidebar-swipe-area" aria-hidden="true"></div>
 
+<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
 <script src="./db-manager.js"></script>
 <script src="./d1-sync.js" data-api-url=""></script>
@@ -680,8 +352,6 @@ body.modal-open {
 <script src="./repo-sync.js"></script>
 <script>
 // ===== Cloudflare Worker API 地址配置 =====
-// 部署 Worker 后，把以下地址替换为实际的 workers.dev 域名
-// 如果 Workers 和 Pages 在同一域名下，留空则用相对路径
 window.__API_BASE__  = 'https://review.zrui73366.workers.dev';
 window.__D1_API_URL__ = window.__API_BASE__ || undefined;
 
@@ -712,7 +382,6 @@ function drawMatrix() {
     drops[i]++;
   }
 }
-
 let matrixInterval = setInterval(drawMatrix, 35);
 
 window.addEventListener('resize', () => {
@@ -728,166 +397,38 @@ var knowledgePoints = [];
 window.knowledgePoints = knowledgePoints;
 window.__PAGE_SLUG__ = 'python-notes';
 var PENDING_SEED = [
-  {
-    "id": "python--001--python-is",
-    "title": "1. Python中的 == 和 is 有什么区别？",
-    "content": "<strong>结论：</strong>== 比较值是否相等，is 比较是不是同一个对象。<br><br><strong>要点：</strong><br>1. == 关注内容，is 关注内存地址（对象身份）。<br>2. 判断变量是否为 None 时，推荐用 is。<br>3. 两个值相同的对象，== 可能为 True，但 is 不一定为 True。"
-  },
-  {
-    "id": "python--002--python",
-    "title": "2. Python 常见数据类型有哪些？",
-    "content": "<strong>结论：</strong>面试里重点记住数字、字符串、布尔、列表、元组、字典、集合。<br><br><strong>要点：</strong><br>1. 不可变类型常见有：int、float、str、tuple、bool。<br>2. 可变类型常见有：list、dict、set。<br>3. 可变和不可变的区别，会直接影响参数传递、拷贝和哈希能力。"
-  },
-  {
-    "id": "python--003--list-tuple",
-    "title": "3. list 和 tuple 的核心区别是什么？",
-    "content": "<strong>结论：</strong>list 可变，tuple 不可变。<br><br><strong>要点：</strong><br>1. list 适合频繁增删改；tuple 适合存放不希望被修改的数据。<br>2. tuple 通常比 list 更轻量，语义上更安全。<br>3. 当需要作为字典键或集合元素时，通常要求对象可哈希，tuple 更有机会满足。"
-  },
-  {
-    "id": "python--004--item",
-    "title": "4. 浅拷贝和深拷贝有什么区别？",
-    "content": "<strong>结论：</strong>浅拷贝只复制最外层，深拷贝会递归复制内部嵌套对象。<br><br><strong>要点：</strong><br>1. 浅拷贝后，内部子对象往往还是共享的。<br>2. 深拷贝后，新旧对象通常彼此独立。<br>3. 面试里最常见追问：嵌套 list、dict 被修改时，浅拷贝会互相影响。"
-  },
-  {
-    "id": "python--005--item",
-    "title": "5. 可变对象作为默认参数为什么是坑？",
-    "content": "<strong>结论：</strong>默认参数只在函数定义时创建一次，可变对象会被多次调用共享。<br><br><strong>要点：</strong><br>1. 常见坑是默认参数写成 list 或 dict。<br>2. 多次调用后，之前修改的内容会残留。<br>3. 标准做法是默认传 None，在函数内部再初始化。"
-  },
-  {
-    "id": "python--006--python",
-    "title": "6. Python 的参数传递怎么理解？",
-    "content": "<strong>结论：</strong>Python 本质是对象引用传递。<br><br><strong>要点：</strong><br>1. 传进去的是“对象的引用”，不是传统意义的值拷贝。<br>2. 如果函数内部修改可变对象本身，外部能感知到。<br>3. 如果只是让形参重新绑定到新对象，通常不会影响外部变量。"
-  },
-  {
-    "id": "python--007--args-kwargs",
-    "title": "7. *args 和 **kwargs 有什么作用？",
-    "content": "<strong>结论：</strong>*args 接收多余位置参数，**kwargs 接收多余关键字参数。<br><br><strong>要点：</strong><br>1. *args 会打包成 tuple。<br>2. **kwargs 会打包成 dict。<br>3. 常用于封装通用函数、装饰器和接口透传。"
-  },
-  {
-    "id": "python--008--python-legb",
-    "title": "8. Python 的作用域规则 LEGB 是什么？",
-    "content": "<strong>结论：</strong>变量查找顺序是 Local → Enclosing → Global → Built-in。<br><br><strong>要点：</strong><br>1. Local 是当前函数内部。<br>2. Enclosing 是外层嵌套函数作用域。<br>3. Global 是当前模块全局作用域，Built-in 是内置命名空间。"
-  },
-  {
-    "id": "python--009--global-nonlocal",
-    "title": "9. global 和 nonlocal 有什么区别？",
-    "content": "<strong>结论：</strong>global 修改全局变量，nonlocal 修改外层函数变量。<br><br><strong>要点：</strong><br>1. global 用在函数里，声明变量来自模块级作用域。<br>2. nonlocal 用在嵌套函数里，声明变量来自最近一层外部函数。<br>3. nonlocal 常和闭包一起出现。"
-  },
-  {
-    "id": "python--010--item",
-    "title": "10. 什么是闭包？",
-    "content": "<strong>结论：</strong>闭包就是“函数 + 它记住的外部变量环境”。<br><br><strong>要点：</strong><br>1. 内部函数引用了外部函数变量，即可形成闭包。<br>2. 闭包常用于封装状态、延迟执行、装饰器。<br>3. 面试常结合 nonlocal 一起问。"
-  },
-  {
-    "id": "python--011--item",
-    "title": "11. 装饰器的本质是什么？",
-    "content": "<strong>结论：</strong>装饰器本质是一个接收函数并返回新函数的高阶函数。<br><br><strong>要点：</strong><br>1. 作用是在不改原函数代码的前提下增强功能。<br>2. 常见用途有日志、鉴权、缓存、统计耗时。<br>3. 本质依赖函数是一等公民和闭包。"
-  },
-  {
-    "id": "python--012--item",
-    "title": "12. 多个装饰器叠加时执行顺序是什么？",
-    "content": "<strong>结论：</strong>装饰阶段从下往上，执行阶段从上往下。<br><br><strong>要点：</strong><br>1. 离函数最近的装饰器先包裹。<br>2. 最外层装饰器最先执行入口逻辑。<br>3. 回答时记一句：像洋葱一样一层层包起来。"
-  },
-  {
-    "id": "python--013--if-name-main",
-    "title": "13. if __name__ == \"__main__\" 的作用是什么？",
-    "content": "<strong>结论：</strong>它用于区分“当前文件是直接运行”还是“被别人导入”。<br><br><strong>要点：</strong><br>1. 直接运行脚本时，__name__ 的值是 __main__。<br>2. 被导入时，__name__ 通常是模块名。<br>3. 常用于放测试代码、启动入口代码。"
-  },
-  {
-    "id": "python--014--and-or-not",
-    "title": "14. and、or、not 的返回规律是什么？",
-    "content": "<strong>结论：</strong>Python 的 and、or 不一定返回布尔值，常返回参与运算的对象本身。<br><br><strong>要点：</strong><br>1. and 遇到第一个假值就返回，否则返回最后一个值。<br>2. or 遇到第一个真值就返回，否则返回最后一个值。<br>3. not 才一定返回布尔值。"
-  },
-  {
-    "id": "python--015--python",
-    "title": "15. Python 常见字符串格式化方式有哪些？",
-    "content": "<strong>结论：</strong>常见有 %、format、f-string，面试最推荐 f-string。<br><br><strong>要点：</strong><br>1. % 是老写法，直观但灵活性一般。<br>2. format 功能更完整。<br>3. f-string 可读性最好，现代 Python 使用最广。"
-  },
-  {
-    "id": "python--016--item",
-    "title": "16. 实例方法、类方法、静态方法有什么区别？",
-    "content": "<strong>结论：</strong>三者区别主要在于第一个参数和使用场景。<br><br><strong>要点：</strong><br>1. 实例方法默认第一个参数是 self，用于访问实例状态。<br>2. 类方法默认第一个参数是 cls，常用于工厂方法或操作类级数据。<br>3. 静态方法没有默认首参，更像写在类里的普通工具函数。"
-  },
-  {
-    "id": "python--017--property",
-    "title": "17. @property 的作用是什么？",
-    "content": "<strong>结论：</strong>@property 可以把方法伪装成属性，提升封装性。<br><br><strong>要点：</strong><br>1. 外部调用时像访问属性，内部仍可加校验逻辑。<br>2. 有利于后续扩展，而不破坏调用方式。<br>3. 常用于只读属性、计算属性、参数检查。"
-  },
-  {
-    "id": "python--018--item",
-    "title": "18. 类变量和实例变量有什么区别？",
-    "content": "<strong>结论：</strong>类变量属于类，实例变量属于对象实例。<br><br><strong>要点：</strong><br>1. 类变量通常被所有实例共享。<br>2. 实例变量通常存储每个对象自己的状态。<br>3. 面试常问：实例给同名属性赋值后，会优先读实例自己的属性。"
-  },
-  {
-    "id": "python--019--new-init",
-    "title": "19. __new__ 和 __init__ 有什么区别？",
-    "content": "<strong>结论：</strong>__new__ 负责创建对象，__init__ 负责初始化对象。<br><br><strong>要点：</strong><br>1. 执行顺序上，先 __new__，后 __init__。<br>2. __new__ 主要用于控制实例创建过程，常见于不可变类型子类化或单例。<br>3. __init__ 不创建对象，只在对象创建后补充属性。"
-  },
-  {
-    "id": "python--020--mro-super",
-    "title": "20. 什么是 MRO？super() 的作用是什么？",
-    "content": "<strong>结论：</strong>MRO 是方法解析顺序，super() 用于按这个顺序去调用父类逻辑。<br><br><strong>要点：</strong><br>1. 多继承场景下，MRO 决定找方法的先后顺序。<br>2. super() 不等于“直接找父类”，而是按 MRO 链继续往后找。<br>3. 它能让多继承调用更可控。"
-  },
-  {
-    "id": "python--021--slots",
-    "title": "21. __slots__ 的作用是什么？",
-    "content": "<strong>结论：</strong>__slots__ 用来限制实例可拥有的属性，并可节省部分内存。<br><br><strong>要点：</strong><br>1. 使用后，实例不能随意动态新增未声明属性。<br>2. 适合大量小对象、属性集合固定的场景。<br>3. 本质上是在灵活性和内存效率之间做取舍。"
-  },
-  {
-    "id": "python--022--python",
-    "title": "22. Python 中单下划线和双下划线分别表示什么？",
-    "content": "<strong>结论：</strong>下划线更多是约定和命名机制，不是真正的强制访问控制。<br><br><strong>要点：</strong><br>1. 单下划线通常表示“内部使用，不建议外部直接访问”。<br>2. 双下划线会触发名称改写，主要为避免子类命名冲突。<br>3. 前后双下划线通常是魔术方法，如 __init__。"
-  },
-  {
-    "id": "python--023--item",
-    "title": "23. 什么是鸭子类型？",
-    "content": "<strong>结论：</strong>鸭子类型强调“看行为，不看出身”。<br><br><strong>要点：</strong><br>1. 只要对象实现了需要的方法，就可以被当作该类型使用。<br>2. 这体现了 Python 的动态语言特性。<br>3. 好处是灵活，代价是类型错误往往在运行时暴露。"
-  },
-  {
-    "id": "python--024--item",
-    "title": "24. 什么是迭代器？什么是生成器？",
-    "content": "<strong>结论：</strong>迭代器是可逐个取值的对象，生成器是创建迭代器的更简洁方式。<br><br><strong>要点：</strong><br>1. 迭代器适合顺序访问数据。<br>2. 生成器按需产出数据，更省内存。<br>3. 面试常考：生成器适合处理大数据流或延迟计算。"
-  },
-  {
-    "id": "python--025--item",
-    "title": "25. 生成器为什么更省内存？",
-    "content": "<strong>结论：</strong>因为它不是一次性把所有结果都放到内存里，而是用一个产一个。<br><br><strong>要点：</strong><br>1. 适合大文件、批量数据、流式处理。<br>2. 每次迭代只保留当前状态。<br>3. 这是 Python 常见的空间换时间优化手段。"
-  },
-  {
-    "id": "python--026--send",
-    "title": "26. 生成器的 send() 方法有什么用？",
-    "content": "<strong>结论：</strong>send() 可以向暂停中的生成器发送值，让生成器变成双向通信。<br><br><strong>要点：</strong><br>1. 普通 next() 是单向取值。<br>2. send() 可把外部数据传回生成器内部。<br>3. 这个思想后来也影响了协程模型。"
-  },
-  {
-    "id": "python--027--async-await",
-    "title": "27. 什么是协程？async/await 是做什么的？",
-    "content": "<strong>结论：</strong>协程是一种用户态轻量并发模型，async/await 是 Python 编写异步协程的核心语法。<br><br><strong>要点：</strong><br>1. 协程适合大量 I/O 等待场景。<br>2. await 表示当前任务挂起，把执行权让出去。<br>3. 协程不是并行，但可以显著提升 I/O 并发效率。"
-  },
-  {
-    "id": "python--028--item",
-    "title": "28. 线程、进程、协程怎么区分？",
-    "content": "<strong>结论：</strong>进程最重、线程次之、协程最轻；适用场景也不同。<br><br><strong>要点：</strong><br>1. 进程适合 CPU 隔离和多核利用。<br>2. 线程适合一般并发任务，但切换成本高于协程。<br>3. 协程最适合高并发 I/O 场景，如网络请求。"
-  },
-  {
-    "id": "python--029--gil",
-    "title": "29. 什么是 GIL？它主要限制了什么？",
-    "content": "<strong>结论：</strong>GIL 是 CPython 的全局解释器锁，它限制了同一时刻只有一个线程执行 Python 字节码。<br><br><strong>要点：</strong><br>1. 它对多线程的 CPU 密集型任务影响最大。<br>2. 对 I/O 密集型任务，多线程依然常常有价值。<br>3. 真想并行跑 CPU 密集任务，通常更推荐多进程。"
-  },
-  {
-    "id": "python--030--python",
-    "title": "30. Python 的垃圾回收机制怎么理解？",
-    "content": "<strong>结论：</strong>Python 主要用引用计数，并辅以循环垃圾回收。<br><br><strong>要点：</strong><br>1. 引用计数让大多数对象能及时回收。<br>2. 但循环引用单靠引用计数解决不了。<br>3. 所以 Python 还引入了 GC 来处理循环引用问题。"
-  },
-  {
-    "id": "python--031--with",
-    "title": "31. 什么是上下文管理器？with 语句有什么用？",
-    "content": "<strong>结论：</strong>上下文管理器用于托管资源，with 语句能确保资源正确获取和释放。<br><br><strong>要点：</strong><br>1. 常见场景有文件、锁、数据库连接。<br>2. 即使中间发生异常，也能执行清理动作。<br>3. 它的核心价值是让资源管理更安全、更简洁。"
-  },
-  {
-    "id": "python--032--python",
-    "title": "32. Python 的主要语言特点有哪些？",
-    "content": "<strong>结论：</strong>Python 的关键词是简洁、动态、开发效率高。<br><br><strong>要点：</strong><br>1. 语法清晰，上手快，适合快速开发。<br>2. 拥有丰富生态，覆盖后端、数据、AI、自动化等方向。<br>3. 缺点是运行效率通常不如 C/C++/Java 这类编译型或强类型语言。"
-  }
+  { "id": "python--001--python-is", "title": "1. Python中的 == 和 is 有什么区别？", "content": "<strong>结论：</strong>== 比较值是否相等，is 比较是不是同一个对象。<br><br><strong>要点：</strong><br>1. == 关注内容，is 关注内存地址（对象身份）。<br>2. 判断变量是否为 None 时，推荐用 is。<br>3. 两个值相同的对象，== 可能为 True，但 is 不一定为 True。" },
+  { "id": "python--002--python", "title": "2. Python 常见数据类型有哪些？", "content": "<strong>结论：</strong>面试里重点记住数字、字符串、布尔、列表、元组、字典、集合。<br><br><strong>要点：</strong><br>1. 不可变类型常见有：int、float、str、tuple、bool。<br>2. 可变类型常见有：list、dict、set。<br>3. 可变和不可变的区别，会直接影响参数传递、拷贝和哈希能力。" },
+  { "id": "python--003--list-tuple", "title": "3. list 和 tuple 的核心区别是什么？", "content": "<strong>结论：</strong>list 可变，tuple 不可变。<br><br><strong>要点：</strong><br>1. list 适合频繁增删改；tuple 适合存放不希望被修改的数据。<br>2. tuple 通常比 list 更轻量，语义上更安全。<br>3. 当需要作为字典键或集合元素时，通常要求对象可哈希，tuple 更有机会满足。" },
+  { "id": "python--004--item", "title": "4. 浅拷贝和深拷贝有什么区别？", "content": "<strong>结论：</strong>浅拷贝只复制最外层，深拷贝会递归复制内部嵌套对象。<br><br><strong>要点：</strong><br>1. 浅拷贝后，内部子对象往往还是共享的。<br>2. 深拷贝后，新旧对象通常彼此独立。<br>3. 面试里最常见追问：嵌套 list、dict 被修改时，浅拷贝会互相影响。" },
+  { "id": "python--005--item", "title": "5. 可变对象作为默认参数为什么是坑？", "content": "<strong>结论：</strong>默认参数只在函数定义时创建一次，可变对象会被多次调用共享。<br><br><strong>要点：</strong><br>1. 常见坑是默认参数写成 list 或 dict。<br>2. 多次调用后，之前修改的内容会残留。<br>3. 标准做法是默认传 None，在函数内部再初始化。" },
+  { "id": "python--006--python", "title": "6. Python 的参数传递怎么理解？", "content": "<strong>结论：</strong>Python 本质是对象引用传递。<br><br><strong>要点：</strong><br>1. 传进去的是“对象的引用”，不是传统意义的值拷贝。<br>2. 如果函数内部修改可变对象本身，外部能感知到。<br>3. 如果只是让形参重新绑定到新对象，通常不会影响外部变量。" },
+  { "id": "python--007--args-kwargs", "title": "7. *args 和 **kwargs 有什么作用？", "content": "<strong>结论：</strong>*args 接收多余位置参数，**kwargs 接收多余关键字参数。<br><br><strong>要点：</strong><br>1. *args 会打包成 tuple。<br>2. **kwargs 会打包成 dict。<br>3. 常用于封装通用函数、装饰器和接口透传。" },
+  { "id": "python--008--python-legb", "title": "8. Python 的作用域规则 LEGB 是什么？", "content": "<strong>结论：</strong>变量查找顺序是 Local → Enclosing → Global → Built-in。<br><br><strong>要点：</strong><br>1. Local 是当前函数内部。<br>2. Enclosing 是外层嵌套函数作用域。<br>3. Global 是当前模块全局作用域，Built-in 是内置命名空间。" },
+  { "id": "python--009--global-nonlocal", "title": "9. global 和 nonlocal 有什么区别？", "content": "<strong>结论：</strong>global 修改全局变量，nonlocal 修改外层函数变量。<br><br><strong>要点：</strong><br>1. global 用在函数里，声明变量来自模块级作用域。<br>2. nonlocal 用在嵌套函数里，声明变量来自最近一层外部函数。<br>3. nonlocal 常和闭包一起出现。" },
+  { "id": "python--010--item", "title": "10. 什么是闭包？", "content": "<strong>结论：</strong>闭包就是“函数 + 它记住的外部变量环境”。<br><br><strong>要点：</strong><br>1. 内部函数引用了外部函数变量，即可形成闭包。<br>2. 闭包常用于封装状态、延迟执行、装饰器。<br>3. 面试常结合 nonlocal 一起问。" },
+  { "id": "python--011--item", "title": "11. 装饰器的本质是什么？", "content": "<strong>结论：</strong>装饰器本质是一个接收函数并返回新函数的高阶函数。<br><br><strong>要点：</strong><br>1. 作用是在不改原函数代码的前提下增强功能。<br>2. 常见用途有日志、鉴权、缓存、统计耗时。<br>3. 本质依赖函数是一等公民和闭包。" },
+  { "id": "python--012--item", "title": "12. 多个装饰器叠加时执行顺序是什么？", "content": "<strong>结论：</strong>装饰阶段从下往上，执行阶段从上往下。<br><br><strong>要点：</strong><br>1. 离函数最近的装饰器先包裹。<br>2. 最外层装饰器最先执行入口逻辑。<br>3. 回答时记一句：像洋葱一样一层层包起来。" },
+  { "id": "python--013--if-name-main", "title": "13. if __name__ == \"__main__\" 的作用是什么？", "content": "<strong>结论：</strong>它用于区分“当前文件是直接运行”还是“被别人导入”。<br><br><strong>要点：</strong><br>1. 直接运行脚本时，__name__ 的值是 __main__。<br>2. 被导入时，__name__ 通常是模块名。<br>3. 常用于放测试代码、启动入口代码。" },
+  { "id": "python--014--and-or-not", "title": "14. and、or、not 的返回规律是什么？", "content": "<strong>结论：</strong>Python 的 and、or 不一定返回布尔值，常返回参与运算的对象本身。<br><br><strong>要点：</strong><br>1. and 遇到第一个假值就返回，否则返回最后一个值。<br>2. or 遇到第一个真值就返回，否则返回最后一个值。<br>3. not 才一定返回布尔值。" },
+  { "id": "python--015--python", "title": "15. Python 常见字符串格式化方式有哪些？", "content": "<strong>结论：</strong>常见有 %、format、f-string，面试最推荐 f-string。<br><br><strong>要点：</strong><br>1. % 是老写法，直观但灵活性一般。<br>2. format 功能更完整。<br>3. f-string 可读性最好，现代 Python 使用最广。" },
+  { "id": "python--016--item", "title": "16. 实例方法、类方法、静态方法有什么区别？", "content": "<strong>结论：</strong>三者区别主要在于第一个参数和使用场景。<br><br><strong>要点：</strong><br>1. 实例方法默认第一个参数是 self，用于访问实例状态。<br>2. 类方法默认第一个参数是 cls，常用于工厂方法或操作类级数据。<br>3. 静态方法没有默认首参，更像写在类里的普通工具函数。" },
+  { "id": "python--017--property", "title": "17. @property 的作用是什么？", "content": "<strong>结论：</strong>@property 可以把方法伪装成属性，提升封装性。<br><br><strong>要点：</strong><br>1. 外部调用时像访问属性，内部仍可加校验逻辑。<br>2. 有利于后续扩展，而不破坏调用方式。<br>3. 常用于只读属性、计算属性、参数检查。" },
+  { "id": "python--018--item", "title": "18. 类变量和实例变量有什么区别？", "content": "<strong>结论：</strong>类变量属于类，实例变量属于对象实例。<br><br><strong>要点：</strong><br>1. 类变量通常被所有实例共享。<br>2. 实例变量通常存储每个对象自己的状态。<br>3. 面试常问：实例给同名属性赋值后，会优先读实例自己的属性。" },
+  { "id": "python--019--new-init", "title": "19. __new__ 和 __init__ 有什么区别？", "content": "<strong>结论：</strong>__new__ 负责创建对象，__init__ 负责初始化对象。<br><br><strong>要点：</strong><br>1. 执行顺序上，先 __new__，后 __init__。<br>2. __new__ 主要用于控制实例创建过程，常见于不可变类型子类化或单例。<br>3. __init__ 不创建对象，只在对象创建后补充属性。" },
+  { "id": "python--020--mro-super", "title": "20. 什么是 MRO？super() 的作用是什么？", "content": "<strong>结论：</strong>MRO 是方法解析顺序，super() 用于按这个顺序去调用父类逻辑。<br><br><strong>要点：</strong><br>1. 多继承场景下，MRO 决定找方法的先后顺序。<br>2. super() 不等于“直接找父类”，而是按 MRO 链继续往后找。<br>3. 它能让多继承调用更可控。" },
+  { "id": "python--021--slots", "title": "21. __slots__ 的作用是什么？", "content": "<strong>结论：</strong>__slots__ 用来限制实例可拥有的属性，并可节省部分内存。<br><br><strong>要点：</strong><br>1. 使用后，实例不能随意动态新增未声明属性。<br>2. 适合大量小对象、属性集合固定的场景。<br>3. 本质上是在灵活性和内存效率之间做取舍。" },
+  { "id": "python--022--python", "title": "22. Python 中单下划线和双下划线分别表示什么？", "content": "<strong>结论：</strong>下划线更多是约定和命名机制，不是真正的强制访问控制。<br><br><strong>要点：</strong><br>1. 单下划线通常表示“内部使用，不建议外部直接访问”。<br>2. 双下划线会触发名称改写，主要为避免子类命名冲突。<br>3. 前后双下划线通常是魔术方法，如 __init__。" },
+  { "id": "python--023--item", "title": "23. 什么是鸭子类型？", "content": "<strong>结论：</strong>鸭子类型强调“看行为，不看出身”。<br><br><strong>要点：</strong><br>1. 只要对象实现了需要的方法，就可以被当作该类型使用。<br>2. 这体现了 Python 的动态语言特性。<br>3. 好处是灵活，代价是类型错误往往在运行时暴露。" },
+  { "id": "python--024--item", "title": "24. 什么是迭代器？什么是生成器？", "content": "<strong>结论：</strong>迭代器是可逐个取值的对象，生成器是创建迭代器的更简洁方式。<br><br><strong>要点：</strong><br>1. 迭代器适合顺序访问数据。<br>2. 生成器按需产出数据，更省内存。<br>3. 面试常考：生成器适合处理大数据流或延迟计算。" },
+  { "id": "python--025--item", "title": "25. 生成器为什么更省内存？", "content": "<strong>结论：</strong>因为它不是一次性把所有结果都放到内存里，而是用一个产一个。<br><br><strong>要点：</strong><br>1. 适合大文件、批量数据、流式处理。<br>2. 每次迭代只保留当前状态。<br>3. 这是 Python 常见的空间换时间优化手段。" },
+  { "id": "python--026--send", "title": "26. 生成器的 send() 方法有什么用？", "content": "<strong>结论：</strong>send() 可以向暂停中的生成器发送值，让生成器变成双向通信。<br><br><strong>要点：</strong><br>1. 普通 next() 是单向取值。<br>2. send() 可把外部数据传回生成器内部。<br>3. 这个思想后来也影响了协程模型。" },
+  { "id": "python--027--async-await", "title": "27. 什么是协程？async/await 是做什么的？", "content": "<strong>结论：</strong>协程是一种用户态轻量并发模型，async/await 是 Python 编写异步协程的核心语法。<br><br><strong>要点：</strong><br>1. 协程适合大量 I/O 等待场景。<br>2. await 表示当前任务挂起，把执行权让出去。<br>3. 协程不是并行，但可以显著提升 I/O 并发效率。" },
+  { "id": "python--028--item", "title": "28. 线程、进程、协程怎么区分？", "content": "<strong>结论：</strong>进程最重、线程次之、协程最轻；适用场景也不同。<br><br><strong>要点：</strong><br>1. 进程适合 CPU 隔离和多核利用。<br>2. 线程适合一般并发任务，但切换成本高于协程。<br>3. 协程最适合高并发 I/O 场景，如网络请求。" },
+  { "id": "python--029--gil", "title": "29. 什么是 GIL？它主要限制了什么？", "content": "<strong>结论：</strong>GIL 是 CPython 的全局解释器锁，它限制了同一时刻只有一个线程执行 Python 字节码。<br><br><strong>要点：</strong><br>1. 它对多线程的 CPU 密集型任务影响最大。<br>2. 对 I/O 密集型任务，多线程依然常常有价值。<br>3. 真想并行跑 CPU 密集任务，通常更推荐多进程。" },
+  { "id": "python--030--python", "title": "30. Python 的垃圾回收机制怎么理解？", "content": "<strong>结论：</strong>Python 主要用引用计数，并辅以循环垃圾回收。<br><br><strong>要点：</strong><br>1. 引用计数让大多数对象能及时回收。<br>2. 但循环引用单靠引用计数解决不了。<br>3. 所以 Python 还引入了 GC 来处理循环引用问题。" },
+  { "id": "python--031--with", "title": "31. 什么是上下文管理器？with 语句有什么用？", "content": "<strong>结论：</strong>上下文管理器用于托管资源，with 语句能确保资源正确获取和释放。<br><br><strong>要点：</strong><br>1. 常见场景有文件、锁、数据库连接。<br>2. 即使中间发生异常，也能执行清理动作。<br>3. 它的核心价值是让资源管理更安全、更简洁。" },
+  { "id": "python--032--python", "title": "32. Python 的主要语言特点有哪些？", "content": "<strong>结论：</strong>Python 的关键词是简洁、动态、开发效率高。<br><br><strong>要点：</strong><br>1. 语法清晰，上手快，适合快速开发。<br>2. 拥有丰富生态，覆盖后端、数据、AI、自动化等方向。<br>3. 缺点是运行效率通常不如 C/C++/Java 这类编译型或强类型语言。" }
 ];
 
 const countdownEl = document.getElementById('countdown');
@@ -915,328 +456,227 @@ Object.defineProperty(window, 'index', {
   set(v) { index = v; }
 });
 let timeLeft = 30;
-let phase = 'hidden'; // hidden(仅标题)→shown(展开内容)→下一知识点
+let phase = 'hidden';
 let isEditModalOpen = false;
 const storageKey = `knowledge-point-overrides:${location.pathname}`;
 
+function getDetailContentEl() { return document.getElementById('detail-content'); }
 
-function getDetailContentEl() {
-  return document.getElementById('detail-content');
-}
-
-function moveCaretToEnd(element) {
-  const selection = window.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(element);
-  range.collapse(false);
-  selection.removeAllRanges();
-  selection.addRange(range);
-}
-
-function syncEditButtonState() {
-  if (editBtn) {
-    editBtn.disabled = isEditModalOpen;
-  }
-}
-
-function closeEditModal(saveChanges = false) {
-  if (!isEditModalOpen) return;
-
-  if (saveChanges && editModalEditor) {
-    const updatedContent = editModalEditor.innerHTML;
-    knowledgePoints[index].content = updatedContent;
-    const detailEl = getDetailContentEl();
-    if (detailEl) {
-      detailEl.innerHTML = updatedContent;
-    }
-    if (typeof DbManager !== 'undefined') {
-      var cardId = knowledgePoints[index].id;
-      if (cardId) DbManager.updateCard(cardId, knowledgePoints[index].title, updatedContent);
+function toggleContent(expand) {
+  if (expand) {
+    if (phase === 'hidden') {
+      phase = 'shown';
+      showKnowledge();
     }
   }
-
-  if (editModalEditor) {
-    editModalEditor.innerHTML = '';
-  }
-
-  if (editModal) {
-    editModal.hidden = true;
-    editModal.classList.remove('open');
-  }
-
-  document.body.classList.remove('modal-open');
-  isEditModalOpen = false;
-  syncEditButtonState();
-}
-
-function openEditModal() {
-  if (isEditModalOpen || !editModal || !editModalEditor) return;
-
-  editModalEditor.innerHTML = knowledgePoints[index].content;
-  editModal.hidden = false;
-  editModal.classList.add('open');
-  document.body.classList.add('modal-open');
-  isEditModalOpen = true;
-  syncEditButtonState();
-
-  window.requestAnimationFrame(() => {
-    editModalEditor.focus();
-    moveCaretToEnd(editModalEditor);
-  });
-}
-
-if (editBtn) {
-  editBtn.addEventListener('click', openEditModal);
-}
-
-if (editModalClose) {
-  editModalClose.addEventListener('click', () => closeEditModal(false));
-}
-
-if (editCancelBtn) {
-  editCancelBtn.addEventListener('click', () => closeEditModal(false));
-}
-
-if (editSaveBtn) {
-  editSaveBtn.addEventListener('click', () => closeEditModal(true));
-}
-
-if (editModal) {
-  editModal.addEventListener('click', (event) => {
-    if (event.target === editModal) {
-      closeEditModal(false);
-    }
-  });
-}
-
-document.addEventListener('keydown', (event) => {
-  if (!isEditModalOpen) return;
-
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    closeEditModal(false);
-  }
-
-  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-    event.preventDefault();
-    closeEditModal(true);
-  }
-});
-
-syncEditButtonState();
-
-// ===== 侧边栏切换 =====
-function openSidebar() {
-  sidebarPanel.classList.add('open');
-  sidebarOverlay.classList.add('show');
-}
-function closeSidebar() {
-  sidebarPanel.classList.remove('open');
-  sidebarOverlay.classList.remove('show');
-}
-sidebarToggle.addEventListener('click', openSidebar);
-sidebarClose.addEventListener('click', closeSidebar);
-sidebarOverlay.addEventListener('click', closeSidebar);
-
-const sidebarSwipeArea = document.getElementById('sidebar-swipe-area');
-if (sidebarSwipeArea) {
-  let touchStartX = 0;
-  let touchCurrentX = 0;
-  let trackingSwipe = false;
-  const SWIPE_OPEN_THRESHOLD = 24;
-
-  sidebarSwipeArea.addEventListener('touchstart', (event) => {
-    if (!event.touches || !event.touches.length) return;
-    touchStartX = event.touches[0].clientX;
-    touchCurrentX = touchStartX;
-    trackingSwipe = true;
-  }, { passive: true });
-
-  sidebarSwipeArea.addEventListener('touchmove', (event) => {
-    if (!trackingSwipe || !event.touches || !event.touches.length) return;
-    touchCurrentX = event.touches[0].clientX;
-  }, { passive: true });
-
-  sidebarSwipeArea.addEventListener('touchend', () => {
-    if (!trackingSwipe) return;
-    const deltaX = touchStartX - touchCurrentX;
-    trackingSwipe = false;
-    if (deltaX > SWIPE_OPEN_THRESHOLD) {
-      openSidebar();
-    }
-  });
-}
-
-// 初始化侧边栏
-var sidebarMgr = new SidebarManager({
-  sidebarUl: sidebar,
-  knowledgePoints: knowledgePoints,
-  onNavigate: function (targetIndex) {
-    if (window.stopTts) window.stopTts();
-    closeEditModal(true);
-    index = targetIndex;
-    showKnowledge();
-    closeSidebar();
-  }
-});
-window.sidebarMgr = sidebarMgr;
-sidebarMgr.render();
-
-
-function updateSidebarActive() {
-  if (typeof sidebarMgr !== 'undefined') sidebarMgr.setActiveIndex(index);
-}
-
-function toggleContent(show) {
-  const detailEl = getDetailContentEl();
-  if (!detailEl) return;
-  detailEl.style.display = show ? 'block' : 'none';
-  if (clickHint) clickHint.style.display = show ? 'none' : 'block';
 }
 
 function showKnowledge() {
-  if (!knowledgePoints.length) {
-    titleEl.textContent = '暂无知识点';
-    container.innerHTML = '';
-    return;
-  }
-  if (index >= knowledgePoints.length) index = knowledgePoints.length - 1;
-  const kp = knowledgePoints[index];
-  phase = 'hidden';
-
-  // 更新粘性标题
-  titleEl.textContent = kp.title;
-  titleEl.style.cursor = 'pointer';
-
-  // 更新内容区
-  container.innerHTML = window.renderTtsKnowledgeContent
-    ? window.renderTtsKnowledgeContent(kp)
-    : `<div id="detail-content" style="display:none;">${kp.content}</div>`;
-  if (clickHint) clickHint.style.display = 'block';
-  // 点击卡片任意空白区域都切换
-  if (window._cardClickHandler) {
-    cardEl.removeEventListener('click', window._cardClickHandler);
-  }
-  window._cardClickHandler = (e) => {
-    // 排除标题、按钮、侧边栏切换、正文编辑区等交互元素
-    const ignoreTags = ['BUTTON', 'H2'];
-    if (ignoreTags.includes(e.target.tagName)) return;
-    if (isEditModalOpen || e.target.closest('#detail-content')) return;
-    if (e.target.closest('.next-btn') || e.target.closest('.sidebar-toggle') || e.target.closest('.countdown')) return;
-    const detailEl = getDetailContentEl();
-    if (detailEl) {
-      const isHidden = detailEl.style.display === 'none';
-      toggleContent(isHidden);
+  const point = knowledgePoints[index];
+  if (!point) return;
+  titleEl.textContent = point.title;
+  const renderedHTML = window.renderTtsKnowledgeContent ? window.renderTtsKnowledgeContent(point) : '';
+  container.innerHTML = point.content || '';
+  if (renderedHTML) {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = renderedHTML;
+    const detailEl = wrapper.querySelector('#detail-content');
+    if (detailEl && detailEl.innerHTML.trim()) {
+      container.appendChild(detailEl);
     }
-  };
-  cardEl.addEventListener('click', window._cardClickHandler);
-
-  // 重置计时
+  }
+  container.scrollTop = 0;
   timeLeft = 30;
   countdownEl.textContent = timeLeft;
-  progressBar.style.width = '0%';
   updateSidebarActive();
 }
 
-function goToNext() {
-  if (window.stopTts) window.stopTts();
-  closeEditModal(true);
-  if (!knowledgePoints.length) return;
-  index = (index + 1) % knowledgePoints.length;
-  showKnowledge();
+function updateSidebarActive() {
+  if (!sidebar) return;
+  const items = sidebar.querySelectorAll('li');
+  items.forEach((li, i) => {
+    li.classList.toggle('active', i === index);
+    if (i === index) li.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
 }
-window.goToNextKnowledge = goToNext;
 
+let countdownInterval;
+function startCountdown() {
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    if (phase === 'hidden') return;
+    timeLeft--;
+    countdownEl.textContent = Math.max(0, timeLeft);
+    if (progressBar) progressBar.value = ((30 - timeLeft) / 30) * 100;
+    if (timeLeft <= 0) {
+      clearInterval(countdownInterval);
+      goToNext();
+    }
+  }, 1000);
+}
+
+function goToNext() {
+  clearInterval(countdownInterval);
+  phase = 'hidden';
+  const total = knowledgePoints.length;
+  if (total === 0) return;
+  const nextIndex = (index + 1) % total;
+  // 如果 window.goToNextKnowledge 被定义（可能被 TTS player 拦截），调用它
+  if (typeof window.goToNextKnowledge === 'function') {
+    window.goToNextKnowledge();
+    return;
+  }
+  index = nextIndex;
+  titleEl.textContent = knowledgePoints[index].title;
+  container.innerHTML = '<p class="text-base-content/60 text-sm">点击标题展开内容</p>';
+  countdownEl.textContent = '30';
+  if (progressBar) progressBar.value = 0;
+  if (clickHint) clickHint.textContent = '点标题展开内容';
+  updateSidebarActive();
+  startCountdown();
+}
+
+// 构建侧边栏
+function buildSidebar() {
+  if (!sidebar) return;
+  sidebar.innerHTML = '';
+  knowledgePoints.forEach((point, i) => {
+    const li = document.createElement('li');
+    li.textContent = point.title;
+    li.addEventListener('click', () => {
+      clearInterval(countdownInterval);
+      phase = 'hidden';
+      index = i;
+      titleEl.textContent = knowledgePoints[i].title;
+      container.innerHTML = '<p class="text-base-content/60 text-sm">点击标题展开内容</p>';
+      countdownEl.textContent = '30';
+      if (progressBar) progressBar.value = 0;
+      if (clickHint) clickHint.textContent = '点标题展开内容';
+      updateSidebarActive();
+      startCountdown();
+      // 手机端点侧边栏后自动关闭
+      if (window.innerWidth <= 768) {
+        sidebarPanel.classList.remove('open');
+        sidebarOverlay.classList.remove('show');
+      }
+    });
+    sidebar.appendChild(li);
+  });
+  updateSidebarActive();
+}
+
+// 编辑功能
+function openEditModal() {
+  isEditModalOpen = true;
+  document.body.classList.add('modal-open');
+  editModal.classList.add('open');
+  editModal.hidden = false;
+  editModalEditor.innerHTML = knowledgePoints[index].content || '';
+}
+
+function closeEditModal() {
+  isEditModalOpen = false;
+  document.body.classList.remove('modal-open');
+  editModal.classList.remove('open');
+  editModal.hidden = true;
+}
+
+editBtn.addEventListener('click', openEditModal);
+editModalClose.addEventListener('click', closeEditModal);
+editCancelBtn.addEventListener('click', closeEditModal);
+editModal.addEventListener('click', (e) => { if (e.target === editModal) closeEditModal(); });
+
+editSaveBtn.addEventListener('click', () => {
+  const newContent = editModalEditor.innerHTML.trim();
+  if (!newContent) { alert('内容不能为空'); return; }
+  knowledgePoints[index].content = newContent;
+  // 保存到本地存储
+  try {
+    const overrides = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    overrides[knowledgePoints[index].id] = newContent;
+    localStorage.setItem(storageKey, JSON.stringify(overrides));
+  } catch(e) {}
+  showKnowledge();
+  closeEditModal();
+});
+
+// 加载前的本地修改覆盖
+function loadOverrides() {
+  try {
+    const overrides = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    knowledgePoints.forEach(point => {
+      if (overrides[point.id]) point.content = overrides[point.id];
+    });
+  } catch(e) {}
+}
+
+// next-btn
 nextBtn.addEventListener('click', goToNext);
 
+// 侧边栏切换
+sidebarToggle.addEventListener('click', () => {
+  sidebarPanel.classList.toggle('open');
+  sidebarOverlay.classList.toggle('show');
+});
+sidebarClose.addEventListener('click', () => {
+  sidebarPanel.classList.remove('open');
+  sidebarOverlay.classList.remove('show');
+});
+sidebarOverlay.addEventListener('click', () => {
+  sidebarPanel.classList.remove('open');
+  sidebarOverlay.classList.remove('show');
+});
+
+// 右边缘滑动打开侧边栏
+const swipeArea = document.getElementById('sidebar-swipe-area');
+if (swipeArea && window.innerWidth <= 768) {
+  let touchStartX = 0;
+  swipeArea.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+  swipeArea.addEventListener('touchend', (e) => {
+    if (touchStartX - e.changedTouches[0].clientX < -30) {
+      sidebarPanel.classList.add('open');
+      sidebarOverlay.classList.add('show');
+    }
+  });
+}
+
+// 初始化
+function init() {
+  buildSidebar();
+  loadOverrides();
+  if (knowledgePoints.length > 0) {
+    titleEl.textContent = knowledgePoints[0].title;
+  }
+  startCountdown();
+  // 把 index 暴露给外部（TTS player 需要）
+  window.__currentKnowledgeIndex = () => index;
+}
+
+// 暴露必要函数给 TTS player
+window.goToNextKnowledge = goToNext;
+
+init();
+
+// TTS player 配置
 setupTtsPlayer({
   pageId: 'python-notes',
   knowledgePoints,
   getIndex: () => index,
-  navigateToIndex: (targetIndex) => {
-    closeEditModal(true);
-    index = targetIndex;
-    showKnowledge();
+  navigateToIndex: (i) => {
+    clearInterval(countdownInterval);
+    phase = 'hidden';
+    index = i;
+    titleEl.textContent = knowledgePoints[i].title;
+    container.innerHTML = '<p class="text-base-content/60 text-sm">点击标题展开内容</p>';
+    countdownEl.textContent = '30';
+    if (progressBar) progressBar.value = 0;
+    updateSidebarActive();
+    startCountdown();
   },
+  showKnowledge: () => showKnowledge(),
   ensureExpanded: () => toggleContent(true),
   apiUrl: (window.__API_BASE__ || '') + '/api/tts'
 });
-
-// 数据库初始化后再显示
-(async function initDbAndShow() {
-  var cards = null;
-
-  // Phase 1: 优先从 D1 云端拉取（跨设备持久化）
-  if (typeof D1Sync !== 'undefined' && D1Sync.isConfigured()) {
-    try {
-      var d1Cards = await D1Sync.init(window.__PAGE_SLUG__);
-      if (d1Cards && d1Cards.length > 0) {
-        cards = d1Cards;
-        // 存入本地 IndexedDB 作为缓存
-        await DbManager.init([], window.__PAGE_SLUG__);
-        DbManager.syncFromArray(cards);
-        cards = DbManager.getCards();
-      }
-    } catch(e) {
-      console.warn('[Init] D1 unavailable, falling back to local:', e);
-    }
-  }
-
-  // Phase 2: 降级到本地 DbManager（IndexedDB）
-  if (!cards || !cards.length) {
-    try {
-      await DbManager.init(PENDING_SEED, window.__PAGE_SLUG__);
-      cards = DbManager.getCards();
-    } catch(e) {
-      console.warn('[Init] DbManager failed, using seed data:', e);
-    }
-  }
-
-  // Phase 3: 最后的兜底 — 直接使用页面内嵌种子数据
-  if (!cards || !cards.length) {
-    cards = PENDING_SEED;
-  }
-
-  // 填充 knowledgePoints
-  knowledgePoints.length = 0;
-  (cards || []).forEach(function(c) {
-    knowledgePoints.push(c.id ? { id: c.id, title: c.title, content: c.content } : c);
-  });
-  if (typeof sidebarMgr !== 'undefined') sidebarMgr.syncFromKnowledgePoints();
-  showKnowledge();
-})();
-
-// 每秒倒计时
-setInterval(() => {
-  if (isEditModalOpen) return;
-  if (timeLeft > 0) {
-    timeLeft--;
-    countdownEl.textContent = timeLeft;
-    progressBar.style.width = `${((30 - timeLeft) / 30) * 100}%`;
-  } else {
-    if (window.isTtsPlaying && window.isTtsPlaying()) {
-      toggleContent(true);
-      phase = 'shown';
-      timeLeft = 30;
-      countdownEl.textContent = timeLeft;
-      progressBar.style.width = '0%';
-    } else if (phase === 'hidden') {
-      // 30秒结束 → 自动展开内容
-      toggleContent(true);
-      phase = 'shown';
-      timeLeft = 30;
-      countdownEl.textContent = timeLeft;
-      progressBar.style.width = '0%';
-    } else {
-      // 再30秒结束 → 收起内容
-      toggleContent(false);
-      phase = 'hidden';
-      timeLeft = 30;
-      countdownEl.textContent = timeLeft;
-      progressBar.style.width = '0%';
-    }
-  }
-}, 1000);
 </script>
 </body>
 </html>

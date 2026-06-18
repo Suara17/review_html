@@ -9,20 +9,19 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      /* Hide original sidebar-toggle and next-btn — tts-player replaces them */
-      .sidebar-toggle { display: none !important; }
-      .next-btn { display: none !important; }
-
+      /* ── Hide original buttons replaced by tts-player ── */
+      .sidebar-toggle, .next-btn, #next-btn { display: none !important; }
+      /* ── 播放器主容器 ── */
       .tts-player {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
         z-index: 25;
-        background: rgba(0,8,16,0.92);
+        background: color-mix(in srgb, var(--color-base-100) 88%, transparent);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border-top: 1px solid rgba(0,255,255,0.15);
+        border-top: 1px solid var(--color-base-300);
         padding: 6px 12px 10px;
         padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
       }
@@ -30,23 +29,27 @@
         display: flex;
         align-items: center;
       }
+
+      /* ── 侧边栏按钮 ── */
       .tts-sidebar-btn {
         height: 44px;
         flex: 1;
         border-radius: 10px;
-        border: 1px solid rgba(0,255,255,0.25);
-        background: rgba(0,255,255,0.08);
-        color: #00ffff;
+        border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+        background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+        color: var(--color-primary);
         font-size: 18px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.2s;
+        transition: all 0.2s;
       }
       .tts-sidebar-btn:hover {
-        background: rgba(0,255,255,0.18);
+        background: color-mix(in srgb, var(--color-primary) 20%, transparent);
       }
+
+      /* ── 中间控制区 ── */
       .tts-btns {
         display: flex;
         align-items: center;
@@ -59,8 +62,8 @@
         height: 40px;
         border-radius: 50%;
         border: none;
-        background: rgba(255,255,255,0.07);
-        color: rgba(255,255,255,0.7);
+        background: color-mix(in srgb, var(--color-base-content) 8%, transparent);
+        color: color-mix(in srgb, var(--color-base-content) 60%, transparent);
         font-size: 14px;
         cursor: pointer;
         display: inline-flex;
@@ -68,69 +71,76 @@
         justify-content: center;
         transition: all 0.2s ease;
         padding: 0;
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
       }
       .tts-icon:hover {
-        background: rgba(255,255,255,0.13);
-        color: #fff;
+        background: color-mix(in srgb, var(--color-base-content) 14%, transparent);
+        color: var(--color-base-content);
         transform: scale(1.05);
       }
+
+      /* ── 播放按钮 ── */
       .tts-icon.tts-play {
         width: 50px;
         height: 50px;
         font-size: 20px;
         border: none;
-        color: #fff;
-        background: linear-gradient(135deg, #00c6ff, #0072ff);
-        box-shadow: 0 4px 15px rgba(0,114,255,0.3);
+        color: var(--color-primary-content);
+        background: linear-gradient(135deg, var(--color-primary), #67e8f9);
+        box-shadow: 0 4px 15px color-mix(in srgb, var(--color-primary) 35%, transparent);
       }
       .tts-icon.tts-play:hover {
         transform: scale(1.08);
-        box-shadow: 0 6px 20px rgba(0,114,255,0.45);
+        box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary) 50%, transparent);
       }
       .tts-icon.tts-play[data-state="playing"] {
-        background: linear-gradient(135deg, #00e676, #00bcd4);
-        box-shadow: 0 4px 15px rgba(0,230,118,0.35);
+        background: linear-gradient(135deg, var(--color-success), var(--color-info));
+        box-shadow: 0 4px 15px color-mix(in srgb, var(--color-success) 35%, transparent);
         animation: tts-pulse 1.8s ease-in-out infinite;
       }
       @keyframes tts-pulse {
-        0%, 100% { box-shadow: 0 4px 15px rgba(0,230,118,0.3); }
-        50% { box-shadow: 0 4px 25px rgba(0,230,118,0.55); }
+        0%, 100% { box-shadow: 0 4px 15px color-mix(in srgb, var(--color-success) 30%, transparent); }
+        50% { box-shadow: 0 4px 25px color-mix(in srgb, var(--color-success) 55%, transparent); }
       }
+
+      /* ── 下一个按钮 ── */
       .tts-next-btn {
         height: 44px;
         flex: 1;
         border-radius: 10px;
-        border: 1px solid rgba(0,255,255,0.35);
-        background: rgba(0,255,255,0.12);
-        color: #00ffff;
+        border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        color: var(--color-primary);
         font-size: 0.88em;
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
-        transition: background 0.2s;
+        transition: all 0.2s;
       }
       .tts-next-btn:hover {
-        background: rgba(0,255,255,0.22);
+        background: color-mix(in srgb, var(--color-primary) 22%, transparent);
       }
+
+      /* ── 状态栏 ── */
       .tts-status-bar {
         text-align: center;
         padding: 4px 0 0;
       }
       .tts-status {
-        color: rgba(255,255,255,0.5);
+        color: color-mix(in srgb, var(--color-base-content) 45%, transparent);
         font-size: 0.75em;
+        transition: color 0.2s;
       }
       .tts-status[data-state="error"] {
-        color: #ff9f9f;
+        color: var(--color-error);
       }
       .tts-status[data-state="loading"] {
-        color: #8ce7ff;
+        color: var(--color-info);
       }
       .tts-status[data-state="playing"] {
-        color: #00ffcc;
+        color: var(--color-success);
       }
+
+      /* ── 高亮 segment ── */
       .tts-segment {
         display: block;
         width: 100%;
@@ -145,18 +155,22 @@
         margin-bottom: 0;
       }
       .tts-segment.is-active {
-        background: rgba(0, 255, 255, 0.18);
-        color: #dfffff;
-        box-shadow: 0 0 0 1px rgba(0,255,255,0.12), 0 0 12px rgba(0,255,255,0.18);
+        background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+        color: var(--color-base-content);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 15%, transparent), 0 0 12px color-mix(in srgb, var(--color-primary) 18%, transparent);
       }
+
+      /* ── 标题朗读状态 ── */
       #knowledge-title.tts-title-active {
-        color: #cfffff;
-        text-shadow: 0 0 14px rgba(0,255,255,0.8), 0 0 28px rgba(0,255,255,0.35);
+        color: var(--color-primary);
+        text-shadow: 0 0 14px color-mix(in srgb, var(--color-primary) 60%, transparent), 0 0 28px color-mix(in srgb, var(--color-primary) 25%, transparent);
       }
-      /* Adjust card bottom padding so content isn't hidden behind the bar */
+
+      /* ── 卡片底部留空 ── */
       .card {
         padding-bottom: 90px !important;
       }
+
       @media (min-width: 641px) {
         .tts-sidebar-btn { display: none; }
         .tts-btns { flex: 3; }

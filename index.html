@@ -1,166 +1,283 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>面经笔记</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5/dist/full.css" rel="stylesheet">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff; min-height: 100vh; overflow-x: hidden; background: #000; }
-#matrix-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; opacity: 0.28; }
-.scanlines { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,255,0.02) 2px, rgba(0,255,255,0.02) 4px); }
-.page-shell { position: relative; z-index: 2; min-height: 100vh; padding: 18px 14px 28px; }
-.hero { max-width: 760px; margin: 0 auto 10px; background: transparent; border: none; border-radius: 0; padding: 0 2px; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
-.hero-kicker { display: none; }
-.hero h1 { font-size: 1.15em; color: #eaffff; text-shadow: none; margin-bottom: 4px; line-height: 1.35; font-weight: 600; }
-.hero p { color: rgba(180,255,255,0.62); line-height: 1.5; font-size: 0.82em; }
-.card-grid { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-.card-grid.dragging { gap: 6px; }
-.nav-card { display: block; text-decoration: none; background: rgba(7,16,22,0.72); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 13px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: none; transition: transform 0.16s, border-color 0.16s, background 0.16s, opacity 0.16s; touch-action: auto; user-select: none; -webkit-user-select: none; }
-.card-grid.sort-mode .nav-card { touch-action: none; }
-.nav-card:hover { border-color: rgba(0,255,255,0.16); background: rgba(8,22,30,0.82); }
-.nav-card:active { transform: scale(0.992); }
-.nav-card.drag-source { opacity: 0.32; }
-.nav-card.drag-ghost { border-color: rgba(0,255,255,0.28); background: rgba(9,28,38,0.92); box-shadow: 0 8px 18px rgba(0,0,0,0.18); }
-.toolbar { max-width: 760px; margin: 0 auto 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: rgba(255,255,255,0.56); }
-.sort-tip { margin: 0; color: rgba(180,255,255,0.60); font-size: 0.76em; }
-.sync-btn { border: none; border-radius: 999px; padding: 6px 10px; font-size: 12px; color: #d9ffff; background: rgba(0,255,255,0.10); border: 1px solid rgba(0,255,255,0.16); }
-.sync-btn-muted { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.82); }
-.homepage-sync-status { max-width: 760px; margin: 0 auto 8px; color: rgba(170,245,255,0.66); font-size: 11px; line-height: 1.45; white-space: pre-wrap; }
-.nav-card-inner { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.card-icon { width: 28px; height: 22px; border-radius: 6px 6px 5px 5px; background: linear-gradient(180deg, rgba(0,255,255,0.16), rgba(0,255,255,0.05)); border: 1px solid rgba(255,255,255,0.07); position: relative; flex: 0 0 auto; }
-.card-icon::before { content: ''; position: absolute; left: 3px; top: -4px; width: 13px; height: 6px; border-radius: 5px 5px 0 0; background: rgba(0,255,255,0.12); border: 1px solid rgba(255,255,255,0.06); border-bottom: none; }
-.card-main { min-width: 0; flex: 1; }
-.card-tag { display: inline-flex; align-items: center; width: fit-content; padding: 0; margin-bottom: 2px; border-radius: 0; border: none; background: transparent; color: rgba(145,220,230,0.60); font-size: 0.68em; letter-spacing: 0.1px; }
-.nav-card h2 { font-size: 0.92em; line-height: 1.3; color: #f3ffff; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.route, .description, .meta, .enter-btn { display: none; }
-.card-arrow { flex: 0 0 auto; color: rgba(180,245,255,0.42); font-size: 0.95em; padding-left: 4px; }
-@media (max-width: 900px) { .card-grid, .hero, .toolbar, .homepage-sync-status { max-width: 100%; } }
-@media (max-width: 640px) { .page-shell { padding: 14px 12px 24px; } .hero { margin-bottom: 8px; } .hero h1 { font-size: 1.06em; } .hero p { font-size: 0.78em; } .toolbar { gap: 6px 10px; margin-bottom: 8px; } .nav-card { padding: 11px 12px; border-radius: 11px; } .card-icon { width: 26px; height: 20px; } .nav-card h2 { font-size: 0.9em; } }
+  /* ─── 数字雨背景 ─── */
+  #matrix-canvas {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 0; opacity: 0.12;
+    pointer-events: none;
+  }
+  .scanlines {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 1; pointer-events: none;
+    background: repeating-linear-gradient(0deg,
+      transparent, transparent 2px,
+      rgba(0,255,255,0.015) 2px, rgba(0,255,255,0.015) 4px);
+  }
+
+  /* ─── 自定义主题覆盖 ─── */
+  :root {
+    --color-base-100: #0d0d14;
+    --color-base-200: #14141e;
+    --color-base-300: #1c1c2a;
+    --color-base-content: #e2e2f0;
+    --color-primary: #22d3ee;
+    --color-primary-content: #02161c;
+    --color-secondary: #818cf8;
+    --color-secondary-content: #0e0a22;
+    --color-accent: #f472b6;
+    --color-neutral: #1a1a28;
+    --color-info: #67e8f9;
+    --color-success: #6ee7b7;
+    --color-warning: #fcd34d;
+    --color-error: #fca5a5;
+  }
+
+  /* ─── 页面结构 ─── */
+  .page-shell {
+    position: relative; z-index: 2;
+    min-height: 100vh;
+    padding: 32px 16px 40px;
+  }
+
+  /* ─── 卡片样式增强 ─── */
+  .nav-card {
+    text-decoration: none;
+    touch-action: auto; user-select: none;
+  }
+  .nav-card .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    border: 1px solid var(--color-base-300);
+  }
+  .nav-card:hover .card {
+    transform: translateY(-2px);
+    border-color: var(--color-primary);
+    box-shadow: 0 8px 30px rgba(34,211,238,0.08);
+  }
+  .nav-card:active .card {
+    transform: scale(0.99);
+  }
+
+  /* 拖拽状态 */
+  .card-grid.dragging .nav-card { transition: none; }
+  .nav-card.drag-source .card { opacity: 0.3; }
+  .nav-card.drag-ghost .card {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary), 0 8px 30px rgba(34,211,238,0.15);
+    transform: scale(1.02);
+  }
+
+  /* ─── 工具栏 ─── */
+  .sync-status-text {
+    font-size: 0.8rem;
+    min-height: 1.4em;
+  }
+
+  /* ─── 适配 ─── */
+  @media (max-width: 640px) {
+    .page-shell { padding: 20px 12px 32px; }
+  }
 </style>
 </head>
 <body>
+
+<!-- 数字雨 Canvas -->
 <canvas id="matrix-canvas"></canvas>
 <div class="scanlines"></div>
+
 <div class="page-shell">
-  <section class="hero">
-    <div class="hero-kicker">NOTE SYSTEM</div>
-    <h1>面经笔记卡片组</h1>
-    <p>按知识点分类整理的高频面试题，点击卡片进入对应模块。</p>
-  </section>
-  <div class="toolbar homepage-sync-toolbar">
-    <button type="button" class="sync-btn" data-action="toggle-sort">进入排序</button>
-    <span class="sort-tip" id="sort-mode-tip">默认可直接点击进入卡片组</span>
-    <button type="button" class="sync-btn" data-action="pull-order">从 GitHub 拉取排序</button>
-    <button type="button" class="sync-btn" data-action="push-order">保存排序到 GitHub</button>
-    <button type="button" class="sync-btn sync-btn-muted" data-action="reset-order">恢复默认排序</button>
+  <!-- ── Hero ── -->
+  <div class="max-w-4xl mx-auto mb-10 text-center">
+    <div class="badge badge-soft badge-primary mb-3 tracking-widest">NOTE SYSTEM</div>
+    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 text-base-content">
+      面经笔记
+    </h1>
+    <p class="text-base-content/50 text-sm md:text-base max-w-lg mx-auto">
+      按知识点分类整理的高频面试题，点击卡片进入对应模块。
+    </p>
   </div>
-  <div id="homepage-sync-status" class="homepage-sync-status"></div>
-  <section class="card-grid" id="folder-list">
-      <a class="nav-card" href="./computer-network.html" data-slug="computer-network">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">计算机基础</span>
-            <h2>计算机网络知识点笔记</h2>
+
+  <!-- ── 工具栏 ── -->
+  <div class="max-w-4xl mx-auto mb-5 flex flex-wrap items-center gap-2">
+    <button type="button" class="btn btn-soft btn-primary btn-xs shadow-sm" data-action="toggle-sort">进入排序</button>
+    <span class="text-xs text-base-content/50 italic" id="sort-mode-tip">默认可直接点击进入卡片组</span>
+    <div class="ml-auto flex flex-wrap gap-1">
+      <button type="button" class="btn btn-ghost btn-xs text-base-content/50" data-action="pull-order">拉取排序</button>
+      <button type="button" class="btn btn-ghost btn-xs text-base-content/50" data-action="push-order">保存排序</button>
+      <button type="button" class="btn btn-ghost btn-xs text-base-content/40" data-action="reset-order">默认</button>
+    </div>
+  </div>
+
+  <!-- ── 状态提示 ── -->
+  <div id="homepage-sync-status" class="max-w-4xl mx-auto mb-4 sync-status-text text-base-content/40"></div>
+
+  <!-- ── 卡片网格 ── -->
+  <section class="card-grid max-w-4xl mx-auto flex flex-col gap-3" id="folder-list">
+    <!-- ════════════════════════════════════════════ -->
+    <!-- 卡片由 data.js 动态渲染或静态内联          -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <a class="nav-card" href="./computer-network.html" data-slug="computer-network">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
           </div>
-          <div class="card-arrow">›</div>
-        </div>
-      </a>
-      <a class="nav-card" href="./operating-system.html" data-slug="operating-system">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">计算机基础</span>
-            <h2>操作系统知识点笔记</h2>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-primary mb-1">计算机基础</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">计算机网络知识点笔记</h2>
           </div>
-          <div class="card-arrow">›</div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
-      </a>
-      <a class="nav-card" href="./mysql-topics.html" data-slug="mysql-topics">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">数据库</span>
-            <h2>MySQL知识点笔记</h2>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./operating-system.html" data-slug="operating-system">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
           </div>
-          <div class="card-arrow">›</div>
-        </div>
-      </a>
-      <a class="nav-card" href="./redis-topics.html" data-slug="redis-topics">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">数据库</span>
-            <h2>Redis知识点笔记</h2>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-primary mb-1">计算机基础</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">操作系统知识点笔记</h2>
           </div>
-          <div class="card-arrow">›</div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
-      </a>
-      <a class="nav-card" href="./design-patterns-topics.html" data-slug="design-patterns-topics">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">软件设计</span>
-            <h2>设计模式知识点笔记</h2>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./mysql-topics.html" data-slug="mysql-topics">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
           </div>
-          <div class="card-arrow">›</div>
-        </div>
-      </a>
-      <a class="nav-card" href="./system-design-topics.html" data-slug="system-design-topics">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">系统设计</span>
-            <h2>系统设计场景题知识点笔记</h2>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-secondary mb-1">数据库</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">MySQL知识点笔记</h2>
           </div>
-          <div class="card-arrow">›</div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
-      </a>
-      <a class="nav-card" href="./python.html" data-slug="python">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">编程语言</span>
-            <h2>Python知识点笔记</h2>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./redis-topics.html" data-slug="redis-topics">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           </div>
-          <div class="card-arrow">›</div>
-        </div>
-      </a>
-      <a class="nav-card" href="./git-topics.html" data-slug="git-topics">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">工程工具</span>
-            <h2>Git知识点笔记</h2>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-secondary mb-1">数据库</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">Redis知识点笔记</h2>
           </div>
-          <div class="card-arrow">›</div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
-      </a>
-      <a class="nav-card" href="./guanlan.html" data-slug="guanlan">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">项目面试</span>
-            <h2>天工·弈控面试问题知识点笔记</h2>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./design-patterns-topics.html" data-slug="design-patterns-topics">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           </div>
-          <div class="card-arrow">›</div>
-        </div>
-      </a>
-      <a class="nav-card" href="./learning-research-agent.html" data-slug="learning-research-agent">
-        <div class="nav-card-inner">
-          <div class="card-icon"></div>
-          <div class="card-main">
-            <span class="card-tag">项目面试</span>
-            <h2>Research Agent学习问答知识点笔记</h2>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-accent mb-1">软件设计</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">设计模式知识点笔记</h2>
           </div>
-          <div class="card-arrow">›</div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
-      </a>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./system-design-topics.html" data-slug="system-design-topics">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-accent mb-1">系统设计</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">系统设计场景题知识点笔记</h2>
+          </div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./python.html" data-slug="python">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-info mb-1">编程语言</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">Python知识点笔记</h2>
+          </div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./git-topics.html" data-slug="git-topics">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-info mb-1">工程工具</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">Git知识点笔记</h2>
+          </div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./guanlan.html" data-slug="guanlan">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-warning mb-1">项目面试</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">天工·弈控面试问题知识点笔记</h2>
+          </div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="nav-card" href="./learning-research-agent.html" data-slug="learning-research-agent">
+      <div class="card bg-base-200/50 backdrop-blur-sm">
+        <div class="card-body p-4 flex-row items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="badge badge-xs badge-soft badge-warning mb-1">项目面试</div>
+            <h2 class="card-title text-sm md:text-base font-semibold">Research Agent学习问答知识点笔记</h2>
+          </div>
+          <svg class="w-5 h-5 text-base-content/20 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </a>
   </section>
 </div>
 
 <script>
+// ─── 数字雨 Canvas ───
 const canvas = document.getElementById('matrix-canvas');
 const ctx = canvas.getContext('2d');
 function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -184,6 +301,7 @@ function drawMatrix(){
 }
 setInterval(drawMatrix, 38);
 
+// ─── 排序 / 同步逻辑 ───
 (function(){
   const STORAGE_KEY='homepage-folder-order-v1';
   const ORDER_FILE_PATH='data/sidebar-state/homepage-folder-order.json';
@@ -209,7 +327,7 @@ setInterval(drawMatrix, 38);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(getOrder())); } catch(e) {}
   }
   function restoreOrder(){
-    let raw=null;
+    let raw = null;
     try { raw = localStorage.getItem(STORAGE_KEY); } catch(e) {}
     if(!raw) return;
     try {
@@ -225,7 +343,7 @@ setInterval(drawMatrix, 38);
     const el=document.getElementById('homepage-sync-status');
     if(!el) return;
     el.textContent = msg || '';
-    el.style.color = type==='error' ? '#ff9b9b' : type==='success' ? '#9ff7c2' : type==='warn' ? '#ffd37a' : '#9cc';
+    el.style.color = type==='error' ? '#fca5a5' : type==='success' ? '#6ee7b7' : type==='warn' ? '#fcd34d' : '';
   }
   function getConfig(){
     const token=(localStorage.getItem(TOKEN_KEY)||'').trim();
@@ -299,20 +417,20 @@ setInterval(drawMatrix, 38);
     clearOrder();
     setStatus('已恢复默认排序。','success');
   }
-  const toolbar = document.querySelector('.homepage-sync-toolbar');
-  let pressTimer=null, draggingEl=null, ghost=null, startX=0, startY=0, moved=false, longPressed=false, sortMode=false;
+  const toolbar = document.querySelector('.max-w-4xl.mx-auto.mb-5');
+  let pressTimer = null, draggingEl = null, ghost = null, startX = 0, startY = 0, moved = false, longPressed = false, sortMode = false;
   const dragBindings = new Map();
 
-  function clearPress(){ if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } }
+  function clearPress(){ if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; } }
   function cleanupDrag(){
     clearPress();
     list.classList.remove('dragging');
     Array.from(list.querySelectorAll('.nav-card')).forEach(el => el.classList.remove('drag-source','drag-ghost'));
-    draggingEl=null; ghost=null; moved=false; longPressed=false;
+    draggingEl = null; ghost = null; moved = false; longPressed = false;
   }
   function getAfterElement(y){
     const els=[...list.querySelectorAll('.nav-card:not(.drag-source)')];
-    let closest={offset:Number.NEGATIVE_INFINITY, el:null};
+    let closest = {offset: Number.NEGATIVE_INFINITY, el: null};
     els.forEach(el=>{
       const box=el.getBoundingClientRect();
       const offset=y - box.top - box.height/2;
@@ -385,8 +503,9 @@ setInterval(drawMatrix, 38);
     const tip=document.getElementById('sort-mode-tip');
     const btn=document.querySelector('[data-action="toggle-sort"]');
     if(list){ list.classList.toggle('sort-mode', !!sortMode); }
-    if(tip){ tip.textContent = sortMode ? '排序模式已开启：拖动列表项调整顺序' : '默认可直接点击进入卡片组'; }
-    if(btn){ btn.textContent = sortMode ? '完成排序' : '进入排序'; btn.classList.toggle('sync-btn-muted', !!sortMode); }
+    if(tip){ tip.textContent = sortMode ? '长按拖动调整顺序' : '默认可直接点击进入卡片组'; }
+    if(btn){ btn.textContent = sortMode ? '完成排序' : '进入排序'; }
+    if(btn) btn.classList.toggle('btn-warning', !!sortMode);
   }
   if(toolbar){
     toolbar.addEventListener('click', (e) => {
