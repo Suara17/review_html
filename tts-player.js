@@ -58,66 +58,45 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        border: 1.5px solid rgba(125, 249, 255, 0.26);
-        background: linear-gradient(180deg, rgba(8,28,38,0.92), rgba(3,16,24,0.96));
-        color: #9ffcff;
+        border: none;
+        background: rgba(255,255,255,0.07);
+        color: rgba(255,255,255,0.7);
         font-size: 14px;
-        line-height: 1;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+        transition: all 0.2s ease;
         padding: 0;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 16px rgba(0,0,0,0.22);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
       }
       .tts-icon:hover {
-        background: linear-gradient(180deg, rgba(10,36,48,0.96), rgba(4,20,30,0.98));
-        border-color: rgba(0,255,255,0.42);
-        color: #d9ffff;
-        transform: translateY(-1px);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 0 14px rgba(0,255,255,0.08), 0 10px 22px rgba(0,0,0,0.26);
+        background: rgba(255,255,255,0.13);
+        color: #fff;
+        transform: scale(1.05);
       }
       .tts-icon.tts-play {
-        width: 54px;
-        height: 54px;
+        width: 50px;
+        height: 50px;
         font-size: 20px;
-        border-width: 1.8px;
-        border-color: rgba(72, 245, 255, 0.55);
-        color: #ecffff;
-        background:
-          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.20), transparent 34%),
-          linear-gradient(145deg, rgba(0,255,255,0.24), rgba(0,138,179,0.18) 42%, rgba(0,24,34,0.96) 100%);
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.10),
-          0 0 0 1px rgba(0,255,255,0.08),
-          0 0 18px rgba(0,255,255,0.16),
-          0 10px 26px rgba(0,0,0,0.30);
+        border: none;
+        color: #fff;
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        box-shadow: 0 4px 15px rgba(0,114,255,0.3);
       }
       .tts-icon.tts-play:hover {
-        background:
-          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.24), transparent 36%),
-          linear-gradient(145deg, rgba(0,255,255,0.30), rgba(0,168,214,0.22) 42%, rgba(0,28,40,0.98) 100%);
-        border-color: rgba(110, 250, 255, 0.78);
-        color: #ffffff;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.14),
-          0 0 0 1px rgba(0,255,255,0.12),
-          0 0 24px rgba(0,255,255,0.22),
-          0 14px 28px rgba(0,0,0,0.34);
+        transform: scale(1.08);
+        box-shadow: 0 6px 20px rgba(0,114,255,0.45);
       }
       .tts-icon.tts-play[data-state="playing"] {
-        background:
-          radial-gradient(circle at 30% 28%, rgba(255,255,255,0.22), transparent 34%),
-          linear-gradient(145deg, rgba(0,255,255,0.34), rgba(0,196,255,0.24) 40%, rgba(0,32,44,0.98) 100%);
-        border-color: rgba(133, 251, 255, 0.88);
-        color: #ffffff;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.15),
-          0 0 0 1px rgba(0,255,255,0.16),
-          0 0 28px rgba(0,255,255,0.30),
-          0 0 42px rgba(0,255,255,0.12),
-          0 12px 28px rgba(0,0,0,0.32);
+        background: linear-gradient(135deg, #00e676, #00bcd4);
+        box-shadow: 0 4px 15px rgba(0,230,118,0.35);
+        animation: tts-pulse 1.8s ease-in-out infinite;
+      }
+      @keyframes tts-pulse {
+        0%, 100% { box-shadow: 0 4px 15px rgba(0,230,118,0.3); }
+        50% { box-shadow: 0 4px 25px rgba(0,230,118,0.55); }
       }
       .tts-next-btn {
         height: 44px;
