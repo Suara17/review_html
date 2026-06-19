@@ -1193,7 +1193,19 @@ export default function App() {
                             : "bg-black/30 border-[#00ffff]/15 text-[#00ffff]/70 hover:bg-[#00ffff]/5 hover:border-[#00ffff]/40"
                         }`}
                       >
-                        {/* Drag and drop cyber dots handle */}
+                        {/* Delete button - top left */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCard(card.id);
+                          }}
+                          className="absolute left-1 top-1 w-4 h-4 flex items-center justify-center text-[8px] text-[#ff0055]/40 hover:text-[#ff0055] hover:bg-[#ff0055]/10 rounded-sm opacity-0 group-hover/card:opacity-100 transition-all cursor-pointer"
+                          title="删除此知识点"
+                        >
+                          ✕
+                        </button>
+
+                        {/* Drag handle */}
                         <div className="absolute right-2 top-2 flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
                           <span className="text-[8px] border border-cyber-cyan/30 text-cyber-cyan/60 px-1 font-mono font-bold scale-90">DRAG ☰</span>
                         </div>
