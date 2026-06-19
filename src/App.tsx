@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
 const API_BASE = 'https://review.zrui73366.workers.dev';
+const TTS_URL = 'https://review-html-five.vercel.app/api/tts';
 import { Category, Card } from "./types";
 import { 
   Play, 
@@ -331,8 +332,8 @@ export default function App() {
     setIsRevealed(true);
     updateStatus(`TTS: FETCHING AUDIO...`);
 
-    // Send to Edge TTS Worker
-    fetch(`${API_BASE}/api/tts`, {
+    // Send to Vercel Edge TTS
+    fetch(`${TTS_URL}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

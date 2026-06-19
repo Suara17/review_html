@@ -242,7 +242,12 @@ function buildTimeline(fullText, segments, events, sep) {
 }
 
 async function synthesizeSpeech(fullText, voice, rate, textSegments) {
-  const tokenResp = await fetch(EDGE_TOKEN_URL);
+  const tokenResp = await fetch(EDGE_TOKEN_URL, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Referer': 'https://edge.microsoft.com/',
+    },
+  });
   if (!tokenResp.ok) throw new Error(`Edge token error: HTTP ${tokenResp.status}`);
   const token = await tokenResp.text();
 

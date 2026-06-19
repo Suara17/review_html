@@ -1,6 +1,7 @@
 name = "review"
 main = "src/index.js"
-compatibility_date = "2025-04-01"
+compatibility_date = "2025-04-04"
+compatibility_flags = ["nodejs_compat"]
 
 # TTS 上游地址（建议设置）
 # Worker 会把 /api/tts 请求转发到上游 Vercel Python API 进行合成。
