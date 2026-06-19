@@ -695,7 +695,7 @@ export default function App() {
         {/* ==================================================== */}
         {/* HEADER AREA */}
         {/* ==================================================== */}
-        <header className="h-14 sm:h-16 flex items-center justify-between px-3 sm:px-6 border-b border-[#00ffff]/30 bg-black/90 z-20 sticky top-0">
+        <header className="h-12 sm:h-12 flex items-center justify-between px-3 sm:px-4 border-b border-[#00ffff]/30 bg-black/90 z-20 sticky top-0">
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-cyber-cyan shadow-[0_0_12px_#00ffff] animate-pulse rounded-sm"></div>
             <h1 className="text-xs xs:text-sm sm:text-base md:text-xl font-display font-extrabold tracking-wider sm:tracking-widest text-[#ffffff] flex items-center gap-1.5 sm:gap-3">
@@ -950,7 +950,7 @@ export default function App() {
             )}
 
             {/* LEFT SIDEBAR: Topic Cards registry navigator */}
-            <aside className={`w-full md:w-80 border-r border-[#00ffff]/20 bg-black/95 md:bg-black/85 backdrop-blur-md flex flex-col min-h-0 ${isMobileSidebarOpen ? "fixed top-14 bottom-0 left-0 z-40" : "hidden md:flex"} transition-all`}>
+            <aside className={`w-full md:w-80 border-r border-[#00ffff]/20 bg-black/95 md:bg-black/85 backdrop-blur-md flex flex-col min-h-0 ${isMobileSidebarOpen ? "fixed top-12 bottom-0 left-0 z-40" : "hidden md:flex"} transition-all`}>
               
               {/* Category selector panel */}
               <div className="p-4 border-b border-[#00ffff]/20 bg-gradient-to-r from-cyan-950/20 to-black">
@@ -1057,32 +1057,32 @@ export default function App() {
               <div className="absolute top-0 left-0 w-16 h-16 border-t border-l border-[#00ffff]/30 pointer-events-none z-10"></div>
               <div className="absolute bottom-0 right-0 w-16 h-16 border-b border-r border-[#00ffff]/30 pointer-events-none z-10"></div>
 
-              {/* Scrollable content area */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-8">
+              {/* Scrollable content area - compact */}
+              <div className="flex-1 overflow-y-auto px-3 md:px-5 py-2 md:py-3">
                 {/* Mobile sidebar toggle */}
-                <div className="md:hidden flex items-center justify-between bg-black/80 border border-[#00ffff]/20 p-2 mb-4 rounded-sm">
-                  <button onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} className="flex items-center gap-2 text-xs text-cyber-cyan font-mono uppercase border border-cyber-cyan/30 px-3 py-1 rounded-sm">
-                    <Menu className="w-4 h-4" />
-                    {isMobileSidebarOpen ? "CLOSE INDEX LIST" : "OPEN INDEX LIST_"}
+                <div className="md:hidden flex items-center justify-between bg-black/80 border border-[#00ffff]/20 px-2 py-1 mb-2 rounded-sm">
+                  <button onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} className="flex items-center gap-1 text-[11px] text-cyber-cyan font-mono uppercase border border-cyber-cyan/30 px-2 py-0.5 rounded-sm">
+                    <Menu className="w-3.5 h-3.5" />
+                    {isMobileSidebarOpen ? "CLOSE" : "INDEX"}
                   </button>
-                  <span className="text-xs text-slate-300 font-mono">{activeCardIndex + 1} / {filteredCards.length}</span>
+                  <span className="text-[11px] text-slate-300 font-mono">{activeCardIndex + 1} / {filteredCards.length}</span>
                 </div>
 
                 {activeCard ? (
-                  <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full relative z-10">
+                  <div className="flex flex-col gap-2 max-w-4xl mx-auto w-full relative z-10">
 
                     {/* Category badge + title */}
-                    <div className="space-y-1">
-                      <div className="flex items-center flex-wrap gap-2">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center flex-wrap gap-1.5">
                         <span className="text-[9px] px-2 py-0.5 border border-cyber-cyan bg-cyber-cyan/15 text-cyber-cyan font-mono uppercase rounded-sm">{activeCard.category}</span>
                         <span className="text-[9px] text-slate-400 font-mono tracking-widest uppercase">NODE: [{activeCard.id.slice(0, 10)}]</span>
                         <span className="text-[9px] text-cyber-green font-mono tracking-widest uppercase ml-auto">VERIFIED</span>
                       </div>
-                      <h2 className="text-xl md:text-2xl font-display font-black tracking-tight text-white">{activeCard.title}</h2>
+                      <h2 className="text-base md:text-lg font-display font-black tracking-tight text-white">{activeCard.title}</h2>
                     </div>
 
                     {/* Reveal status banner */}
-                    <div className="flex items-center justify-between px-3 py-1.5 bg-[#00ffff]/5 border border-[#00ffff]/25 text-xs text-cyber-cyan font-mono rounded-sm">
+                    <div className="flex items-center justify-between px-2 py-1 bg-[#00ffff]/5 border border-[#00ffff]/25 text-[11px] text-cyber-cyan font-mono rounded-sm">
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${isRevealed ? "bg-cyber-green shadow-[0_0_6px_#00ffcc]" : "bg-[#ff0055] animate-ping"}`}></div>
                         <span>{isRevealed ? "🛡️ 已解密" : "🔒 遮罩回忆中 - 30s 后自动解密"}</span>
@@ -1091,26 +1091,26 @@ export default function App() {
                     </div>
 
                     {/* Content card */}
-                    <div className="bg-black/60 border border-[#00ffff]/15 p-4 md:p-5 relative overflow-hidden rounded-sm">
+                    <div className="bg-black/60 border border-[#00ffff]/15 p-3 md:p-3 relative overflow-hidden rounded-sm">
                       <div className="absolute top-2 right-2 flex gap-1.5 z-20">
                         <button onClick={() => handleOpenEditModal(activeCard)} className="p-1 px-1.5 border border-[#00ffff]/30 bg-black/80 text-[9px] text-cyber-cyan hover:bg-[#00ffff]/20 font-mono flex items-center gap-1 cursor-pointer transition-all rounded-sm"><Edit className="w-3 h-3" /> MODIFY</button>
                         <button onClick={() => handleDeleteCard(activeCard.id)} className="p-1 px-1.5 border border-[#ff0055]/30 bg-black/80 text-[9px] text-[#ff0055] hover:bg-[#ff0055]/15 font-mono flex items-center gap-1 cursor-pointer transition-all rounded-sm"><Trash2 className="w-3 h-3" /> DELETE</button>
                       </div>
 
                       {!isRevealed ? (
-                        <div className="flex flex-col items-center justify-center py-6 text-center text-cyber-cyan/50 font-mono space-y-3">
-                          <Cpu className="w-10 h-10 text-cyber-cyan animate-pulse" />
+                        <div className="flex flex-col items-center justify-center py-3 text-center text-cyber-cyan/50 font-mono space-y-2">
+                          <Cpu className="w-8 h-8 text-cyber-cyan animate-pulse" />
                           <p className="text-xs">30 秒内自行回忆本题要点</p>
-                          <div className="text-3xl font-black text-cyber-cyan tracking-wider bg-[#00ffff]/5 border border-cyber-cyan/20 px-6 py-2 rounded-sm">00:{timerCount < 10 ? `0${timerCount}` : timerCount}</div>
-                          <button onClick={toggleReveal} className="px-5 py-1.5 bg-cyber-cyan text-black text-xs font-black uppercase shadow-[0_0_12px_rgba(0,255,255,0.3)] hover:shadow-[0_0_20px_#00ffff] transition-all cursor-pointer rounded-sm">立即解锁</button>
+                          <div className="text-3xl font-black text-cyber-cyan tracking-wider bg-[#00ffff]/5 border border-cyber-cyan/20 px-6 py-1.5 rounded-sm">00:{timerCount < 10 ? `0${timerCount}` : timerCount}</div>
+                          <button onClick={toggleReveal} className="px-4 py-1 bg-cyber-cyan text-black text-xs font-black uppercase shadow-[0_0_12px_rgba(0,255,255,0.3)] hover:shadow-[0_0_20px_#00ffff] transition-all cursor-pointer rounded-sm">立即解锁</button>
                         </div>
                       ) : (
-                        <div ref={textContainerRef} className="max-h-[35vh] overflow-y-auto pr-1">
-                          <div className="markdown-body text-[#e2e8f0]/95 space-y-3 font-mono select-text text-sm md:text-[14px]">
+                        <div ref={textContainerRef} className="max-h-[58vh] overflow-y-auto pr-1">
+                          <div className="markdown-body text-[#e2e8f0]/95 space-y-1 font-mono select-text text-sm md:text-[14px]">
                             {activeParagraphs.map((block, idx) => (
                               <div key={idx} id={`p-block-${idx}`}
                                 onClick={() => { setCurrentParagraphIndex(idx); if (isPlayingTTS) speakActiveParagraph(); }}
-                                className={`p-3 transition-all duration-300 rounded-sm cursor-pointer ${idx === currentParagraphIndex && isPlayingTTS ? "bg-cyber-cyan/15 border-l-4 border-cyber-cyan text-white" : "border-l-4 border-transparent hover:bg-white/5"}`}
+                                className={`p-2 transition-all duration-300 rounded-sm cursor-pointer ${idx === currentParagraphIndex && isPlayingTTS ? "bg-cyber-cyan/15 border-l-4 border-cyber-cyan text-white" : "border-l-4 border-transparent hover:bg-white/5"}`}
                                 dangerouslySetInnerHTML={{ __html: block }} />
                             ))}
                           </div>
@@ -1126,49 +1126,50 @@ export default function App() {
               </div>
 
               {/* Fixed bottom: TTS player + navigation */}
-              {activeCard && (
-              <div className="shrink-0 bg-black/95 border-t border-[#00ffff]/20 px-3 py-1.5">
-                <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-1.5 max-w-4xl mx-auto">
-                  <div className="flex items-center gap-3 shrink-0">
-                    <button onClick={handleToggleTTS}
-                      className={`relative w-10 h-10 flex items-center justify-center cursor-pointer transition-all rounded-sm border-2 shrink-0 ${
-                        isPlayingTTS ? "bg-cyber-magenta/20 border-cyber-magenta text-cyber-magenta shadow-[0_0_15px_#ff0055]" : "bg-black border-cyber-cyan hover:bg-cyber-cyan/15 text-cyber-cyan hover:shadow-[0_0_12px_#00ffff]"
-                      }`}
-                      title={isPlayingTTS ? "暂停" : "朗读"}>
-                      {isPlayingTTS ? <VolumeX className="w-5 h-5 animate-pulse" /> : <Volume2 className="w-5 h-5" />}
-                    </button>
-                    <div className="text-left leading-tight">
-                      <span className={`text-[9px] font-mono tracking-widest uppercase ${isPlayingTTS ? 'text-cyber-magenta' : 'text-slate-400'}`}>
-                        {isPlayingTTS ? '▶ TTS 朗读中' : '⏸ 就绪'}
-                      </span>
-                      <div className="text-[9px] font-mono text-cyber-cyan">
-                        段落 [{currentParagraphIndex + 1}/{activeParagraphs.length}]
-                      </div>
+            {/* Fixed bottom: TTS player + navigation */}
+            {activeCard && (
+            <div className="shrink-0 bg-black/95 border-t border-[#00ffff]/20 px-3 py-1">
+              <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-1 max-w-4xl mx-auto">
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={handleToggleTTS}
+                    className={`relative w-8 h-8 flex items-center justify-center cursor-pointer transition-all rounded-sm border-2 shrink-0 ${
+                      isPlayingTTS ? "bg-cyber-magenta/20 border-cyber-magenta text-cyber-magenta shadow-[0_0_15px_#ff0055]" : "bg-black border-cyber-cyan hover:bg-cyber-cyan/15 text-cyber-cyan hover:shadow-[0_0_12px_#00ffff]"
+                    }`}
+                    title={isPlayingTTS ? "暂停" : "朗读"}>
+                    {isPlayingTTS ? <VolumeX className="w-4 h-4 animate-pulse" /> : <Volume2 className="w-4 h-4" />}
+                  </button>
+                  <div className="text-left leading-tight">
+                    <span className={`text-[8px] font-mono tracking-widest uppercase ${isPlayingTTS ? 'text-cyber-magenta' : 'text-slate-400'}`}>
+                      {isPlayingTTS ? '▶ TTS' : '⏸ 就绪'}
+                    </span>
+                    <div className="text-[8px] font-mono text-cyber-cyan">
+                      [{currentParagraphIndex + 1}/{activeParagraphs.length}]
                     </div>
                   </div>
+                </div>
 
-                  {/* Segment bar */}
-                  <div className="flex-1 flex items-center gap-1 overflow-x-auto py-1">
-                    {activeParagraphs.map((_, i) => (
-                      <button key={i} onClick={() => { setCurrentParagraphIndex(i); if (isPlayingTTS) speakActiveParagraph(); }}
-                        className={`flex-1 min-w-[14px] h-2.5 border rounded-sm cursor-pointer transition-all ${
-                          i === currentParagraphIndex ? "bg-cyber-cyan border-cyber-cyan shadow-[0_0_6px_#00ffff]" :
-                          i < currentParagraphIndex ? "bg-cyber-cyan/40 border-cyber-cyan/30" : "bg-[#00ffff]/5 border-[#00ffff]/15 hover:bg-[#00ffff]/20"
-                        }`} />
-                    ))}
-                  </div>
+                {/* Segment bar */}
+                <div className="flex-1 flex items-center gap-0.5 overflow-x-auto py-0.5">
+                  {activeParagraphs.map((_, i) => (
+                    <button key={i} onClick={() => { setCurrentParagraphIndex(i); if (isPlayingTTS) speakActiveParagraph(); }}
+                      className={`flex-1 min-w-[10px] h-2 border rounded-sm cursor-pointer transition-all ${
+                        i === currentParagraphIndex ? "bg-cyber-cyan border-cyber-cyan shadow-[0_0_6px_#00ffff]" :
+                        i < currentParagraphIndex ? "bg-cyber-cyan/40 border-cyber-cyan/30" : "bg-[#00ffff]/5 border-[#00ffff]/15 hover:bg-[#00ffff]/20"
+                      }`} />
+                  ))}
+                </div>
 
-                  {/* Navigation */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={handlePrevBlock} className="p-1 border border-white/10 text-[#00ffff]/60 hover:text-cyber-cyan hover:bg-[#00ffff]/10 cursor-pointer rounded-sm"><SkipBack className="w-3.5 h-3.5" /></button>
-                    <button onClick={handleNextBlock} className="p-1 border border-white/10 text-[#00ffff]/60 hover:text-cyber-cyan hover:bg-[#00ffff]/10 cursor-pointer rounded-sm"><SkipForward className="w-3.5 h-3.5" /></button>
-                    <div className="w-px h-4 bg-white/15 mx-1"></div>
-                    <button onClick={handlePrevCard} className="px-2 py-1 border border-cyber-cyan/45 bg-black text-[9px] font-mono text-cyber-cyan hover:bg-cyber-cyan/15 transition-all cursor-pointer rounded-sm uppercase"><ChevronLeft className="w-3 h-3 inline" /> 上一条</button>
-                    <button onClick={handleNextCard} className="px-2.5 py-1 bg-cyber-cyan hover:bg-[#00ffff] text-black font-bold text-[9px] font-mono uppercase tracking-wider shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all cursor-pointer rounded-sm flex items-center gap-1">下一条 <ChevronRight className="w-3 h-3" /></button>
-                  </div>
+                {/* Navigation */}
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button onClick={handlePrevBlock} className="p-0.5 border border-white/10 text-[#00ffff]/60 hover:text-cyber-cyan hover:bg-[#00ffff]/10 cursor-pointer rounded-sm"><SkipBack className="w-3 h-3" /></button>
+                  <button onClick={handleNextBlock} className="p-0.5 border border-white/10 text-[#00ffff]/60 hover:text-cyber-cyan hover:bg-[#00ffff]/10 cursor-pointer rounded-sm"><SkipForward className="w-3 h-3" /></button>
+                  <div className="w-px h-3 bg-white/15 mx-0.5"></div>
+                  <button onClick={handlePrevCard} className="px-1.5 py-0.5 border border-cyber-cyan/45 bg-black text-[8px] font-mono text-cyber-cyan hover:bg-cyber-cyan/15 transition-all cursor-pointer rounded-sm uppercase"><ChevronLeft className="w-2.5 h-2.5 inline" /> 上</button>
+                  <button onClick={handleNextCard} className="px-2 py-0.5 bg-cyber-cyan hover:bg-[#00ffff] text-black font-bold text-[8px] font-mono uppercase tracking-wider shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all cursor-pointer rounded-sm flex items-center gap-0.5">下 <ChevronRight className="w-2.5 h-2.5" /></button>
                 </div>
               </div>
-              )}
+            </div>
+            )}
             </section>
 
           </main>
@@ -1280,7 +1281,7 @@ export default function App() {
         {/* ==================================================== */}
         {/* FOOTER METRICS SYSTEM STATUS */}
         {/* ==================================================== */}
-        <footer className="h-8 border-t border-[#00ffff]/20 bg-black/90 flex items-center justify-between px-4 text-[9px] font-mono uppercase tracking-[0.2em] text-[#00ffff]/40 shrink-0">
+        <footer className="h-6 border-t border-[#00ffff]/20 bg-black/90 flex items-center justify-between px-3 text-[8px] font-mono uppercase tracking-[0.18em] text-[#00ffff]/40 shrink-0">
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-cyber-green animate-pulse inline-block"></span>
             <span>SYSTEM STATUS: NORMAL</span>
