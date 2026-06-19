@@ -27,8 +27,11 @@ import {
   Terminal,
   Activity,
   Cpu,
-  RefreshCw
+  RefreshCw,
+  Award
 } from "lucide-react";
+
+import { loadRewards, saveRewards, getLevel, getNextLevel, xpProgress, XP_PER_CARD_CYCLE, XP_PER_TTS_MINUTE, XP_PER_CATEGORY_CLEAR, XP_PER_LOGIN, LEVELS, type RewardState } from "./data/rewards";
 
 export default function App() {
   // Application Modes / Views
@@ -74,6 +77,76 @@ export default function App() {
   const timerIntervalRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ttsMetaRef = useRef({ index: 0, total: 0 });
+  
+  // Reward System State
+  const [rewards, setRewards] = useState<RewardState>(() => loadRewards());
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [levelUpName, setLevelUpName] = useState('');
+  const rewardsRef = useRef(rewards);
+  rewardsRef.current = rewards;
+  const ttsSecondAccum = useRef(0);
+  const viewedCardIds = useRef<Set<string>>(new Set());
+
+  function addXP(amount: number, reason?: string) {
+    setRewards(prev => {
+      const oldLevel = getLevel(prev.xp);
+      const newXp = prev.xp + amount;
+      const newLevel = getLevel(newXp);
+      const updated = { ...prev, xp: newXp };
+      if (newLevel.level > oldLevel.level) {
+        updated.level = newLevel.level;
+        updated.seenLevelUp = [...(updated.seenLevelUp || []), newLevel.level];
+        setLevelUpName(newLevel.name);
+        setShowLevelUp(true);
+        setTimeout(() => setShowLevelUp(false), 4000);
+      }
+      saveRewards(updated);
+      return updated;
+    });
+  }
+
+  // Daily login XP check
+  useEffect(() => {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    setRewards(prev => {
+      if (prev.lastLoginDate === today) return prev;
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yStr = yesterday.toISOString().slice(0, 10);
+      const streak = prev.lastLoginDate === yStr ? (prev.loginStreak || 0) + 1 : 1;
+      const bonus = XP_PER_LOGIN + (streak > 1 ? (streak - 1) * 2 : 0);
+      const updated = { ...prev, lastLoginDate: today, loginStreak: streak, xp: prev.xp + bonus };
+      const oldLevel = getLevel(prev.xp);
+      const newLevel = getLevel(updated.xp);
+      if (newLevel.level > oldLevel.level) {
+        updated.level = newLevel.level;
+        updated.seenLevelUp = [...(updated.seenLevelUp || []), newLevel.level];
+        setLevelUpName(newLevel.name);
+        setShowLevelUp(true);
+        setTimeout(() => setShowLevelUp(false), 4000);
+      }
+      saveRewards(updated);
+      return updated;
+    });
+  }, []);
+
+  // Check if all cards in current category have been viewed → award category clear XP
+  function checkCategoryCompletion() {
+    const slug = selectedCategorySlug;
+    const catCards = cards.filter(c => c.slug === slug);
+    const allViewed = catCards.every(c => viewedCardIds.current.has(c.id));
+    const alreadyDone = rewardsRef.current.completedCategories.includes(slug);
+    if (allViewed && catCards.length > 0 && !alreadyDone) {
+      addXP(XP_PER_CATEGORY_CLEAR);
+      setRewards(prev => {
+        const updated = { ...prev, completedCategories: [...prev.completedCategories, slug] };
+        saveRewards(updated);
+        return updated;
+      });
+      updateStatus(`🏆 通关「${categories.find(c => c.slug === slug)?.title || slug}」！+${XP_PER_CATEGORY_CLEAR}XP`);
+    }
+  }
 
   // ----------------------------------------------------
   // 1. Initial Data Fetching & Syncing
@@ -218,6 +291,13 @@ export default function App() {
             // Loop: go back to recall mode, cycle repeats on same card
             setIsRevealed(false);
             setRecallMode("recall");
+            // Award XP for completing a card cycle
+            addXP(XP_PER_CARD_CYCLE);
+            setRewards(prev => {
+              const updated = { ...prev, cardCycles: (prev.cardCycles || 0) + 1 };
+              saveRewards(updated);
+              return updated;
+            });
             updateStatus("RECALL CYCLE RESTARTED");
             return 30;
           }
@@ -369,6 +449,22 @@ export default function App() {
       const audio = new Audio(url);
       audioRef.current = audio;
 
+      // Track TTS listening time for XP
+      audio.ontimeupdate = () => {
+        if (!audio.paused) {
+          ttsSecondAccum.current += 0.5; // approximately every timeupdate
+          if (ttsSecondAccum.current >= 60) {
+            ttsSecondAccum.current = 0;
+            addXP(XP_PER_TTS_MINUTE, 'tts');
+            setRewards(prev => {
+              const updated = { ...prev, ttsMinutes: (prev.ttsMinutes || 0) + 1 };
+              saveRewards(updated);
+              return updated;
+            });
+          }
+        }
+      };
+
       audio.onended = () => {
         URL.revokeObjectURL(url);
         const meta = ttsMetaRef.current;
@@ -435,6 +531,9 @@ export default function App() {
     const nextIdx = (activeCardIndex + 1) % filteredCards.length;
     setActiveCardIndex(nextIdx);
     setCurrentParagraphIndex(0);
+    // Track viewed card for category completion
+    if (filteredCards[nextIdx]) viewedCardIds.current.add(filteredCards[nextIdx].id);
+    checkCategoryCompletion();
     if (isPlayingTTS) {
       setTimeout(() => speakActiveParagraph(), 300);
     }
@@ -446,6 +545,9 @@ export default function App() {
     const prevIdx = activeCardIndex === 0 ? filteredCards.length - 1 : activeCardIndex - 1;
     setActiveCardIndex(prevIdx);
     setCurrentParagraphIndex(0);
+    // Track viewed card for category completion
+    if (filteredCards[prevIdx]) viewedCardIds.current.add(filteredCards[prevIdx].id);
+    checkCategoryCompletion();
     if (isPlayingTTS) {
       setTimeout(() => speakActiveParagraph(), 300);
     }
@@ -709,6 +811,22 @@ export default function App() {
             </h1>
           </div>
 
+          {/* Rewards badge */}
+          <div className="flex items-center gap-1.5 sm:gap-2 ml-auto mr-2 sm:mr-0">
+            <div className={`text-xs sm:text-sm ${LEVELS[rewards.level - 1]?.color || 'text-cyber-cyan'}`} title={`Lv.${rewards.level} ${LEVELS[rewards.level - 1]?.name || ''}`}>
+              {LEVELS[rewards.level - 1]?.icon || '🌱'}
+            </div>
+            <div className="hidden sm:flex flex-col items-start min-w-[60px]">
+              <div className="text-[8px] font-mono text-[#00ffff]/60 uppercase tracking-wider leading-tight">Lv.{rewards.level}</div>
+              <div className="w-full h-1 bg-[#00ffff]/10 rounded-full overflow-hidden mt-0.5">
+                {(() => {
+                  const prog = xpProgress(rewards.xp);
+                  return <div className="h-full bg-gradient-to-r from-cyber-cyan to-cyber-green rounded-full" style={{ width: `${prog.progress * 100}%` }} />;
+                })()}
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 sm:gap-4">
             {currentView === "dashboard" && activeCard && (
               <div className="hidden lg:flex flex-col items-end">
@@ -936,6 +1054,77 @@ export default function App() {
                 })}
               </div>
             )}
+
+            {/* =============================== */}
+            {/* ACHIEVEMENTS / REWARDS PANEL */}
+            {/* =============================== */}
+            <div className="p-4 bg-cyber-gray-dark/80 border border-[#00ffff]/15 rounded-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyber-cyan"></div>
+              <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyber-cyan"></div>
+              
+              <div className="flex items-center gap-2 mb-3">
+                <Award className="w-4 h-4 text-cyber-cyan" />
+                <span className="text-[10px] font-mono text-cyber-cyan uppercase tracking-widest font-bold">
+                  ACHIEVEMENT SYSTEM / 成就系统
+                </span>
+              </div>
+
+              {/* Current level + XP bar */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`text-2xl ${LEVELS[rewards.level - 1]?.color || 'text-cyber-cyan'}`}>
+                  {LEVELS[rewards.level - 1]?.icon || '🌱'}
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between text-[10px] font-mono">
+                    <span className="text-white font-bold">Lv.{rewards.level} {LEVELS[rewards.level - 1]?.name}</span>
+                    <span className="text-cyber-cyan">
+                      {(() => { const p = xpProgress(rewards.xp); return `${p.current} / ${p.required} XP`; })()}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-[#00ffff]/10 rounded-full overflow-hidden mt-1">
+                    {(() => { const p = xpProgress(rewards.xp); return (
+                      <div className="h-full bg-gradient-to-r from-cyber-cyan to-cyber-green rounded-full transition-all duration-500" style={{ width: `${p.progress * 100}%` }} />
+                    ); })()}
+                  </div>
+                  <div className="text-[8px] font-mono text-[#00ffff]/40 mt-0.5">
+                    {(() => { const n = getNextLevel(rewards.xp); return n ? `下一级：Lv.${n.level} ${n.name}` : '已达满级！'; })()}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[11px] font-mono text-white font-bold">{rewards.xp}</div>
+                  <div className="text-[8px] font-mono text-[#00ffff]/50">总经验值</div>
+                </div>
+              </div>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-black/40 border border-[#00ffff]/10 p-2 rounded-sm">
+                  <div className="text-xs font-mono text-cyber-cyan font-bold">{rewards.cardCycles || 0}</div>
+                  <div className="text-[8px] font-mono text-[#00ffff]/50">已完成卡片周期</div>
+                </div>
+                <div className="bg-black/40 border border-[#00ffff]/10 p-2 rounded-sm">
+                  <div className="text-xs font-mono text-cyber-cyan font-bold">{rewards.ttsMinutes || 0}</div>
+                  <div className="text-[8px] font-mono text-[#00ffff]/50">TTS 朗读分钟</div>
+                </div>
+                <div className="bg-black/40 border border-[#00ffff]/10 p-2 rounded-sm">
+                  <div className="text-xs font-mono text-cyber-cyan font-bold">{rewards.completedCategories.length} / {categories.length}</div>
+                  <div className="text-[8px] font-mono text-[#00ffff]/50">已通关分类</div>
+                </div>
+              </div>
+
+              {/* Level badges row */}
+              <div className="flex items-center gap-1 mt-2 overflow-x-auto py-1">
+                {LEVELS.map((lv, i) => {
+                  const unlocked = rewards.level >= lv.level;
+                  return (
+                    <div key={lv.level} className={`flex items-center gap-1 px-1.5 py-0.5 border text-[9px] font-mono rounded-sm shrink-0 ${unlocked ? 'border-cyber-cyan/30 bg-cyber-cyan/10 text-white' : 'border-white/5 bg-black/40 text-slate-600'}`}>
+                      <span>{lv.icon}</span>
+                      <span className={unlocked ? lv.color : ''}>Lv.{lv.level}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </main>
         )}
 
@@ -1278,6 +1467,18 @@ export default function App() {
                 </button>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* Level up celebration overlay */}
+        {showLevelUp && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="bg-black/90 border-2 border-cyber-cyan shadow-[0_0_40px_rgba(0,255,255,0.3)] px-8 py-6 rounded-sm text-center animate-bounce">
+              <div className="text-4xl mb-2">🎉</div>
+              <div className="text-[11px] font-mono text-cyber-cyan uppercase tracking-widest mb-1">LEVEL UP!</div>
+              <div className="text-lg font-display font-bold text-white">{LEVELS[rewards.level - 1]?.icon} Lv.{rewards.level}</div>
+              <div className="text-sm font-mono text-cyber-cyan">{levelUpName}</div>
             </div>
           </div>
         )}
