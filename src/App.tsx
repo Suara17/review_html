@@ -71,7 +71,7 @@ export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const timerIntervalRef = useRef<any>(null);
-  const ttsSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // ----------------------------------------------------
   // 1. Initial Data Fetching & Syncing
@@ -304,82 +304,101 @@ export default function App() {
       .trim();
   };
 
+  function stopAudio() {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+  }
+
+  // Auto-advance: when paragraph index changes during playback, speak new paragraph
   useEffect(() => {
-    // If paragraph shifts during playback
     if (isPlayingTTS) {
       speakActiveParagraph();
     }
   }, [currentParagraphIndex]);
 
   const speakActiveParagraph = () => {
-    if (!window.speechSynthesis) {
-      updateStatus("CRITICAL: TTS AUDIO NOT SUPPORTED IN HOST CONTAINER");
-      return;
-    }
-
-    // Cancel dynamic synthesis first
-    window.speechSynthesis.cancel();
+    stopAudio();
 
     if (!activeCard || activeParagraphs.length === 0) return;
 
     const rawBlock = activeParagraphs[currentParagraphIndex];
     const cleanedText = cleanTalkText(rawBlock);
+    if (!cleanedText.trim()) return;
 
-    // Call server API for timeline segment breakdown in background to sync screen display
+    setIsRevealed(true);
+    updateStatus(`TTS: FETCHING AUDIO...`);
+
+    // Send to Edge TTS Worker
     fetch(`${API_BASE}/api/tts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: cleanedText, segments: cleanedText.split(/([，。！？；\n]+)/).filter(Boolean).map((s, i) => ({ index: i, text: s })) })
+      body: JSON.stringify({
+        text: cleanedText,
+        voice: "zh-CN-XiaoxiaoNeural",
+        segments: cleanedText.split(/([，。！？；\n]+)/).filter(Boolean).map((s, i) => ({ index: i, text: s }))
+      })
     })
     .then(res => res.json())
     .then(data => {
+      if (data.error) throw new Error(data.error);
+
+      // Set timeline for segment highlighting
       if (data.segments && data.segments.length > 0) {
         setTtsTimeline(data.segments);
       }
-    })
-    .catch(err => console.debug("Offline estimate timeline configured"));
 
-    // Real synthesis player initialized on user container
-    const utterance = new SpeechSynthesisUtterance(cleanedText);
-    utterance.lang = "zh-CN";
-    utterance.rate = voiceSpeed;
-    
-    utterance.onend = () => {
-      // Auto trigger skip to subsequent block
-      if (currentParagraphIndex < activeParagraphs.length - 1) {
-        setCurrentParagraphIndex(prev => prev + 1);
-      } else {
+      // Decode base64 audio and play
+      const binary = atob(data.audioBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: data.audioMime || 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        // Auto advance to next paragraph
+        if (currentParagraphIndex < activeParagraphs.length - 1) {
+          setCurrentParagraphIndex(prev => prev + 1);
+        } else {
+          setIsPlayingTTS(false);
+          updateStatus("TRANSMISSION COMPLETE");
+        }
+      };
+
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        updateStatus("TTS ERROR: PLAYBACK FAILED");
+      };
+
+      audio.play().catch(err => {
+        updateStatus("TTS ERROR: " + err.message);
         setIsPlayingTTS(false);
-        updateStatus("TRANSMISSION COMPLETE - TERMINATING SYNTH VOICE");
-      }
-    };
+      });
 
-    utterance.onerror = (e) => {
-      console.warn("Speech synthesiser interrupted:", e);
-    };
-
-    ttsSynthRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-    setIsRevealed(true); // force reveal content if they listen to voice
-
-    // Ensure highlighted paragraph remains visible on active board
-    setTimeout(() => {
-      const activeEl = document.getElementById(`p-block-${currentParagraphIndex}`);
-      if (activeEl) {
-        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    }, 100);
+      updateStatus("EDGE TTS: PLAYING");
+    })
+    .catch(err => {
+      updateStatus("TTS FAILED: " + err.message);
+      setIsPlayingTTS(false);
+      console.error('[TTS]', err);
+    });
   };
 
   const handleToggleTTS = () => {
     if (isPlayingTTS) {
-      window.speechSynthesis.cancel();
+      stopAudio();
       setIsPlayingTTS(false);
       updateStatus("TTS DEACTIVATED");
     } else {
       setIsPlayingTTS(true);
       speakActiveParagraph();
-      updateStatus(`TTS ACTIVATED SECURE CHANNEL (VOICE CHANNEL AT SPEED ${voiceSpeed}x)`);
+      updateStatus("TTS ACTIVATED - EDGE VOICE");
     }
   };
 
@@ -405,7 +424,6 @@ export default function App() {
     const nextIdx = (activeCardIndex + 1) % filteredCards.length;
     setActiveCardIndex(nextIdx);
     setCurrentParagraphIndex(0);
-    // Restart active sound if playing
     if (isPlayingTTS) {
       setTimeout(() => speakActiveParagraph(), 300);
     }
@@ -660,16 +678,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-cyber-black text-slate-100 font-sans relative overflow-hidden select-none">
+    <div className="h-screen bg-cyber-black text-slate-100 font-sans relative overflow-hidden select-none">
       {/* 1. Background Matrix Animation Layer */}
-      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none opacity-40 z-0" />
-
-      {/* 2. Cyberpunk CRT Scanline overlay effect */}
-      <div className="crt-overlay" />
-      <div className="crt-scan" />
+      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none opacity-60 z-0" />
 
       {/* Main Container */}
-      <div className="relative z-10 min-h-screen flex flex-col max-w-[1360px] mx-auto border-l border-r border-[#00ffff]/20 bg-black/75 backdrop-blur-md shadow-2xl">
+      <div className="relative z-10 h-screen flex flex-col max-w-[1360px] mx-auto border-l border-r border-[#00ffff]/20 bg-black/75 backdrop-blur-md shadow-2xl">
         
         {/* ==================================================== */}
         {/* HEADER AREA */}
@@ -918,7 +932,7 @@ export default function App() {
         {/* DETAIL VIEW / SPECIALIST TECHNICAL DASHBOARD */}
         {/* ==================================================== */}
         {currentView === "dashboard" && (
-          <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+          <main className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative">
             
             {/* Mobile Sidebar backdrop overlay */}
             {isMobileSidebarOpen && (
@@ -929,7 +943,7 @@ export default function App() {
             )}
 
             {/* LEFT SIDEBAR: Topic Cards registry navigator */}
-            <aside className={`w-full md:w-80 border-r border-[#00ffff]/20 bg-black/95 md:bg-black/85 backdrop-blur-md flex flex-col ${isMobileSidebarOpen ? "fixed top-14 bottom-0 left-0 z-40" : "hidden md:flex"} transition-all`}>
+            <aside className={`w-full md:w-80 border-r border-[#00ffff]/20 bg-black/95 md:bg-black/85 backdrop-blur-md flex flex-col min-h-0 ${isMobileSidebarOpen ? "fixed top-14 bottom-0 left-0 z-40" : "hidden md:flex"} transition-all`}>
               
               {/* Category selector panel */}
               <div className="p-4 border-b border-[#00ffff]/20 bg-gradient-to-r from-cyan-950/20 to-black">
@@ -1030,322 +1044,126 @@ export default function App() {
             </aside>
 
             {/* MAIN CENTRAL WORKSPACE: Knowledge Card Content and memory helper */}
-            <section className="flex-1 flex flex-col p-4 md:p-8 relative bg-gradient-to-br from-black via-[#000d0d] to-black overflow-y-auto">
+            <section className="flex-1 min-h-0 flex flex-col relative bg-gradient-to-br from-black via-[#000d0d] to-black overflow-hidden">
               
               {/* Corner decoratives */}
-              <div className="absolute top-0 left-0 w-16 h-16 border-t border-l border-[#00ffff]/30 pointer-events-none"></div>
-              <div className="absolute bottom-0 right-0 w-16 h-16 border-b border-r border-[#00ffff]/30 pointer-events-none"></div>
+              <div className="absolute top-0 left-0 w-16 h-16 border-t border-l border-[#00ffff]/30 pointer-events-none z-10"></div>
+              <div className="absolute bottom-0 right-0 w-16 h-16 border-b border-r border-[#00ffff]/30 pointer-events-none z-10"></div>
 
-              {/* Mobile View Sidebar toggle handle */}
-              <div className="md:hidden flex items-center justify-between bg-black/80 border border-[#00ffff]/20 p-2 mb-4 rounded-sm">
-                <button 
-                  onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                  className="flex items-center gap-2 text-xs text-cyber-cyan font-mono uppercase border border-cyber-cyan/30 px-3 py-1 rounded-sm"
-                >
-                  <Menu className="w-4 h-4" />
-                  {isMobileSidebarOpen ? "CLOSE INDEX LIST" : "OPEN INDEX LIST_"}
-                </button>
-                <span className="text-xs text-slate-300 font-mono">
-                  {activeCardIndex + 1} / {filteredCards.length}
-                </span>
+              {/* Scrollable content area */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-8">
+                {/* Mobile sidebar toggle */}
+                <div className="md:hidden flex items-center justify-between bg-black/80 border border-[#00ffff]/20 p-2 mb-4 rounded-sm">
+                  <button onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} className="flex items-center gap-2 text-xs text-cyber-cyan font-mono uppercase border border-cyber-cyan/30 px-3 py-1 rounded-sm">
+                    <Menu className="w-4 h-4" />
+                    {isMobileSidebarOpen ? "CLOSE INDEX LIST" : "OPEN INDEX LIST_"}
+                  </button>
+                  <span className="text-xs text-slate-300 font-mono">{activeCardIndex + 1} / {filteredCards.length}</span>
+                </div>
+
+                {activeCard ? (
+                  <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full relative z-10">
+
+                    {/* Category badge + title */}
+                    <div className="space-y-1">
+                      <div className="flex items-center flex-wrap gap-2">
+                        <span className="text-[9px] px-2 py-0.5 border border-cyber-cyan bg-cyber-cyan/15 text-cyber-cyan font-mono uppercase rounded-sm">{activeCard.category}</span>
+                        <span className="text-[9px] text-slate-400 font-mono tracking-widest uppercase">NODE: [{activeCard.id.slice(0, 10)}]</span>
+                        <span className="text-[9px] text-cyber-green font-mono tracking-widest uppercase ml-auto">VERIFIED</span>
+                      </div>
+                      <h2 className="text-xl md:text-2xl font-display font-black tracking-tight text-white">{activeCard.title}</h2>
+                    </div>
+
+                    {/* Reveal status banner */}
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-[#00ffff]/5 border border-[#00ffff]/25 text-xs text-cyber-cyan font-mono rounded-sm">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${isRevealed ? "bg-cyber-green shadow-[0_0_6px_#00ffcc]" : "bg-[#ff0055] animate-ping"}`}></div>
+                        <span>{isRevealed ? "🛡️ 已解密" : "🔒 遮罩回忆中 - 30s 后自动解密"}</span>
+                      </div>
+                      <button onClick={toggleReveal} className="px-2 py-0.5 border border-cyber-cyan/40 hover:bg-cyber-cyan/15 text-[10px] uppercase cursor-pointer">{isRevealed ? "遮罩" : "解密"}</button>
+                    </div>
+
+                    {/* Content card */}
+                    <div className="bg-black/60 border border-[#00ffff]/15 p-4 md:p-5 relative overflow-hidden rounded-sm">
+                      <div className="absolute top-2 right-2 flex gap-1.5 z-20">
+                        <button onClick={() => handleOpenEditModal(activeCard)} className="p-1 px-1.5 border border-[#00ffff]/30 bg-black/80 text-[9px] text-cyber-cyan hover:bg-[#00ffff]/20 font-mono flex items-center gap-1 cursor-pointer transition-all rounded-sm"><Edit className="w-3 h-3" /> MODIFY</button>
+                        <button onClick={() => handleDeleteCard(activeCard.id)} className="p-1 px-1.5 border border-[#ff0055]/30 bg-black/80 text-[9px] text-[#ff0055] hover:bg-[#ff0055]/15 font-mono flex items-center gap-1 cursor-pointer transition-all rounded-sm"><Trash2 className="w-3 h-3" /> DELETE</button>
+                      </div>
+
+                      {!isRevealed ? (
+                        <div className="flex flex-col items-center justify-center py-6 text-center text-cyber-cyan/50 font-mono space-y-3">
+                          <Cpu className="w-10 h-10 text-cyber-cyan animate-pulse" />
+                          <p className="text-xs">30 秒内自行回忆本题要点</p>
+                          <div className="text-3xl font-black text-cyber-cyan tracking-wider bg-[#00ffff]/5 border border-cyber-cyan/20 px-6 py-2 rounded-sm">00:{timerCount < 10 ? `0${timerCount}` : timerCount}</div>
+                          <button onClick={toggleReveal} className="px-5 py-1.5 bg-cyber-cyan text-black text-xs font-black uppercase shadow-[0_0_12px_rgba(0,255,255,0.3)] hover:shadow-[0_0_20px_#00ffff] transition-all cursor-pointer rounded-sm">立即解锁</button>
+                        </div>
+                      ) : (
+                        <div ref={textContainerRef} className="max-h-[35vh] overflow-y-auto pr-1">
+                          <div className="markdown-body text-[#e2e8f0]/95 space-y-3 font-mono select-text text-sm md:text-[14px]">
+                            {activeParagraphs.map((block, idx) => (
+                              <div key={idx} id={`p-block-${idx}`}
+                                onClick={() => { setCurrentParagraphIndex(idx); if (isPlayingTTS) speakActiveParagraph(); }}
+                                className={`p-3 transition-all duration-300 rounded-sm cursor-pointer ${idx === currentParagraphIndex && isPlayingTTS ? "bg-cyber-cyan/15 border-l-4 border-cyber-cyan text-white" : "border-l-4 border-transparent hover:bg-white/5"}`}
+                                dangerouslySetInnerHTML={{ __html: block }} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-[#00ffff]/40 font-mono">
+                    <span>WARNING: NO KNOWLEDGE CARD SELECTED ON ACTIVE CHANNEL.</span>
+                  </div>
+                )}
               </div>
 
-              {activeCard ? (
-                <div className="flex-1 flex flex-col gap-6 max-w-4xl mx-auto w-full relative z-10">
-                  
-                  {/* Category badging and index header */}
-                  <div className="space-y-1">
-                    <div className="flex items-center flex-wrap gap-2.5">
-                      <span className="text-[10px] px-2 py-0.5 border border-cyber-cyan bg-cyber-cyan/15 text-cyber-cyan font-mono uppercase rounded-sm">
-                        {activeCard.category}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">
-                        NODE CHIP ID: CODE-[{activeCard.id.slice(0, 14)}]
-                      </span>
-                      <span className="text-[10px] text-cyber-green font-mono tracking-widest uppercase ml-auto">
-                        VERIFIED SECURE
-                      </span>
-                    </div>
-
-                    <h2 
-                      className="text-2xl md:text-3xl font-display font-black tracking-tight text-white pt-2"
-                      style={{ textShadow: "0 0 10px rgba(0,255,255,0.2)" }}
-                    >
-                      {activeCard.title}
-                    </h2>
-                  </div>
-
-                  {/* 30s Cooldown State Alert Banner */}
-                  <div className="flex items-center justify-between px-4 py-2 bg-[#00ffff]/5 border border-[#00ffff]/25 text-xs text-cyber-cyan font-mono rounded-sm">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2.5 h-2.5 rounded-full ${isRevealed ? "bg-cyber-green shadow-[0_0_6px_#00ffcc]" : "bg-[#ff0055] animate-ping"}`}></div>
-                      <span>
-                        {isRevealed 
-                          ? "🛡️ 内容已完全解密运行中 (Decrypted mode)" 
-                          : "🔒 状态：内容处于遮罩回忆态 (Recall state: mask applied)"}
-                      </span>
-                    </div>
-                    <button 
-                      onClick={toggleReveal}
-                      className="px-3 py-0.5 border border-cyber-cyan/40 hover:bg-cyber-cyan/15 text-[11px] uppercase cursor-pointer"
-                    >
-                      {isRevealed ? "重置回忆遮盖 [LOCK]" : "手动提前解密 [DECRYPT]"}
+              {/* Fixed bottom: TTS player + navigation */}
+              {activeCard && (
+              <div className="shrink-0 bg-black/95 border-t border-[#00ffff]/20 px-3 py-1.5">
+                <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-1.5 max-w-4xl mx-auto">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button onClick={handleToggleTTS}
+                      className={`relative w-10 h-10 flex items-center justify-center cursor-pointer transition-all rounded-sm border-2 shrink-0 ${
+                        isPlayingTTS ? "bg-cyber-magenta/20 border-cyber-magenta text-cyber-magenta shadow-[0_0_15px_#ff0055]" : "bg-black border-cyber-cyan hover:bg-cyber-cyan/15 text-cyber-cyan hover:shadow-[0_0_12px_#00ffff]"
+                      }`}
+                      title={isPlayingTTS ? "暂停" : "朗读"}>
+                      {isPlayingTTS ? <VolumeX className="w-5 h-5 animate-pulse" /> : <Volume2 className="w-5 h-5" />}
                     </button>
-                  </div>
-
-                  {/* Glassy Core Document Node Display */}
-                  <div className="flex-1 bg-black/60 border border-[#00ffff]/15 p-5 md:p-7 relative overflow-hidden group/board min-h-[300px] flex flex-col justify-between shadow-[inset_0_0_15px_rgba(0,255,255,0.03)] rounded-sm">
-                    {/* Top action layout triggers */}
-                    <div className="absolute top-3 right-3 flex gap-2 z-20">
-                      <button 
-                        onClick={() => handleOpenEditModal(activeCard)}
-                        className="p-1 px-2 border border-[#00ffff]/30 bg-black/80 text-[10px] text-cyber-cyan hover:bg-[#00ffff]/20 hover:border-cyber-cyan font-mono flex items-center gap-1 cursor-pointer transition-all rounded-sm"
-                        title="双击进入富自定义文本编辑器"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        MODIFY
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCard(activeCard.id)}
-                        className="p-1 px-2 border border-[#ff0055]/30 bg-black/80 text-[10px] text-[#ff0055] hover:bg-[#ff0055]/15 font-mono flex items-center gap-1 cursor-pointer transition-all rounded-sm"
-                        title="删除该节点"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        DELETE
-                      </button>
-                    </div>
-
-                    {/* Unmask / Mask rendering block */}
-                    {!isRevealed ? (
-                      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-cyber-cyan/50 font-mono space-y-4">
-                        <Cpu className="w-12 h-12 text-cyber-cyan animate-pulse" />
-                        <div className="space-y-1">
-                          <p className="text-sm font-bold text-slate-100 tracking-wider">🔒 DATA BLOCKS UNDER LOCK & KEY </p>
-                          <p className="text-xs text-cyber-cyan/80">在 30 秒内自行默默回忆本题面经的底层解答。</p>
-                        </div>
-                        <div className="text-4xl font-black text-cyber-cyan tracking-wider blink bg-[#00ffff]/5 border border-cyber-cyan/20 px-8 py-3 rounded-sm">
-                          00:{timerCount < 10 ? `0${timerCount}` : timerCount}
-                        </div>
-                        <button 
-                          onClick={toggleReveal}
-                          className="px-6 py-2 bg-cyber-cyan text-black text-xs font-black uppercase shadow-[0_0_12px_rgba(0,255,255,0.3)] hover:shadow-[0_0_20px_#00ffff] hover:scale-105 active:scale-95 transition-all cursor-pointer rounded-sm"
-                        >
-                          立即强制解锁芯片 (DECRYPT INTEGRITY_
-                        </button>
-                      </div>
-                    ) : (
-                      <div ref={textContainerRef} className="flex-1 overflow-y-auto pr-2">
-                        <div className="markdown-body text-[#e2e8f0]/95 space-y-4 font-mono select-text mb-4 text-sm md:text-[15px]">
-                          {activeParagraphs.map((block, idx) => {
-                            const isCurrentBlock = idx === currentParagraphIndex && isPlayingTTS;
-                            return (
-                              <div 
-                                key={idx}
-                                id={`p-block-${idx}`}
-                                onClick={() => {
-                                  setCurrentParagraphIndex(idx);
-                                  if (isPlayingTTS) {
-                                    speakActiveParagraph();
-                                  }
-                                }}
-                                className={`p-4 transition-all duration-300 rounded-sm cursor-pointer ${
-                                  isCurrentBlock 
-                                    ? "bg-cyber-cyan/15 border-l-4 border-cyber-cyan text-white shadow-[0_0_15px_rgba(0,255,255,0.1)] font-medium" 
-                                    : "border-l-4 border-transparent hover:bg-white/5"
-                                }`}
-                                dangerouslySetInnerHTML={{ __html: block }}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Footer decoration indicator */}
-                    <div className="border-t border-cyber-cyan/10 pt-3 flex items-center justify-between text-[9px] text-[#00ffff]/50 font-mono uppercase">
-                      <span>CHIP TYPE: INNODB_ACTIVE_REVISION</span>
-                      <span>LAST PROTOCOL UPDATE: {new Date(activeCard.updatedAt).toLocaleString("zh-CN")}</span>
-                    </div>
-                  </div>
-
-                  {/* ==================================================== */}
-                  {/* FLOATING TTS SOUND CONTROLLER FOOTPRINT */}
-                  {/* ==================================================== */}
-                  <div className="bg-black/95 border border-[#00ffff]/30 p-4 sm:p-5 shadow-[0_0_30px_rgba(0,255,255,0.15)] flex flex-col xl:flex-row items-center justify-between gap-4 sm:gap-6 relative overflow-hidden backdrop-blur-xl rounded-sm">
-                    {/* Retro Grid Accent for specialist physical controls feel */}
-                    <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0" style={{ background: "linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px)", backgroundSize: "8px 8px" }}></div>
-                    
-                    {/* Neon pulsing audio bars decoration on background bottom */}
-                    <div className="absolute right-0 left-0 bottom-0 pointer-events-none opacity-15 h-1.5 flex gap-[2px] justify-between z-0">
-                      {Array.from({ length: 90 }).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className="bg-cyber-cyan w-full" 
-                          style={{ 
-                            height: isPlayingTTS ? `${20 + Math.random() * 80}%` : "1px",
-                            transition: "height 0.15s ease-in-out" 
-                          }}
-                        />
-                      ))}
-                    </div>
-
-                    {/* CONTROL PART 1: AUDIO STATUS & LAUNCH BUTTON */}
-                    <div className="flex items-center gap-4 z-10 w-full xl:w-auto justify-between">
-                      <div className="flex items-center gap-3">
-                        <button 
-                          onClick={handleToggleTTS}
-                          className={`group relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center cursor-pointer transition-all rounded-sm border-2 ${
-                            isPlayingTTS 
-                              ? "bg-cyber-magenta/20 border-cyber-magenta text-cyber-magenta shadow-[0_0_20px_#ff0055]" 
-                              : "bg-black border-cyber-cyan hover:bg-cyber-cyan/15 text-cyber-cyan hover:shadow-[0_0_15px_#00ffff]"
-                          }`}
-                          title={isPlayingTTS ? "暂停语音朗读" : "开始 AI 自动语音朗读"}
-                        >
-                          {/* Angled corner accents */}
-                          <div className={`absolute -top-1 -right-1 w-1.5 h-1.5 ${isPlayingTTS ? "bg-cyber-magenta" : "bg-cyber-cyan"}`}></div>
-                          
-                          {isPlayingTTS ? (
-                            <VolumeX className="w-5.5 h-5.5 sm:w-6 h-6 animate-pulse" />
-                          ) : (
-                            <Volume2 className="w-5.5 h-5.5 sm:w-6 h-6 group-hover:scale-110 transition-transform" />
-                          )}
-                        </button>
-
-                        <div className="flex flex-col text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[9px] sm:text-[10px] text-white font-mono tracking-widest uppercase font-extrabold flex items-center gap-1.5">
-                              {isPlayingTTS ? (
-                                <>
-                                  <span className="w-1.5 h-1.5 bg-cyber-magenta rounded-full animate-ping"></span>
-                                  <span className="text-cyber-magenta">TTS TRANSMITTING</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="w-1.5 h-1.5 bg-cyber-green rounded-full"></span>
-                                  <span className="text-slate-400 font-bold">READER STANDBY</span>
-                                </>
-                              )}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2 mt-1 text-[10px] sm:text-[11px] font-mono text-slate-300">
-                            <span className="font-black bg-[#00ffff]/10 border border-[#00ffff]/20 px-1 py-0.5 text-cyber-cyan">
-                              SEG [{String(currentParagraphIndex + 1).padStart(2, "0")}/{String(activeParagraphs.length).padStart(2, "0")}]
-                            </span>
-                            <div className="flex items-center gap-1 bg-black/50 px-1.5 py-0.5 border border-white/5">
-                              <span className="text-[8px] text-[#00ffff]/60 uppercase hidden xs:inline">SPEED:</span>
-                              <span className="text-cyber-green font-bold text-center w-6">{voiceSpeed.toFixed(1)}x</span>
-                              <input 
-                                type="range" 
-                                min="0.8" 
-                                max="1.8" 
-                                step="0.1" 
-                                value={voiceSpeed}
-                                onChange={(e) => {
-                                  const newspeed = parseFloat(e.target.value);
-                                  setVoiceSpeed(newspeed);
-                                  if (isPlayingTTS) {
-                                    setTimeout(() => speakActiveParagraph(), 200);
-                                  }
-                                }}
-                                className="w-12 sm:w-16 accent-cyber-cyan h-1 bg-cyber-gray-light cursor-pointer"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* CONTROL PART 2: THE SEGMENT SEQUENCER STRIP (CHANNELS OVERLAY) */}
-                    <div className="flex-1 w-full xl:w-auto flex flex-col justify-center px-1 border-t border-b xl:border-t-0 xl:border-b-0 border-white/5 z-10 py-1.5 xl:py-0">
-                      <div className="flex items-center justify-between mb-1 text-[8px] sm:text-[9px] font-mono text-[#00ffff]/50">
-                        <span>AUDIO DECODER SEQUENCER STATE</span>
-                        <span>{isPlayingTTS ? `DECODING STREAM CHUNKS...` : `READY TO PLAY`}</span>
-                      </div>
-                      <div className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-cyber-cyan/30 scrollbar-track-transparent">
-                        {activeParagraphs.map((_, i) => {
-                          const isActive = i === currentParagraphIndex;
-                          const isPlayed = i < currentParagraphIndex;
-                          return (
-                            <button 
-                              key={i}
-                              onClick={() => {
-                                setCurrentParagraphIndex(i);
-                                if (isPlayingTTS) speakActiveParagraph();
-                              }}
-                              className={`flex-1 min-w-[20px] sm:min-w-0 h-4 sm:h-3.5 relative focus:outline-none border rounded-sm cursor-pointer transition-all ${
-                                isActive 
-                                  ? "bg-cyber-cyan border-cyber-cyan shadow-[0_0_12px_#00ffff]" 
-                                  : isPlayed 
-                                  ? "bg-cyber-cyan/40 border-cyber-cyan/30 hover:bg-cyber-cyan/60" 
-                                  : "bg-[#00ffff]/5 border-[#00ffff]/15 hover:bg-[#00ffff]/20 hover:border-[#00ffff]/30"
-                              }`}
-                              title={`切换到第 ${i + 1} 段`}
-                            >
-                              <span className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-black border border-cyber-cyan text-[8px] text-cyber-cyan px-1 py-0.5 opacity-0 hover:opacity-100 pointer-events-none transition-opacity font-mono z-30 whitespace-nowrap">
-                                SEG_CH #{i + 1}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* CONTROL PART 3: NAVIGATION TACTICAL KEYBOARD */}
-                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-10 w-full sm:w-auto justify-between sm:justify-end">
-                      {/* Segment hoppers */}
-                      <div className="flex items-center gap-1 border border-white/10 bg-black/40 p-1 rounded-sm">
-                        <button 
-                          onClick={handlePrevBlock}
-                          className="p-1.5 border border-transparent text-[#00ffff]/60 hover:text-cyber-cyan hover:bg-[#00ffff]/10 cursor-pointer rounded-sm active:scale-95 transition-all"
-                          title="跳转到上一段 (PREVIOUS SEGMENT)"
-                        >
-                          <SkipBack className="w-4 h-4" />
-                        </button>
-                        
-                        <div className="h-4 w-px bg-white/15" />
-                        
-                        <button 
-                          onClick={handleNextBlock}
-                          className="p-1.5 border border-transparent text-[#00ffff]/60 hover:text-cyber-cyan hover:bg-[#00ffff]/10 cursor-pointer rounded-sm active:scale-95 transition-all"
-                          title="跳转到下一段 (NEXT SEGMENT)"
-                        >
-                          <SkipForward className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      {/* Topic swappers - styled elegantly like core terminal buttons */}
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={handlePrevCard}
-                          className="px-3.5 py-2 border border-cyber-cyan/45 bg-black text-[11px] font-mono text-cyber-cyan hover:bg-cyber-cyan/15 hover:text-white hover:shadow-[0_0_15px_rgba(0,255,255,0.2)] transition-all cursor-pointer rounded-sm uppercase tracking-wider flex items-center gap-1"
-                          title="跳转向上一知识点"
-                        >
-                          <ChevronLeft className="w-3.5 h-3.5" />
-                          PREV_CHIP
-                        </button>
-                        
-                        <button 
-                          onClick={handleNextCard}
-                          className="relative group overflow-hidden px-4 py-2 bg-cyber-cyan hover:bg-[#00ffff] text-black font-extrabold text-[11px] font-mono uppercase tracking-widest shadow-[0_0_15px_rgba(0,255,255,0.35)] hover:shadow-[0_0_25px_#00ffff] transition-all cursor-pointer rounded-sm flex items-center gap-1.5"
-                          title="跳转向下一知识点"
-                        >
-                          {/* Inner glowing effect on hover */}
-                          <div className="absolute top-0 right-0 w-2 h-2 bg-white"></div>
-                          <span>NEXT_CHIP</span>
-                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                        </button>
+                    <div className="text-left leading-tight">
+                      <span className={`text-[9px] font-mono tracking-widest uppercase ${isPlayingTTS ? 'text-cyber-magenta' : 'text-slate-400'}`}>
+                        {isPlayingTTS ? '▶ TTS 朗读中' : '⏸ 就绪'}
+                      </span>
+                      <div className="text-[9px] font-mono text-cyber-cyan">
+                        段落 [{currentParagraphIndex + 1}/{activeParagraphs.length}]
                       </div>
                     </div>
                   </div>
 
+                  {/* Segment bar */}
+                  <div className="flex-1 flex items-center gap-1 overflow-x-auto py-1">
+                    {activeParagraphs.map((_, i) => (
+                      <button key={i} onClick={() => { setCurrentParagraphIndex(i); if (isPlayingTTS) speakActiveParagraph(); }}
+                        className={`flex-1 min-w-[14px] h-2.5 border rounded-sm cursor-pointer transition-all ${
+                          i === currentParagraphIndex ? "bg-cyber-cyan border-cyber-cyan shadow-[0_0_6px_#00ffff]" :
+                          i < currentParagraphIndex ? "bg-cyber-cyan/40 border-cyber-cyan/30" : "bg-[#00ffff]/5 border-[#00ffff]/15 hover:bg-[#00ffff]/20"
+                        }`} />
+                    ))}
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={handlePrevBlock} className="p-1 border border-white/10 text-[#00ffff]/60 hover:text-cyber-cyan hover:bg-[#00ffff]/10 cursor-pointer rounded-sm"><SkipBack className="w-3.5 h-3.5" /></button>
+                    <button onClick={handleNextBlock} className="p-1 border border-white/10 text-[#00ffff]/60 hover:text-cyber-cyan hover:bg-[#00ffff]/10 cursor-pointer rounded-sm"><SkipForward className="w-3.5 h-3.5" /></button>
+                    <div className="w-px h-4 bg-white/15 mx-1"></div>
+                    <button onClick={handlePrevCard} className="px-2 py-1 border border-cyber-cyan/45 bg-black text-[9px] font-mono text-cyber-cyan hover:bg-cyber-cyan/15 transition-all cursor-pointer rounded-sm uppercase"><ChevronLeft className="w-3 h-3 inline" /> 上一条</button>
+                    <button onClick={handleNextCard} className="px-2.5 py-1 bg-cyber-cyan hover:bg-[#00ffff] text-black font-bold text-[9px] font-mono uppercase tracking-wider shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all cursor-pointer rounded-sm flex items-center gap-1">下一条 <ChevronRight className="w-3 h-3" /></button>
+                  </div>
                 </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 text-[#00ffff]/40 font-mono">
-                  <span>WARNING: NO KNOWLEDGE CARD SELECTED ON ACTIVE CHANNEL.</span>
-                </div>
+              </div>
               )}
             </section>
+
           </main>
         )}
 
