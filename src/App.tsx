@@ -215,7 +215,10 @@ export default function App() {
               updateStatus("TTS TRANSMISSION ACTIVE: POSTPONING AUTOMATED HOP");
               return 15;
             }
-            handleNextCard();
+            // Loop: go back to recall mode, cycle repeats on same card
+            setIsRevealed(false);
+            setRecallMode("recall");
+            updateStatus("RECALL CYCLE RESTARTED");
             return 30;
           }
         }
@@ -369,12 +372,13 @@ export default function App() {
       audio.onended = () => {
         URL.revokeObjectURL(url);
         const meta = ttsMetaRef.current;
-        // Auto advance to next paragraph
+        // Loop: if last paragraph, go back to first; otherwise advance
         if (meta.index < meta.total - 1) {
           setCurrentParagraphIndex(prev => prev + 1);
         } else {
-          setIsPlayingTTS(false);
-          updateStatus("TRANSMISSION COMPLETE");
+          // Loop back to start of the same card
+          setCurrentParagraphIndex(0);
+          updateStatus("TTS: LOOPING CARD");
         }
       };
 
@@ -421,8 +425,8 @@ export default function App() {
     if (currentParagraphIndex < activeParagraphs.length - 1) {
       setCurrentParagraphIndex(prev => prev + 1);
     } else {
-      // Auto move down to Next card
-      handleNextCard();
+      // Loop back to first paragraph
+      setCurrentParagraphIndex(0);
     }
   };
 
