@@ -178,35 +178,40 @@ export default function App() {
   // ----------------------------------------------------
   // 3. 30s Cooldown State & Automations
   // ----------------------------------------------------
+  // Reset state when card changes (NOT when recallMode changes)
   useEffect(() => {
-    // Clear existing intervals
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-
-    if (currentView !== "dashboard" || !activeCard) return;
-
-    // Reset countdown timer whenever Card changes
     setTimerCount(30);
     setIsRevealed(false);
     setRecallMode("recall");
+    setCurrentParagraphIndex(0);
+  }, [selectedCategorySlug, activeCardIndex, currentView]);
+
+  // Timer tick effect (uses refs to avoid stale closure on recallMode)
+  const recallModeRef = useRef(recallMode);
+  const isPlayingTTSRef = useRef(isPlayingTTS);
+  useEffect(() => { recallModeRef.current = recallMode; }, [recallMode]);
+  useEffect(() => { isPlayingTTSRef.current = isPlayingTTS; }, [isPlayingTTS]);
+
+  useEffect(() => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    if (currentView !== "dashboard" || !activeCard) return;
 
     timerIntervalRef.current = setInterval(() => {
       if (isTimerPaused) return;
 
       setTimerCount(prev => {
         if (prev <= 1) {
-          // Timer finished
-          if (recallMode === "recall") {
-            // Auto reveal content
+          const mode = recallModeRef.current;
+          const ttsPlaying = isPlayingTTSRef.current;
+          if (mode === "recall") {
             setIsRevealed(true);
             setRecallMode("cooldown");
             updateStatus("RECALL COOLDOWN COMMENCED - UNMASKING CODES");
-            return 30; // Next countdown to auto advance
+            return 30;
           } else {
-            // Transition to Next Topic
-            // Skip automated jump if TTS or Audio is actively reading
-            if (isPlayingTTS) {
+            if (ttsPlaying) {
               updateStatus("TTS TRANSMISSION ACTIVE: POSTPONING AUTOMATED HOP");
-              return 15; // Delay 15s to check again
+              return 15;
             }
             handleNextCard();
             return 30;
@@ -219,7 +224,7 @@ export default function App() {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  }, [selectedCategorySlug, activeCardIndex, isTimerPaused, recallMode, currentView, isPlayingTTS]);
+  }, [selectedCategorySlug, activeCardIndex, isTimerPaused, currentView]);
 
   // Clean elements from card HTML content
   const getParagraphs = (htmlContent: string) => {
