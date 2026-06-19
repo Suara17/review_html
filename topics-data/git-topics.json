@@ -6,63 +6,63 @@
   "knowledge_points": [
     {
       "title": "1. Git 的三个核心区域是什么？",
-      "content": "<strong>结论：</strong>高频记住工作区、暂存区、本地仓库。<br><br><strong>要点：</strong><br>1. 工作区是你正在改的文件。<br>2. 暂存区是本次准备提交的内容。<br>3. 本地仓库保存正式提交历史。"
+      "content": "<p>Git 三个区域是工作区、暂存区、本地仓库。工作区就是你电脑上看到的文件。暂存区是 git add 后存放待提交内容的地方——相当于一个中间缓冲区。本地仓库是 git commit 后正式记录历史的地方。很多 Git 操作都可以用这三个区的移动来理解：add 是把工作区的改动挪到暂存区，commit 是把暂存区内容写入仓库，checkout 或 reset 是把仓库的内容还原到工作区。理解了这三个区，Git 百分之八十的操作你都能自己推出来了。</p>"
     },
     {
       "title": "2. git status 为什么重要？",
-      "content": "<strong>结论：</strong>git status 是最基础的状态确认命令，很多误操作都能靠它提前避免。<br><br><strong>要点：</strong><br>1. 它能看出哪些文件修改了。<br>2. 还能看出哪些文件已暂存、哪些还没暂存。<br>3. 做 add、commit、pull、push 前先看一眼很稳。"
+      "content": "<p>「git status 为什么重要？」这个问题其实是在考察你对原理是否真正理解，我的分析如下。 git status 是最基础的状态确认命令，很多误操作都能靠它提前避免。 第一，它能看出哪些文件修改了。 第二，还能看出哪些文件已暂存、哪些还没暂存。 第三，做 add、commit、pull、push 前先看一眼很稳。 日常工作中最常用的是 status、log、branch、commit --amend 和 rebase -i，建议熟练掌握。</p>"
     },
     {
       "title": "3. git add 的本质是什么？",
-      "content": "<strong>结论：</strong>git add 的本质是把“这次想提交的改动”放进暂存区。<br><br><strong>要点：</strong><br>1. 它不是直接提交。<br>2. 它决定了 commit 会带上哪些内容。<br>3. 面试里要强调：提交的是暂存区，不是工作区全部内容。"
+      "content": "<p>关于「git add 的本质是什么？」，这是基础面试题，我的理解是这样的。 git add 的本质是把“这次想提交的改动”放进暂存区。 第一，它不是直接提交。 第二，它决定了 commit 会带上哪些内容。 第三，面试里要强调：提交的是暂存区，不是工作区全部内容。 Git 的难度不在于命令多，而在于理解「三个区」和「对象不可变性」，大部分操作都能推出来。</p>"
     },
     {
       "title": "4. commit 的本质是什么？",
-      "content": "<strong>结论：</strong>commit 是把暂存区内容固化成一次有边界的历史记录。<br><br><strong>要点：</strong><br>1. 好的提交应该语义清晰。<br>2. 一个 commit 最好只做一件事。<br>3. 这会直接影响回滚、审查和协作体验。"
+      "content": "<p>关于「commit 的本质是什么？」，这是基础面试题，我的理解是这样的。 commit 是把暂存区内容固化成一次有边界的历史记录。 第一，好的提交应该语义清晰。 第二，一个 commit 最好只做一件事。 第三，这会直接影响回滚、审查和协作体验。 日常工作中最常用的是 status、log、branch、commit --amend 和 rebase -i，建议熟练掌握。</p>"
     },
     {
       "title": "5. branch / switch 的作用是什么？",
-      "content": "<strong>结论：</strong>分支用于隔离不同开发任务，避免大家直接在主线互相干扰。<br><br><strong>要点：</strong><br>1. 新需求、新修复最好开新分支。<br>2. switch 用于切换分支。<br>3. 分支本质是指向某个提交的可移动引用。"
+      "content": "<p>关于「branch / switch 的作用是什么？」，这是基础面试题，我的理解是这样的。 分支用于隔离不同开发任务，避免大家直接在主线互相干扰。 第一，新需求、新修复最好开新分支。 第二，switch 用于切换分支。 第三，分支本质是指向某个提交的可移动引用。 日常工作中最常用的是 status、log、branch、commit --amend 和 rebase -i，建议熟练掌握。</p>"
     },
     {
       "title": "6. merge 和 rebase 有什么区别？",
-      "content": "<strong>结论：</strong>两者都能同步代码，但 merge 保留分叉历史，rebase 改写提交基底让历史更线性。<br><br><strong>要点：</strong><br>1. merge 更安全，历史更真实。<br>2. rebase 历史更整洁。<br>3. 公共分支上要谨慎 rebase。"
+      "content": "<p>「merge 和 rebase 有什么区别？」这个问题面试经常被问到，我来梳理一下它们的核心区别。 两者都能同步代码，但 merge 保留分叉历史，rebase 改写提交基底让历史更线性。 第一，merge 更安全，历史更真实。 第二，rebase 历史更整洁。 第三，公共分支上要谨慎 rebase。 Git 的难度不在于命令多，而在于理解「三个区」和「对象不可变性」，大部分操作都能推出来。</p>"
     },
     {
       "title": "7. git pull 本质做了什么？",
-      "content": "<strong>结论：</strong>git pull 本质是先 fetch，再 merge 或 rebase。<br><br><strong>要点：</strong><br>1. 它会把远程更新拉到本地。<br>2. 然后尝试和当前分支整合。<br>3. 面试里最好补一句：想更稳，可以先 fetch 再手动决定怎么合。"
+      "content": "<p>关于「git pull 本质做了什么？」，我来展开说一下。 git pull 本质是先 fetch，再 merge 或 rebase。 第一，它会把远程更新拉到本地。 第二，然后尝试和当前分支整合。 第三，面试里最好补一句：想更稳，可以先 fetch 再手动决定怎么合。 Git 的难度不在于命令多，而在于理解「三个区」和「对象不可变性」，大部分操作都能推出来。</p>"
     },
     {
       "title": "8. git push 前为什么常要先同步远程？",
-      "content": "<strong>结论：</strong>因为远程分支可能已经有别人新提交，直接 push 容易被拒绝或引发覆盖风险。<br><br><strong>要点：</strong><br>1. 先同步能减少冲突。<br>2. 也能避免把自己的分支建立在过时历史上。<br>3. 团队协作中这是基本习惯。"
+      "content": "<p>「git push 前为什么常要先同步远程？」这个问题其实是在考察你对原理是否真正理解，我的分析如下。 因为远程分支可能已经有别人新提交，直接 push 容易被拒绝或引发覆盖风险。 第一，先同步能减少冲突。 第二，也能避免把自己的分支建立在过时历史上。 第三，团队协作中这是基本习惯。 日常工作中最常用的是 status、log、branch、commit --amend 和 rebase -i，建议熟练掌握。</p>"
     },
     {
       "title": "9. git reset 和 git revert 有什么区别？",
-      "content": "<strong>结论：</strong>reset 更像回退历史指针，revert 更像新增一次“反向提交”。<br><br><strong>要点：</strong><br>1. reset 常用于本地整理提交。<br>2. revert 更适合公共分支撤销，因为不会抹掉历史。<br>3. 面试里要强调：公共历史慎用 reset 改写。"
+      "content": "<p>「git reset 和 git revert 有什么区别？」这个问题面试经常被问到，我来梳理一下它们的核心区别。 reset 更像回退历史指针，revert 更像新增一次“反向提交”。 第一，reset 常用于本地整理提交。 第二，revert 更适合公共分支撤销，因为不会抹掉历史。 第三，面试里要强调：公共历史慎用 reset 改写。 日常工作中最常用的是 status、log、branch、commit --amend 和 rebase -i，建议熟练掌握。</p>"
     },
     {
       "title": "10. soft / mixed / hard reset 怎么区分？",
-      "content": "<strong>结论：</strong>三者区别在于是否保留暂存区和工作区改动。<br><br><strong>要点：</strong><br>1. soft 回退提交，但保留暂存区和工作区。<br>2. mixed 回退提交并清空暂存区，但保留工作区。<br>3. hard 会连工作区一起重置，风险最大。"
+      "content": "<p>「soft / mixed / hard reset 怎么区分？」这个问题，我的回答思路是分步骤来说清楚。 三者区别在于是否保留暂存区和工作区改动。 第一，soft 回退提交，但保留暂存区和工作区。 第二，mixed 回退提交并清空暂存区，但保留工作区。 第三，hard 会连工作区一起重置，风险最大。 日常工作中最常用的是 status、log、branch、commit --amend 和 rebase -i，建议熟练掌握。</p>"
     },
     {
       "title": "11. git stash 是做什么的？",
-      "content": "<strong>结论：</strong>stash 是把当前未完成改动临时收起来，等会儿再恢复。<br><br><strong>要点：</strong><br>1. 适合中途切分支、临时救火。<br>2. 它不是正式历史，不适合长期保存。<br>3. 用完记得及时清理和恢复。"
+      "content": "<p>关于「git stash 是做什么的？」，我来展开说一下。 stash 是把当前未完成改动临时收起来，等会儿再恢复。 第一，适合中途切分支、临时救火。 第二，它不是正式历史，不适合长期保存。 第三，用完记得及时清理和恢复。 日常工作中最常用的是 status、log、branch、commit --amend 和 rebase -i，建议熟练掌握。</p>"
     },
     {
       "title": "12. 冲突为什么会发生？怎么处理？",
-      "content": "<strong>结论：</strong>同一位置的改动 Git 无法自动判断该保留谁时，就会发生冲突。<br><br><strong>要点：</strong><br>1. 先理解双方改了什么。<br>2. 再人工决定保留哪部分，或把两边正确内容合并。<br>3. 处理完后记得重新 add 并完成合并流程。"
+      "content": "<p>「冲突为什么会发生？怎么处理？」这个问题其实是在考察你对原理是否真正理解，我的分析如下。 同一位置的改动 Git 无法自动判断该保留谁时，就会发生冲突。 第一，先理解双方改了什么。 第二，再人工决定保留哪部分，或把两边正确内容合并。 第三，处理完后记得重新 add 并完成合并流程。 日常工作中最常用的是 status、log、branch、commit --amend 和 rebase -i，建议熟练掌握。</p>"
     },
     {
       "title": "13. cherry-pick 是什么？",
-      "content": "<strong>结论：</strong>cherry-pick 用于把某一个指定提交拣到当前分支。<br><br><strong>要点：</strong><br>1. 它适合补丁迁移、热修复迁移。<br>2. 不需要把整个分支历史都合过来。<br>3. 面试里常被拿来和 merge、rebase 对比。"
+      "content": "<p>关于「cherry-pick 是什么？」，这是基础面试题，我的理解是这样的。 cherry-pick 用于把某一个指定提交拣到当前分支。 第一，它适合补丁迁移、热修复迁移。 第二，不需要把整个分支历史都合过来。 第三，面试里常被拿来和 merge、rebase 对比。 Git 的难度不在于命令多，而在于理解「三个区」和「对象不可变性」，大部分操作都能推出来。</p>"
     },
     {
       "title": "14. force push 为什么危险？",
-      "content": "<strong>结论：</strong>force push 会改写远程分支历史，可能把别人的提交直接覆盖掉。<br><br><strong>要点：</strong><br>1. 在多人共享分支上风险尤其高。<br>2. 使用前必须确认影响范围。<br>3. 如果确实要用，也要优先考虑更稳妥流程和团队沟通。"
+      "content": "<p>「force push 为什么危险？」这个问题其实是在考察你对原理是否真正理解，我的分析如下。 force push 会改写远程分支历史，可能把别人的提交直接覆盖掉。 第一，在多人共享分支上风险尤其高。 第二，使用前必须确认影响范围。 第三，如果确实要用，也要优先考虑更稳妥流程和团队沟通。 Git 的难度不在于命令多，而在于理解「三个区」和「对象不可变性」，大部分操作都能推出来。</p>"
     },
     {
       "title": "15. 一套稳妥的日常 Git 工作流怎么说？",
-      "content": "<strong>结论：</strong>最稳的习惯是：先看状态，再拉最新，改完后小步提交，最后再推送。<br><br><strong>要点：</strong><br>1. 开工前先同步远程。<br>2. 提交时保持一次只做一件事。<br>3. push 前再检查状态和分支，能显著减少事故。"
+      "content": "<p>「一套稳妥的日常 Git 工作流怎么说？」这个问题，我的回答思路是分步骤来说清楚。 最稳的习惯是：先看状态，再拉最新，改完后小步提交，最后再推送。 第一，开工前先同步远程。 第二，提交时保持一次只做一件事。 第三，push 前再检查状态和分支，能显著减少事故。 Git 的难度不在于命令多，而在于理解「三个区」和「对象不可变性」，大部分操作都能推出来。</p>"
     }
   ]
 }
