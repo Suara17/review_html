@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+
+const API_BASE = 'https://review.zrui73366.workers.dev';
 import { Category, Card } from "./types";
 import { 
   Play, 
@@ -88,7 +90,7 @@ export default function App() {
   const fetchDatabase = async () => {
     try {
       updateStatus("CONNECTING TO CYBER D1 DATABASE LAYER...");
-      const res = await fetch("/api/cards");
+      const res = await fetch(`${API_BASE}/api/cards`);
       const data = await res.json();
       if (data.success) {
         // Sort items by sequence 'order' parameter
@@ -319,7 +321,7 @@ export default function App() {
     const cleanedText = cleanTalkText(rawBlock);
 
     // Call server API for timeline segment breakdown in background to sync screen display
-    fetch("/api/tts", {
+    fetch(`${API_BASE}/api/tts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: cleanedText, segments: cleanedText.split(/([，。！？；\n]+)/).filter(Boolean).map((s, i) => ({ index: i, text: s })) })
@@ -422,7 +424,7 @@ export default function App() {
   const handleSaveToGithub = async () => {
     updateStatus("PUSHING SPECIFICATION METADATA SCHEMES TO REPOSITORY...");
     try {
-      const res = await fetch("/api/cards/sync", {
+      const res = await fetch(`${API_BASE}/api/cards/sync`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ categories, cards })
@@ -447,7 +449,7 @@ export default function App() {
     if (window.confirm("确认要恢复全部默认设置与原始种子排序吗？此操作将清洗所有的增删改。")) {
       updateStatus("DESTRUCTIVE COMMAND INVOKED - PURGING ACTIVE MATRIX");
       try {
-        const res = await fetch("/api/cards", { method: "DELETE" });
+        const res = await fetch(`${API_BASE}/api/cards`, { method: "DELETE" });
         const data = await res.json();
         if (data.success) {
           setCategories(data.data.categories);
@@ -532,7 +534,7 @@ export default function App() {
   const triggerBackendD1Sync = async (updatedCats: Category[], updatedCards: Card[]) => {
     // mock debounce and dynamic push API
     try {
-      await fetch("/api/cards/sync", {
+      await fetch(`${API_BASE}/api/cards/sync`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ categories: updatedCats, cards: updatedCards })
