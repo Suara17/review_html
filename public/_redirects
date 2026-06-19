@@ -1,0 +1,3 @@
+# Cloudflare Pages redirects
+# Proxy API requests to Worker
+/api/* https://review.zrui73366.workers.dev/api/:splat 200
