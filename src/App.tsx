@@ -73,6 +73,7 @@ export default function App() {
   const textContainerRef = useRef<HTMLDivElement | null>(null);
   const timerIntervalRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsMetaRef = useRef({ index: 0, total: 0 });
 
   // ----------------------------------------------------
   // 1. Initial Data Fetching & Syncing
@@ -332,6 +333,11 @@ export default function App() {
     setIsRevealed(true);
     updateStatus(`TTS: FETCHING AUDIO...`);
 
+    // Save current playback metadata in ref for onended callback
+    const paraIndex = currentParagraphIndex;
+    const paraTotal = activeParagraphs.length;
+    ttsMetaRef.current = { index: paraIndex, total: paraTotal };
+
     // Send to Vercel Edge TTS
     fetch(`${TTS_URL}`, {
       method: "POST",
@@ -339,7 +345,6 @@ export default function App() {
       body: JSON.stringify({
         text: cleanedText,
         voice: "zh-CN-XiaoxiaoNeural",
-        segments: cleanedText.split(/([，。！？；\n]+)/).filter(Boolean).map((s, i) => ({ index: i, text: s }))
       })
     })
     .then(res => res.json())
@@ -363,8 +368,9 @@ export default function App() {
 
       audio.onended = () => {
         URL.revokeObjectURL(url);
+        const meta = ttsMetaRef.current;
         // Auto advance to next paragraph
-        if (currentParagraphIndex < activeParagraphs.length - 1) {
+        if (meta.index < meta.total - 1) {
           setCurrentParagraphIndex(prev => prev + 1);
         } else {
           setIsPlayingTTS(false);
