@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-cyber-black: #000000;
+  --color-cyber-gray-dark: #06080d;
+  --color-cyber-gray: #121620;
+  --color-cyber-gray-light: #1b2030;
+  
+  --color-cyber-cyan: #00ffff;
+  --color-cyber-cyan-dim: rgba(0, 255, 255, 0.25);
+  --color-cyber-green: #00ffcc;
+  --color-cyber-green-dim: rgba(0, 255, 204, 0.25);
+  --color-cyber-magenta: #ff0055;
+  --color-cyber-magenta-dim: rgba(255, 0, 85, 0.25);
+  
+  --font-sans: "Inter", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  body {
+    background-color: #000000;
+    color: #e2e8f0;
+    font-family: var(--font-sans);
+    overflow-x: hidden;
+  }
+
+  /* Fine Cybernetic Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #000000;
+    border-left: 1px solid rgba(0, 255, 255, 0.1);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 255, 0.7);
+    box-shadow: 0 0 8px #00ffff;
+  }
+}
+
+/* Custom glow utility */
+.neon-glow-cyan {
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.8), 0 0 16px rgba(0, 255, 255, 0.3);
+}
+
+.neon-glow-green {
+  text-shadow: 0 0 8px rgba(0, 255, 204, 0.8), 0 0 16px rgba(0, 255, 204, 0.3);
+}
+
+.neon-border-cyan {
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+}
+
+.neon-border-cyan-heavy {
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), inset 0 0 15px rgba(0, 255, 255, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.8);
+}
+
+.neon-border-magenta {
+  box-shadow: 0 0 10px rgba(255, 0, 85, 0.2), inset 0 0 10px rgba(255, 0, 85, 0.1);
+  border: 1px solid rgba(255, 0, 85, 0.4);
+}
+
+/* CRT Scanlines Layer */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* Ambient flicker animation for Cyberpunk immersion */
+@keyframes cyber-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 0.99;
+  }
+  20%, 24%, 55% {
+    opacity: 0.4;
+  }
+}
+
+.flicker-anim {
+  animation: cyber-flicker 4s infinite alternate;
+}
+
+/* Scanning ray */
+.crt-scan {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(0deg, rgba(0, 255, 255, 0) 0%, rgba(0, 255, 255, 0.05) 10%, rgba(0, 255, 255, 0) 11%);
+  animation: scan-ray 8s linear infinite;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+@keyframes scan-ray {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* Custom CSS formatting for Markdown detail view */
+.markdown-body {
+  line-height: 1.8;
+}
+.markdown-body p {
+  margin-bottom: 1rem;
+  color: #ccd6f6;
+}
+.markdown-body ul {
+  list-style-type: square;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+  color: #ccd6f6;
+}
+.markdown-body li {
+  margin-bottom: 0.5rem;
+}
+.markdown-body code {
+  font-family: var(--font-mono);
+  background: rgba(0, 255, 255, 0.1);
+  color: #00ffff;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+}
+.markdown-body pre {
+  background: #020305;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+}
+.markdown-body pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #00ffcc;
+}
